@@ -1,0 +1,21 @@
+{
+  "title": "Traces and Evaluating Agents",
+  "summary": "An agent's answer is only the end of the story: to debug and improve it you need to see every step. This lesson covers traces and spans, metrics for whole trajectories, reliability measures such as pass^k, and how many runs you need before you can trust a number.",
+  "objectives": [
+    "After this lesson you can describe a trace as a tree of spans and attribute latency, tokens and cost to individual steps",
+    "Compute task success, step efficiency and tool-call accuracy from a set of recorded runs",
+    "Explain why pass@k and pass^k answer different questions and compute both",
+    "Put a confidence interval on a success rate and estimate how many tasks are needed to detect a given improvement",
+    "Define the signals worth monitoring in production and how to turn failed traces into regression tests"
+  ],
+  "prerequisites": "The agent loop from [/learn/agents/agent-loop](/learn/agents/agent-loop) and failure classes from [/learn/agents/failures-and-recovery](/learn/agents/failures-and-recovery). Evaluation basics (success criteria, comparing systems) are in [/learn/evaluation/success-criteria](/learn/evaluation/success-criteria) and [/learn/evaluation/comparing-systems](/learn/evaluation/comparing-systems).",
+  "sims": [],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "OpenTelemetry specification: Traces", "authors": "Cloud Native Computing Foundation", "year": 2023, "note": "Definitions of trace, span, attributes and context propagation" },
+    { "title": "Evaluating Large Language Models Trained on Code", "authors": "Chen et al.", "year": 2021, "note": "Introduces the pass@k metric and its unbiased estimator" },
+    { "title": "Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena", "authors": "Zheng et al.", "year": 2023, "note": "Using strong models as graders and the biases involved" },
+    { "title": "Distributed Systems Observability", "authors": "Cindy Sridharan", "year": 2018, "note": "Logs, metrics and traces as complementary signals" }
+  ]
+}

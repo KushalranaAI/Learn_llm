@@ -1,0 +1,22 @@
+{
+  "title": "Design Enterprise Search over Company Documents",
+  "summary": "An interview-style design of question answering over a company's documents, wikis and tickets: connectors, permission-aware retrieval, hybrid search with reranking and cited answers, sized for 20 million documents.",
+  "objectives": [
+    "Estimate query load, corpus size, index memory and answer cost for a company-wide search assistant",
+    "Design ingestion that keeps documents and their permissions fresh, and choose between pre- and post-filtering by access",
+    "Combine term-based and embedding retrieval with reciprocal rank fusion and a reranker, and compute fused scores by hand",
+    "Write an evaluation plan using recall@k, nDCG and citation faithfulness, and list the failure modes that leak data",
+    "Defend the trade-offs between freshness, recall, latency, cost and security"
+  ],
+  "prerequisites": "Work through [A Framework for LLM System Design](/learn/llm-system-design/design-framework). This case leans on [term-based and embedding retrieval](/learn/retrieval-and-rag/sparse-and-dense), [vector indexes](/learn/retrieval-and-rag/vector-indexes), [hybrid search and reranking](/learn/retrieval-and-rag/hybrid-and-reranking) and [evaluating RAG](/learn/retrieval-and-rag/evaluating-rag).",
+  "sims": ["retrieval-compare"],
+  "labs": [],
+  "sandbox": ["rag-production"],
+  "sources": [
+    { "title": "The Probabilistic Relevance Framework: BM25 and Beyond", "authors": "Robertson and Zaragoza", "year": 2009, "note": "The term-based half of hybrid retrieval" },
+    { "title": "Dense Passage Retrieval for Open-Domain Question Answering", "authors": "Karpukhin et al.", "year": 2020, "note": "Embedding retrieval with a dual encoder" },
+    { "title": "Reciprocal Rank Fusion outperforms Condorcet and individual Rank Learning Methods", "authors": "Cormack, Clarke and Buettcher", "year": 2009, "note": "The RRF formula and the constant k = 60" },
+    { "title": "Cumulated gain-based evaluation of IR techniques", "authors": "Järvelin and Kekäläinen", "year": 2002, "note": "Definition of (normalised) discounted cumulative gain" },
+    { "title": "Efficient and robust approximate nearest neighbor search using Hierarchical Navigable Small World graphs", "authors": "Malkov and Yashunin", "year": 2018, "note": "HNSW, the usual vector index at this scale" }
+  ]
+}

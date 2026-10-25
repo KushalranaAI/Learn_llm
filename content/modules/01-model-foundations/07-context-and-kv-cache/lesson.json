@@ -1,0 +1,23 @@
+{
+  "title": "Context Windows, Prefill and the KV Cache",
+  "summary": "A model reads its whole prompt in one parallel pass (prefill), then writes one token at a time (decode), reusing stored keys and values for every earlier token. That stored KV cache is what limits how many users and how much context fit on a GPU.",
+  "objectives": [
+    "Explain what a context window is and budget a prompt, retrieved documents and output against it",
+    "Distinguish prefill from decode and explain why one is compute-bound and the other memory-bandwidth-bound",
+    "Compute KV-cache memory with 2·L·h_kv·d_h·n·B·bytes for a real model",
+    "Compare multi-head, grouped-query and multi-query attention by cache size and quality",
+    "Explain why facts in the middle of a long context are used less reliably, and what to do about it"
+  ],
+  "prerequisites": "You should know how attention computes queries, keys and values and applies a causal mask ([Attention](/learn/model-foundations/attention)), and what a transformer block contains ([The Transformer Block](/learn/model-foundations/transformer-block)). The decoding loop from [Next-Token Prediction and Sampling](/learn/model-foundations/sampling) is the loop we are about to make fast.",
+  "sims": ["kv-cache-memory", "context-position"],
+  "labs": ["fit-the-kv-cache"],
+  "sandbox": [],
+  "sources": [
+    { "title": "Fast Transformer Decoding: One Write-Head is All You Need", "authors": "Noam Shazeer", "year": 2019, "note": "Introduces multi-query attention to shrink the KV cache" },
+    { "title": "GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints", "authors": "Ainslie et al.", "year": 2023, "note": "Grouped-query attention, the middle ground used by many open models" },
+    { "title": "Efficient Memory Management for Large Language Model Serving with PagedAttention", "authors": "Kwon et al.", "year": 2023, "note": "The vLLM paper: paging the KV cache like virtual memory" },
+    { "title": "FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness", "authors": "Dao et al.", "year": 2022, "note": "Computing attention without materialising the n × n score matrix" },
+    { "title": "Lost in the Middle: How Language Models Use Long Contexts", "authors": "Liu et al.", "year": 2023, "note": "Recall of a relevant document is highest at the start and end of the context" },
+    { "title": "Llama 2: Open Foundation and Fine-Tuned Chat Models", "authors": "Touvron et al.", "year": 2023, "note": "Architecture details used in the worked examples" }
+  ]
+}

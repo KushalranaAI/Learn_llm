@@ -1,0 +1,1 @@
+{ "title": "Retrieval and RAG", "summary": "Grounding answers in your own data: how retrieval works, how to rank and chunk, how vector indexes scale, and how to measure and debug a RAG system.", "icon": "database", "cover": "retrieval-compare" }

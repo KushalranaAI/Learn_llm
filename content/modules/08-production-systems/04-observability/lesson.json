@@ -1,0 +1,21 @@
+{
+  "title": "Observability and Incident Analysis",
+  "summary": "You cannot fix what you cannot see. This lesson covers what to log for every LLM call, how to read latency percentiles, cost and error metrics, traces, quality measured in production, SLOs with error budgets, and how to run an incident and write a blameless postmortem.",
+  "objectives": [
+    "Design a request log that lets you reconstruct any LLM call without storing more than you must",
+    "Compute p50, p95 and p99 from raw latencies and explain why averages mislead",
+    "Compute cost per request, cost per success and error rates with a confidence interval",
+    "Read a trace, find its critical path and decide what to optimise",
+    "Size a production evaluation sample and set an SLO, an error budget and burn-rate alerts",
+    "Run an incident and write a blameless postmortem with a timeline and action items"
+  ],
+  "prerequisites": "You should be comfortable with percentiles and the cost formula from [Choosing and Routing Models](/learn/production-systems/model-routing) and with the idea of an evaluation set ([Success Criteria](/learn/evaluation/success-criteria)). Latency terms (TTFT, TPOT) come from [Measuring Inference](/learn/inference-and-serving/measuring-inference).",
+  "sims": [],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "Site Reliability Engineering", "authors": "Beyer, Jones, Petoff and Murphy (eds.)", "year": 2016, "note": "Chapters on monitoring, service level objectives, and postmortem culture" },
+    { "title": "The Site Reliability Workbook", "authors": "Beyer, Murphy, Rensin, Kawahara and Thorne (eds.)", "year": 2018, "note": "Alerting on SLOs and multi-window burn rates" },
+    { "title": "Dapper, a Large-Scale Distributed Systems Tracing Infrastructure", "authors": "Sigelman et al.", "year": 2010, "note": "The origin of the span-and-trace model used by modern tracing tools" }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "title": "Choosing Context: Selection, Ordering and Compression",
+  "summary": "The context window is a budget shared by instructions, history, tools, documents and the answer. This lesson treats it like one: what to include, where to put it so the model actually uses it, and how far you can compress before facts are lost.",
+  "objectives": [
+    "Write a context budget equation and compute how many retrieved chunks fit after fixed costs and the output reserve",
+    "Select context under a token budget by relevance per token, and explain when greedy selection is suboptimal",
+    "Describe the lost-in-the-middle effect and compute expected recall for a given ordering of documents",
+    "Order context to maximise expected use of the relevant parts, using the rearrangement argument",
+    "Estimate how much information survives compression and when more context costs more than it helps"
+  ],
+  "prerequisites": "You should know how prompts are rendered and priced from [Anatomy of a Prompt](/learn/prompt-and-context/prompt-anatomy) and what a context window and prefill are from [Context windows, prefill and the KV cache](/learn/model-foundations/context-and-kv-cache). Retrieval itself is covered in module 6; here we take a ranked list of candidate passages as given.",
+  "sims": ["context-position"],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "Lost in the Middle: How Language Models Use Long Contexts", "authors": "Liu et al.", "year": 2023, "note": "U-shaped accuracy as a function of where the relevant document sits" },
+    { "title": "The Use of MMR, Diversity-Based Reranking for Reordering Documents and Producing Summaries", "authors": "Carbonell and Goldstein", "year": 1998, "note": "Maximal marginal relevance for non-redundant selection" },
+    { "title": "LLMLingua: Compressing Prompts for Accelerated Inference of Large Language Models", "authors": "Jiang et al.", "year": 2023, "note": "Token-level prompt compression with a small model" },
+    { "title": "Large Language Models Can Be Easily Distracted by Irrelevant Context", "authors": "Shi et al.", "year": 2023, "note": "Irrelevant passages reduce accuracy on reasoning problems" }
+  ]
+}

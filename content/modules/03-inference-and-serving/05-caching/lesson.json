@@ -1,0 +1,21 @@
+{
+  "title": "Caching Repeated Work: Prefix, Prompt and Semantic Caches",
+  "summary": "The cheapest token is the one you never compute. This lesson covers reusing the KV cache for shared prompt prefixes, the arithmetic of provider prompt-caching discounts and break-even hit rates, designing prompts for cache hits, and semantic caches that answer repeated questions with a similarity threshold and a risk of false hits.",
+  "objectives": [
+    "Explain prefix (KV) caching and compute the prefill time and cost it saves for a shared prompt prefix",
+    "Compute the expected cost per request under a provider's cached-read discount and cache-write premium, and the break-even hit rate",
+    "Structure prompts so the stable part comes first and estimate hit rate from request rate and cache lifetime",
+    "Compute a semantic cache's hit rate and false-hit rate at a similarity threshold and choose the threshold by expected value",
+    "Decide what to cache, for how long, and how to keep it correct and private"
+  ],
+  "prerequisites": "You should know prefill and the KV cache ([Context Windows, Prefill and the KV Cache](/learn/model-foundations/context-and-kv-cache)), PagedAttention blocks ([Batching and Scheduling](/learn/inference-and-serving/batching)) and cosine similarity of embeddings ([Embeddings](/learn/model-foundations/embeddings)).",
+  "sims": ["prompt-cache"],
+  "labs": [],
+  "sandbox": ["semantic-cache"],
+  "sources": [
+    { "title": "Efficient Memory Management for Large Language Model Serving with PagedAttention", "authors": "Kwon et al.", "year": 2023, "note": "Block-level KV sharing between requests with a common prefix" },
+    { "title": "SGLang: Efficient Execution of Structured Language Model Programs", "authors": "Zheng et al.", "year": 2023, "note": "RadixAttention: a radix tree over cached prefixes with LRU eviction" },
+    { "title": "Prompt Cache: Modular Attention Reuse for Low-Latency Inference", "authors": "Gim et al.", "year": 2023, "note": "Reusing precomputed attention states for recurring prompt segments" },
+    { "title": "Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks", "authors": "Reimers and Gurevych", "year": 2019, "note": "Sentence embeddings compared by cosine similarity, the basis of semantic caching" }
+  ]
+}

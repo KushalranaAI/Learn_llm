@@ -1,0 +1,1 @@
+{ "title": "LLM System Design", "summary": "Interview-style end-to-end designs: one reusable framework, then seven case studies worked with real estimates, architectures, trade-offs and evaluation plans.", "icon": "boxes", "cover": "rag-pipeline" }

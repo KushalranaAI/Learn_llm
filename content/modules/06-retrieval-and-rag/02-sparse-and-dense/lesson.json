@@ -1,0 +1,22 @@
+{
+  "title": "Term-Based (BM25) and Embedding Retrieval",
+  "summary": "There are two families of retriever. Sparse retrievers score documents by the words they share with the query, weighted by rarity (TF-IDF, BM25). Dense retrievers embed query and documents as vectors and compare meanings with cosine similarity. Each fails where the other succeeds.",
+  "objectives": [
+    "Build an inverted index and score documents with TF-IDF by hand",
+    "Compute BM25 scores and explain what k1 (term-frequency saturation) and b (length normalisation) do",
+    "Compute cosine similarity between embeddings and explain why it captures paraphrase",
+    "Contrast bi-encoders and cross-encoders in accuracy and cost, with numbers",
+    "Explain how embedding models are trained with a contrastive loss and why hard negatives matter"
+  ],
+  "prerequisites": "You should have built the toy retriever in [How RAG Works](/learn/retrieval-and-rag/rag-architecture) and know what an embedding vector is ([Embeddings](/learn/model-foundations/embeddings)). Logarithms and softmax ([Next-Token Prediction and Sampling](/learn/model-foundations/sampling)) are used.",
+  "sims": ["retrieval-compare"],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "The Probabilistic Relevance Framework: BM25 and Beyond", "authors": "Robertson and Zaragoza", "year": 2009, "note": "Derivation and discussion of BM25 and its parameters k1 and b" },
+    { "title": "A statistical interpretation of term specificity and its application in retrieval", "authors": "Karen Spärck Jones", "year": 1972, "note": "The origin of inverse document frequency" },
+    { "title": "Dense Passage Retrieval for Open-Domain Question Answering", "authors": "Karpukhin et al.", "year": 2020, "note": "Bi-encoder retrieval trained with in-batch negatives" },
+    { "title": "Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks", "authors": "Reimers and Gurevych", "year": 2019, "note": "Bi-encoder sentence embeddings and the cost argument against cross-encoders for search" },
+    { "title": "Introduction to Information Retrieval", "authors": "Manning, Raghavan and Schütze", "year": 2008, "note": "Chapters 2, 6 and 11: inverted indexes, tf-idf and probabilistic retrieval" }
+  ]
+}

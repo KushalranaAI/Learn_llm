@@ -1,0 +1,19 @@
+{
+  "title": "Workflows or Agents: Who Decides the Next Step",
+  "summary": "In a workflow your code fixes the steps; in an agent the model chooses them. This lesson puts numbers on what that choice costs, starting with how reliability compounds over many steps, then walks through the standard workflow patterns and when each beats a free-running agent.",
+  "objectives": [
+    "After this lesson you can distinguish a workflow (a fixed graph of steps) from an agent (model-chosen steps) and place a system on that spectrum",
+    "Compute end-to-end success as a product of per-step success rates and find the longest chain that meets a target",
+    "Describe prompt chaining, routing, parallelisation, orchestrator-workers and evaluator-optimiser, and compute the reliability of gates, votes and refinement loops",
+    "Choose between a workflow and an agent for a task using predictability, cost and the shape of the problem"
+  ],
+  "prerequisites": "The agent loop and its cost from [/learn/agents/agent-loop](/learn/agents/agent-loop). Basic probability: multiplying independent probabilities and the complement rule $P(\\text{not } A) = 1 - P(A)$.",
+  "sims": ["agent-reliability"],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "Building Effective Agents", "authors": "Schluntz and Zhang (Anthropic)", "year": 2024, "note": "Workflow patterns versus autonomous agents" },
+    { "title": "Self-Consistency Improves Chain of Thought Reasoning in Language Models", "authors": "Wang et al.", "year": 2023, "note": "Sampling several answers and taking a majority vote" },
+    { "title": "Self-Refine: Iterative Refinement with Self-Feedback", "authors": "Madaan et al.", "year": 2023, "note": "Generate, critique, revise loops" }
+  ]
+}

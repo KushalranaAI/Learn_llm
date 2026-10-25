@@ -1,0 +1,20 @@
+{
+  "title": "Versioning Prompts and Catching Regressions",
+  "summary": "A prompt is code that nobody can read the behaviour of by inspection. This lesson treats prompts as versioned artifacts and builds the testing machinery around them: golden sets, confidence intervals on pass rates, significance tests between versions, and release gates that do not cry wolf.",
+  "objectives": [
+    "Manage prompts as versioned, reviewable artifacts with changelogs, pinned model versions and rollback",
+    "Size a golden set and compute a confidence interval for a measured pass rate",
+    "Compare two prompt versions with a two-proportion test, a paired test, and a power calculation",
+    "Explain why flaky cases and multiple comparisons produce false alarms, and set a release gate that accounts for them",
+    "Turn production failures into new regression cases"
+  ],
+  "prerequisites": "You should be comfortable with probability of independent events from earlier lessons in this module and with the idea of a pass rate. A little statistics (a proportion, a standard error) helps but is explained as we go. Evaluation proper is the subject of module 5; here we use just what prompt changes need.",
+  "sims": ["ab-significance"],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "Statistical Methods for Rates and Proportions", "authors": "Fleiss, Levin and Paik", "year": 2003, "note": "Confidence intervals and sample sizes for proportions; McNemar's test for paired data" },
+    { "title": "Interval Estimation for a Binomial Proportion", "authors": "Brown, Cai and DasGupta", "year": 2001, "note": "Why the Wilson interval beats the simple normal interval for pass rates near 0 or 1" },
+    { "title": "Beyond Accuracy: Behavioral Testing of NLP Models with CheckList", "authors": "Ribeiro et al.", "year": 2020, "note": "Test-suite thinking for language models: capability and regression tests" }
+  ]
+}

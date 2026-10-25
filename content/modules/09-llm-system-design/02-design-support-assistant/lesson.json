@@ -1,0 +1,20 @@
+{
+  "title": "Design a Customer-Support Assistant",
+  "summary": "A full interview-style design of a support assistant for a large online retailer: grounded answers from the help centre, account actions through tools, and a clean hand-off to human agents, with every number estimated.",
+  "objectives": [
+    "Turn a vague support-bot brief into requirements, SLOs and a token and cost estimate",
+    "Draw the architecture and trace one customer turn end to end, from message to grounded answer",
+    "Estimate answer accuracy from retrieval recall and generator faithfulness, and size the help-centre index",
+    "Reason about containment, false resolution and tool permissions in money, not only in quality scores",
+    "Defend the main trade-offs (model size, routing, autonomy, hand-off) the way an interviewer expects"
+  ],
+  "prerequisites": "Work through [A Framework for LLM System Design](/learn/llm-system-design/design-framework) first. It also helps to know [how RAG works](/learn/retrieval-and-rag/rag-architecture), [function calling](/learn/prompt-and-context/tools-and-functions) and [bounded autonomy for agents](/learn/agents/bounded-autonomy).",
+  "sims": ["rag-pipeline"],
+  "labs": ["design-support-bot"],
+  "sandbox": ["support-agent"],
+  "sources": [
+    { "title": "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks", "authors": "Lewis et al.", "year": 2020, "note": "The retrieve-then-generate pattern the help-centre answers use" },
+    { "title": "ReAct: Synergizing Reasoning and Acting in Language Models", "authors": "Yao et al.", "year": 2023, "note": "Interleaving reasoning with tool calls, the basis of the action loop" },
+    { "title": "Toolformer: Language Models Can Teach Themselves to Use Tools", "authors": "Schick et al.", "year": 2023, "note": "Background on models deciding when to call an API" }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "title": "Speculative Decoding and Model Parallelism",
+  "summary": "Decode is memory-bound, so checking several guessed tokens costs almost the same as generating one. Speculative decoding exploits this with a cheap draft model, and keeps the output distribution exactly the same. When a model is too big for one GPU, tensor and pipeline parallelism split it, trading memory for communication.",
+  "objectives": [
+    "Explain draft-and-verify decoding and why the output distribution is unchanged",
+    "Derive and compute the expected tokens per target pass, (1 - alpha^(k+1)) / (1 - alpha), and the resulting speedup including draft cost",
+    "Choose a draft length k and recognise when speculation stops helping (large batches, low acceptance)",
+    "Explain tensor parallelism and estimate its all-reduce communication per layer",
+    "Explain pipeline parallelism, compute the bubble fraction and choose between the two"
+  ],
+  "prerequisites": "You should know why decode is memory-bound ([Where the Time Goes](/learn/inference-and-serving/memory-and-compute)) and how sampling produces a next-token distribution ([Next-Token Prediction and Sampling](/learn/model-foundations/sampling)).",
+  "sims": ["speculative-decoding", "roofline", "llm-batching"],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "Fast Inference from Transformers via Speculative Decoding", "authors": "Leviathan, Kalman and Matias", "year": 2022, "note": "The draft-and-verify algorithm, the acceptance rule and the expected-tokens formula" },
+    { "title": "Accelerating Large Language Model Decoding with Speculative Sampling", "authors": "Chen et al.", "year": 2023, "note": "Independent description of speculative sampling with the same exactness guarantee" },
+    { "title": "Megatron-LM: Training Multi-Billion Parameter Language Models Using Model Parallelism", "authors": "Shoeybi et al.", "year": 2019, "note": "Tensor parallelism of attention and MLP blocks with two all-reduces per layer" },
+    { "title": "GPipe: Efficient Training of Giant Neural Networks using Pipeline Parallelism", "authors": "Huang et al.", "year": 2018, "note": "Micro-batching and the pipeline bubble" },
+    { "title": "Medusa: Simple LLM Inference Acceleration Framework with Multiple Decoding Heads", "authors": "Cai et al.", "year": 2024, "note": "Drafting with extra prediction heads instead of a separate model" }
+  ]
+}

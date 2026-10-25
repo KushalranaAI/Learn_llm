@@ -1,0 +1,20 @@
+{
+  "title": "Measuring Inference: TTFT, TPOT, Throughput and Goodput",
+  "summary": "Before you can make a model faster or cheaper you have to measure it the way users feel it. This lesson splits a request into its phases, defines time to first token, time per output token and end-to-end latency, and shows why percentiles and goodput tell you more than averages and raw throughput.",
+  "objectives": [
+    "Break a streamed LLM request into network, queue, prefill and decode time and compute TTFT, TPOT and end-to-end latency",
+    "Compute p50, p95 and p99 from a sample of latencies and explain why the mean misleads",
+    "Distinguish throughput from goodput and compute goodput under a latency SLO",
+    "Translate a product experience (chat, voice, batch jobs) into concrete latency targets",
+    "Design a benchmark that produces trustworthy serving numbers"
+  ],
+  "prerequisites": "You should know what prefill and decode are and why generation happens one token at a time ([Context Windows, Prefill and the KV Cache](/learn/model-foundations/context-and-kv-cache)), and what a token is ([Tokenization](/learn/model-foundations/tokenization)). No serving experience is assumed.",
+  "sims": ["latency-breakdown"],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "The Tail at Scale", "authors": "Jeffrey Dean and Luiz André Barroso", "year": 2013, "note": "Why rare slow responses dominate user experience in systems that fan out" },
+    { "title": "DistServe: Disaggregating Prefill and Decoding for Goodput-optimized Large Language Model Serving", "authors": "Zhong et al.", "year": 2024, "note": "Defines goodput as requests served per second within TTFT and TPOT targets" },
+    { "title": "Orca: A Distributed Serving System for Transformer-Based Generative Models", "authors": "Yu et al.", "year": 2022, "note": "Describes the prefill and decode phases of a generation request and how a server schedules them" }
+  ]
+}

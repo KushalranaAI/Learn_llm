@@ -1,0 +1,22 @@
+{
+  "title": "Scaling Laws and Compute Budgets",
+  "summary": "Loss falls predictably, as a power law, when you add parameters, data and compute. This lesson turns that regularity into a planning tool: estimate the compute of a run with C ≈ 6ND, split a budget between model size and tokens, and decide when to train a smaller model for longer.",
+  "objectives": [
+    "Read a power law on a log-log plot and compute how much loss falls when a model or dataset grows",
+    "Evaluate the Chinchilla loss formula L(N, D) = E + A/N^α + B/D^β and explain each term",
+    "Derive C ≈ 6ND and convert a training run into FLOPs, GPU-days and dollars",
+    "Find the compute-optimal model size and token count for a budget using the 20-tokens-per-parameter rule",
+    "Explain why production models are often trained far past the compute-optimal point"
+  ],
+  "prerequisites": "You should know the pretraining objective and the idea of tokens per parameter ([Pretraining Data](/learn/training-and-adaptation/pretraining-data)), and roughly how parameters are counted in a transformer ([The Transformer Block](/learn/model-foundations/transformer-block)). Comfort with logarithms and exponents helps; they are reviewed where used.",
+  "sims": ["scaling-laws"],
+  "labs": ["plan-a-training-run"],
+  "sandbox": [],
+  "sources": [
+    { "title": "Scaling Laws for Neural Language Models", "authors": "Kaplan et al.", "year": 2020, "note": "Power-law fits of loss against parameters, data and compute; the C ≈ 6ND estimate" },
+    { "title": "Training Compute-Optimal Large Language Models", "authors": "Hoffmann et al.", "year": 2022, "note": "Chinchilla: the L(N, D) fit and the finding that tokens and parameters should scale about equally" },
+    { "title": "Language Models are Few-Shot Learners", "authors": "Brown et al.", "year": 2020, "note": "GPT-3: 175B parameters on about 300B tokens" },
+    { "title": "Llama 2: Open Foundation and Fine-Tuned Chat Models", "authors": "Touvron et al.", "year": 2023, "note": "7B to 70B models all trained on 2T tokens, far past the compute-optimal ratio for the small models" },
+    { "title": "Chinchilla Scaling: A replication attempt", "authors": "Besiroglu, Erdil, Barnett and You", "year": 2024, "note": "Re-fits the Chinchilla parametric formula and discusses its inconsistencies with the paper's other estimates" }
+  ]
+}

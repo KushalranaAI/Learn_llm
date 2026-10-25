@@ -1,0 +1,22 @@
+{
+  "title": "Where the Time Goes: Memory Bandwidth, Compute and the Roofline",
+  "summary": "A GPU can do arithmetic hundreds of times faster than it can fetch the numbers to do it on. This lesson counts the FLOPs and bytes of a forward pass, introduces arithmetic intensity and the roofline model, and explains why prefill is compute-bound while decode is limited by memory bandwidth.",
+  "objectives": [
+    "Estimate the FLOPs per token of a transformer as about 2N and add the attention term",
+    "Estimate decode time per token from weight bytes and memory bandwidth for a 7-8B model",
+    "Compute arithmetic intensity and locate a workload on the roofline of a given GPU",
+    "Explain why prefill is compute-bound and decode is bandwidth-bound, and what batching changes",
+    "Measure efficiency with model FLOPs utilisation (MFU) and memory bandwidth utilisation (MBU)"
+  ],
+  "prerequisites": "You should know how a transformer block is built and roughly where its parameters are ([The Transformer Block](/learn/model-foundations/transformer-block)), and how the KV cache grows with context ([Context Windows, Prefill and the KV Cache](/learn/model-foundations/context-and-kv-cache)). The previous lesson, [Measuring Inference](/learn/inference-and-serving/measuring-inference), defines TTFT and TPOT.",
+  "sims": ["roofline"],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "Roofline: An Insightful Visual Performance Model for Multicore Architectures", "authors": "Williams, Waterman and Patterson", "year": 2009, "note": "The original roofline model: attainable performance as the minimum of peak compute and intensity times bandwidth" },
+    { "title": "Scaling Laws for Neural Language Models", "authors": "Kaplan et al.", "year": 2020, "note": "Section 2.1 derives the forward-pass cost of about 2N FLOPs per token" },
+    { "title": "Efficiently Scaling Transformer Inference", "authors": "Pope et al.", "year": 2022, "note": "Analyses inference cost, memory traffic and partitioning for large transformers" },
+    { "title": "FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness", "authors": "Dao, Fu, Ermon, Rudra and Ré", "year": 2022, "note": "Shows that attention speed is governed by memory traffic, not FLOPs" },
+    { "title": "PaLM: Scaling Language Modeling with Pathways", "authors": "Chowdhery et al.", "year": 2022, "note": "Appendix B defines model FLOPs utilisation (MFU)" }
+  ]
+}

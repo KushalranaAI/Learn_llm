@@ -1,0 +1,22 @@
+{
+  "title": "Tokenization: From Text to Token IDs",
+  "summary": "Models do not read characters or words; they read tokens, sub-word pieces chosen by a compression algorithm. This lesson builds byte-pair encoding by hand, measures compression, and shows how tokens drive context limits, cost and some famous model blind spots.",
+  "objectives": [
+    "Explain why models use sub-word tokens rather than characters or whole words",
+    "Run byte-pair encoding merges by hand by counting adjacent pairs, and compute the resulting compression ratio",
+    "Explain byte-level tokenization and why some languages and scripts cost more tokens than others",
+    "Estimate the parameter and compute cost of a vocabulary size choice",
+    "Convert words to tokens to dollars for a prompt and output, and spot tokenizer quirks that cause bugs"
+  ],
+  "prerequisites": "You should know that a model maps numbers in to probabilities out and is trained with cross-entropy over a vocabulary, from [How a Network Learns](/learn/model-foundations/how-networks-learn). No other background is needed.",
+  "sims": ["bpe-tokenizer", "token-cost"],
+  "labs": ["token-budget"],
+  "sandbox": [],
+  "sources": [
+    { "title": "Neural Machine Translation of Rare Words with Subword Units", "authors": "Sennrich, Haddow and Birch", "year": 2016, "note": "Introduced byte-pair encoding for sub-word vocabularies" },
+    { "title": "Language Models are Unsupervised Multitask Learners", "authors": "Radford et al.", "year": 2019, "note": "GPT-2: byte-level BPE with a 50,257-token vocabulary" },
+    { "title": "SentencePiece: A simple and language independent subword tokenizer and detokenizer for Neural Text Processing", "authors": "Kudo and Richardson", "year": 2018, "note": "Tokenizing raw text without pre-splitting on spaces" },
+    { "title": "Subword Regularization: Improving Neural Network Translation Models with Multiple Subword Candidates", "authors": "Kudo", "year": 2018, "note": "The unigram language-model tokenizer" },
+    { "title": "Language Model Tokenizers Introduce Unfairness Between Languages", "authors": "Petrov, La Malfa, Torr and Bibi", "year": 2023, "note": "Token counts for the same content vary widely across languages" }
+  ]
+}

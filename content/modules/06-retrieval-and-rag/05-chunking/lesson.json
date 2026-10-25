@@ -1,0 +1,21 @@
+{
+  "title": "Chunking and Indexing Documents",
+  "summary": "Documents are split into chunks before they are embedded, and the split decides what the retriever can find. This lesson works out chunk counts, overlap overhead, the chance a fact is cut in half, index size, and how structure-aware and parent-child chunking help.",
+  "objectives": [
+    "Explain why whole documents are not embedded as a single vector and why chunk size is a trade-off",
+    "Compute chunk count with ceil((L − o)/(s − o)) and the overlap overhead s/(s − o)",
+    "Compute the probability that a fact of f tokens is split by a chunk boundary and how overlap reduces it",
+    "Compute index size N · d · bytes and indexing cost for a collection",
+    "Choose between fixed-size, sentence, heading-aware and parent-child chunking, and evaluate the choice with labelled questions"
+  ],
+  "prerequisites": "You should know the offline indexing pipeline from [How RAG Works](/learn/retrieval-and-rag/rag-architecture), how dense retrieval embeds text ([Term-Based and Embedding Retrieval](/learn/retrieval-and-rag/sparse-and-dense)), and the retrieval metrics from [Hybrid Search and Reranking](/learn/retrieval-and-rag/hybrid-and-reranking).",
+  "sims": ["chunking"],
+  "labs": ["chunk-it-right"],
+  "sandbox": [],
+  "sources": [
+    { "title": "Lost in the Middle: How Language Models Use Long Contexts", "authors": "Liu et al.", "year": 2023, "note": "Why packing more text into the prompt is not free" },
+    { "title": "Dense Passage Retrieval for Open-Domain Question Answering", "authors": "Karpukhin et al.", "year": 2020, "note": "Passages of about 100 words as the retrieval unit" },
+    { "title": "Introduction to Information Retrieval", "authors": "Manning, Raghavan and Schütze", "year": 2008, "note": "Chapter 2 on document units and tokenisation" },
+    { "title": "BEIR: A Heterogeneous Benchmark for Zero-shot Evaluation of Information Retrieval Models", "authors": "Thakur et al.", "year": 2021, "note": "Evidence that retrieval quality depends on the corpus and document granularity" }
+  ]
+}

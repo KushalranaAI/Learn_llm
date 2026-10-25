@@ -1,0 +1,21 @@
+{
+  "title": "How RAG Works: Retrieve, Then Generate",
+  "summary": "Retrieval-augmented generation looks up relevant passages from your own data and places them in the prompt, so the model answers from evidence instead of memory. Its accuracy factors into two numbers you can measure separately: did retrieval find the evidence, and did the model use it faithfully.",
+  "objectives": [
+    "Explain which problems retrieval solves (stale knowledge, private data, citations) and which it does not",
+    "Draw the offline indexing path and the online query path of a RAG system and name each component",
+    "Use P(correct) ≈ P(retrieved) × P(faithful | retrieved) to decide which half of a system to improve",
+    "Compute the token cost and latency of a RAG request from k, chunk size and prices",
+    "Choose between RAG, long-context stuffing and fine-tuning for a given use case"
+  ],
+  "prerequisites": "You should know what tokens and context windows are ([Tokenization](/learn/model-foundations/tokenization), [Context Windows and the KV Cache](/learn/model-foundations/context-and-kv-cache)) and why models hallucinate ([Hallucination and the Limits of Next-Token Prediction](/learn/model-foundations/limits)). Embeddings as vectors ([Embeddings](/learn/model-foundations/embeddings)) help but are revisited in the next lesson.",
+  "sims": ["rag-pipeline"],
+  "labs": [],
+  "sandbox": ["rag-basic"],
+  "sources": [
+    { "title": "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks", "authors": "Lewis et al.", "year": 2020, "note": "The paper that named RAG: a retriever plus a generator, trained end to end" },
+    { "title": "Dense Passage Retrieval for Open-Domain Question Answering", "authors": "Karpukhin et al.", "year": 2020, "note": "Bi-encoder dense retrieval used as the retriever in many RAG systems" },
+    { "title": "Lost in the Middle: How Language Models Use Long Contexts", "authors": "Liu et al.", "year": 2023, "note": "Evidence that position in a long context affects whether the model uses it" },
+    { "title": "Introduction to Information Retrieval", "authors": "Manning, Raghavan and Schütze", "year": 2008, "note": "Chapter 1 (inverted indexes) and Chapter 8 (evaluation)" }
+  ]
+}

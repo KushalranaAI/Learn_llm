@@ -1,0 +1,386 @@
+{
+ "module": "production-systems",
+ "sections": [
+  {
+   "slug": "model-routing",
+   "title": "Choosing and Routing Models",
+   "lesson": "model-routing",
+   "questions": [
+    {
+     "level": "junior",
+     "q": "What is the quality, cost and latency frontier, and why do you discard dominated models?",
+     "a": "Measure every candidate on your own evaluation set for quality $q$, on your own traffic for cost per request $c$, and for latency $t$. Model $i$ **dominates** $j$ if $q_i \\ge q_j$, $c_i \\le c_j$, $t_i \\le t_j$ with at least one strict inequality. A dominated model is never the right choice, because the dominating one is at least as good on everything. The models nobody dominates form the Pareto frontier. Example: Medium at 86%, \\$0.0030, 1.2 s dominates Medium-B at 84%, \\$0.0045, 1.5 s. After removing dominated models you pick on the frontier by applying constraints (for example $q \\ge 85\\%$ and $t \\le 2$ s) and then taking the cheapest survivor."
+    },
+    {
+     "level": "junior",
+     "q": "How do you compute the cost of one LLM request, and which part usually surprises people?",
+     "a": "$c = (n_{\\text{in}} p_{\\text{in}} + n_{\\text{out}} p_{\\text{out}})/10^6$ with prices per million tokens. For 1,500 input and 300 output tokens at \\$3 and \\$15 per million: $(4500 + 4500)/10^6 = \\$0.009$. The surprise is that output tokens are several times dearer, so 300 output tokens cost as much as 1,500 input tokens. Also forgotten: retries multiply cost by $(1 + r)$, hidden reasoning tokens bill as output, and cached prefix tokens are discounted. Compute cost from the token counts the provider reports in each response, not from character-count estimates, which can be off by 20-40%."
+    },
+    {
+     "level": "mid",
+     "q": "Derive the expected cost of a two-model cascade and the acceptance rate at which it breaks even.",
+     "a": "Every request pays for the small model; only the escalated fraction $(1-a)$ also pays for the large one: $\\mathbb{E}[c] = c_s + (1-a)c_\\ell$, where $a$ is the acceptance rate. It beats large-only when $c_s + (1-a)c_\\ell < c_\\ell$, i.e. $a > c_s/c_\\ell$. With $c_s = \\$0.001$, $c_\\ell = \\$0.010$, $a = 0.7$: $0.001 + 0.003 = \\$0.004$, a 60% saving, and break-even is $a > 10\\%$. With a 2x price gap the small model must handle more than half the traffic, so cascades pay when the price gap is large. If the check is a separate model, add its cost to $c_s$."
+    },
+    {
+     "level": "mid",
+     "q": "A cascade lowers mean latency but your p95 got worse. Why, and what do you do?",
+     "a": "Escalated requests wait for both models in sequence: $T_s + T_\\ell$. With $T_s = 0.8$ s and $T_\\ell = 2.5$ s, 30% of users wait 3.3 s, longer than large-only, while the mean $0.8 + 0.3 \\times 2.5 = 1.55$ s improves. If more than 5% of requests escalate, the p95 is an escalated request. Options: use a router that decides before calling any model so escalated requests pay only $T_\\ell$; run the small model and a speculative large call in parallel for traffic that is likely to escalate; lower $T_s$ with shorter outputs; or accept the trade-off if the SLO is on the mean or p50. Check the percentile your SLO actually names."
+    },
+    {
+     "level": "mid",
+     "q": "How do you choose a router threshold, and why compare against random and oracle routing?",
+     "a": "Run both models on a labelled set of real requests, score each with the router, sweep the threshold $\\tau$ and tabulate fraction routed small $f$, overall quality and cost. Pick the cheapest threshold meeting the quality target, with margin. Random routing at the same $f$ gives $Q = f q_s + (1-f) q_\\ell$; for $q_s = 0.78$, $q_\\ell = 0.92$, $f = 0.6$ that is 83.6%, so a router achieving 91.4% is worth 7.8 points. The oracle (small exactly when the small model would be right) gives the ceiling, 94% at about \\$0.003 here. Together they show the router's value and how much headroom remains."
+    },
+    {
+     "level": "mid",
+     "q": "Why pin model versions and log the prompt and router versions on every request?",
+     "a": "Quality, cost, output length and style can change when a provider repoints a moving alias to a new snapshot, or when you change a prompt or router. Without versions on each request you cannot answer \"what changed?\" when quality moves on a Tuesday. Pin a dated model snapshot, upgrade deliberately through shadow and canary, and log `model_version`, `prompt_version` and `router_version` in the gateway record. Then you can group quality by version, confirm or rule out a cause in minutes, and roll back by pointing the id at the previous version. Also watch provider deprecation notices so a pinned version does not disappear unexpectedly."
+    },
+    {
+     "level": "senior",
+     "q": "Design the model routing for a support product with free and paid tiers, 3 million requests per month and a quality floor of 91%.",
+     "a": "Put routing in a gateway. Policy first: free tier always small (cost policy), paid tier through a learned router with threshold from the sweep, long prompts to a long-context model. Blended cost is $\\sum_k w_k c_k$: with 80% free at \\$0.001 and 20% paid at \\$0.0047, \\$0.00174 per request, about \\$5,200 a month versus \\$30,000 large-only. Protect quality with a 1-5% always-large holdout (about \\$0.0001 per paid request at 2%), daily grading of sampled small-routed answers against the offline pass rate, and a user \"regenerate\" path that retries on the large model. Track the fraction routed small daily: a jump signals new traffic the router misjudges. Pin versions, and ramp router changes through the rollout playbook."
+    },
+    {
+     "level": "senior",
+     "q": "The router's quality dropped two weeks after a large customer was onboarded. How do you investigate and fix it?",
+     "a": "Start with \"what changed\": the traffic mix. Group graded quality and the routed-small fraction $f$ by tenant, language and feature; a new tenant with, say, code questions or another language will show a jump in $f$ and a lower pass rate on routed-small answers. The router's score is calibrated for the old distribution, so it overestimates the small model's chance of success. Fixes in order: lower the threshold for that segment immediately (more traffic to large, a known cost), sample and grade the new tenant's traffic to build labelled data, retrain or recalibrate the router with it, add per-segment quality to the dashboard with a minimum sample size, and add a drift alert on score distribution. Re-run the threshold sweep on a held-out slice of the new traffic before restoring the old threshold."
+    }
+   ]
+  },
+  {
+   "slug": "fallbacks",
+   "title": "Fallbacks and Graceful Degradation",
+   "lesson": "fallbacks",
+   "questions": [
+    {
+     "level": "junior",
+     "q": "What does 99.9% availability mean in minutes per month, and why do the nines matter?",
+     "a": "A 30-day month has 43,200 minutes, so 99.9% allows $0.001 \\times 43{,}200 = 43.2$ minutes of downtime. 99% allows 432 minutes (7.2 hours), 99.99% only 4.32 minutes. Each extra nine cuts the allowed downtime tenfold, so they are not close: the gap between 99% and 99.9% is more than six hours a month. For an LLM feature, count a request as failed if it errors, times out or returns invalid output, and measure that definition yourself instead of trusting the provider's status page."
+    },
+    {
+     "level": "junior",
+     "q": "Why does every call to a model provider need a timeout?",
+     "a": "A hang neither succeeds nor fails, so without a timeout you never discover that you should fail over. Requests also pile up: by Little's law $N = \\lambda W$, so at 100 requests per second a 5 s hang means 500 in flight instead of 80, which can exhaust your own workers and take down unrelated features. Choose the timeout just above the tail of successful latency (for example p99 of 3.5 s gives a 4 s timeout). Too short abandons healthy requests and pays twice; too long makes users wait and ties up resources. For streaming, use a time-to-first-token timeout plus a total timeout."
+    },
+    {
+     "level": "mid",
+     "q": "Compute the availability of a primary at 99.5% and a fallback at 99%, first independent, then with a 10% shared-cause probability.",
+     "a": "Independent: $1 - (1-A_1)(1-A_2) = 1 - 0.005 \\times 0.01 = 0.99995$, about 2.2 minutes of downtime a month. With correlation $\\rho = 0.1$ meaning the fallback is also down with probability $\\rho + (1-\\rho)(1-A_2) = 0.1 + 0.9 \\times 0.01 = 0.109$ given a primary outage: failure is $0.005 \\times 0.109 = 0.000545$, availability 99.9455%, about 23.5 minutes a month. A modest shared cause cost more than 10x. With $\\rho = 1$ the fallback adds nothing. So use a different provider and region, different credentials and quotas, and avoid a shared gateway as a single point of failure."
+    },
+    {
+     "level": "mid",
+     "q": "What is a retry storm and how do you prevent it?",
+     "a": "If each of $d$ layers retries up to $m$ times, one user request can become $m^d$ calls to a struggling provider: three layers with three attempts each is 27 calls. That load can turn a partial outage into a total one. Prevent it by retrying in a single layer (usually the gateway), using exponential backoff with jitter so clients do not synchronise, honouring `Retry-After` on 429s, and enforcing a retry budget, for example retries at most 10% of recent first-attempt traffic. Beyond the budget, shed load or fail over instead of retrying. Never retry non-idempotent tool actions without an idempotency key."
+    },
+    {
+     "level": "mid",
+     "q": "How does hedging cut tail latency, and what does it cost?",
+     "a": "Send a second copy after a delay $d$ (around the p90-p95) and take the first answer. The user waits beyond $x$ only if both are slow: $P = P(L > x) P(L > x - d)$. With $P(L>4) = 0.01$, $P(L>2.5) = 0.02$ and $d = 1.5$ s, the chance of exceeding 4 s falls from 1% to 0.02%. Cost: a hedge is sent for the slowest $P(L>d)$ share, about 5% extra requests at the p95. Limits: duplicate LLM calls cost real tokens, can differ in output, count against rate limits and add load when the system is already slow. Hedge only side-effect-free calls, cap the hedge rate and disable it during overload."
+    },
+    {
+     "level": "mid",
+     "q": "Explain the circuit breaker states and use Little's law to show why failing fast helps.",
+     "a": "Closed: calls pass through while errors are counted in a window. Open: calls are rejected or sent to the fallback immediately after the error rate exceeds a threshold (with a minimum request count, say 50% over at least 20 requests). Half-open: after a cool-down a few probes test recovery; success closes it, failure re-opens it. Little's law $N = \\lambda W$: at 100 req/s, healthy $W = 0.8$ s gives 80 in flight; a hang with a 5 s timeout gives 500, exhausting workers. With the breaker open and a 1 s fallback, $N = 100$; with fast failure $N \\approx 0.5$. Pair it with bulkheads and load shedding."
+    },
+    {
+     "level": "senior",
+     "q": "Your provider delivers 99.5%. Design a feature that meets a 99.95% SLO.",
+     "a": "Single provider cannot do it: 99.5% allows 216 minutes a month, the SLO allows 21.6. Add a second provider on a different platform and region, with its own credentials and quota. Independent math gives 99.995%, but verify correlation from incident history; at $\\rho = 0.1$ it is 99.945%, just under the target, so add more rungs. Use a degradation ladder: fallback model, smaller or self-hosted model, cache, then a non-LLM path (search or template) whose availability tracks your own servers. Add timeouts, retry budget, circuit breakers and hedging for the tail. Measure availability as success within the latency limit with valid output, run game days that block the primary, and alert on the share of traffic below rung 1."
+    },
+    {
+     "level": "senior",
+     "q": "Both your primary and fallback providers degrade at the same time. What went wrong in the design, and how do you respond?",
+     "a": "The independence assumption failed: a shared cause such as the same cloud region, upstream model, DNS or auth service, a shared proxy in front of both, a single account-level rate limit, or your own gateway or retry storm overloading both. Response: confirm via per-provider error and latency dashboards, open breakers to stop wasting capacity, move down the degradation ladder (cached answers, smaller self-hosted model, non-LLM path), shed low-priority traffic and tell users honestly. Afterwards compute the real correlation $\\rho$ from the incident, add a truly separate rung (different platform, self-hosted), separate credentials and quotas, and run game days that fail both providers."
+    }
+   ]
+  },
+  {
+   "slug": "budgets-and-rate-limits",
+   "title": "Budgets, Rate Limits and Usage Controls",
+   "lesson": "budgets-and-rate-limits",
+   "questions": [
+    {
+     "level": "junior",
+     "q": "What do the two parameters of a token bucket control?",
+     "a": "Capacity $b$ is the burst size: how many permits can be spent at once. Refill rate $r$ is the sustained rate: permits added per second. A request takes a permit; if none is left it is rejected or waits. Over any window of length $T$ at most $b + rT$ requests are admitted, so short windows are governed by $b$ and long-run rate is capped at $r$. Too small a $b$ rejects harmless bursts; too large permits damaging spikes. Implementation needs only the level and last-update time per client, applying $s \\leftarrow \\min(b, s + r\\Delta)$ lazily."
+    },
+    {
+     "level": "junior",
+     "q": "How should a client react to an HTTP 429?",
+     "a": "Treat it as \"slow down\", not as a failure to repeat harder. Wait at least the `Retry-After` time, add jitter, use exponential backoff and stay within a retry budget. If the limit persists, shed or degrade traffic (route to a cheaper model, a cache or a queue) instead of retrying more. Retrying at every layer multiplies load, so retry in one place. Also fix the cause: lower an unrealistic `max_tokens` that wastes token quota, spread batch work over time, prioritise interactive traffic and request a higher limit before launches."
+    },
+    {
+     "level": "mid",
+     "q": "A bucket has capacity 30 and refills at 10 per second. What is the most it admits in 3 seconds, and what happens under steady overload?",
+     "a": "$N_{\\max}(T) = b + rT = 30 + 10 \\times 3 = 60$, and in a minute at most $30 + 600 = 630$. Under steady demand $\\lambda$ above $r$, the bucket empties and stays empty, and the admitted rate is capped at $r$ so the rejected fraction approaches $1 - r/\\lambda$: at 12 requests per second against $r = 10$, about 17%. A larger bucket only delays that effect. Contrast with a fixed-window counter, which allows double the limit across a window boundary; the bucket cannot be gamed that way."
+    },
+    {
+     "level": "mid",
+     "q": "Requests per minute is 100 and tokens per minute is 200,000. Requests average 2,000 input tokens and reserve max_tokens = 1,000. Which limit binds and what can you do?",
+     "a": "TPM-bound rate is $200{,}000/(2000 + 1000) = 66.7$ requests per minute, below RPM = 100, so TPM binds at about 66. If providers reserve `max_tokens` at admission and real answers average 400 tokens, setting `max_tokens = 500` gives $200{,}000/2500 = 80$ per minute, a 20% gain for free. Shortening the prompt to 1,000 tokens with 500 reserved gives 133, now above RPM, so RPM binds at 100. Estimate tokens locally to shape traffic before sending, bound the queue with a timeout, and separate interactive from batch quotas."
+    },
+    {
+     "level": "mid",
+     "q": "Three tenants share 100,000 TPM with demands 10,000, 40,000 and 80,000. What does max-min fairness allocate, and why is it better than static shares?",
+     "a": "Equal share is 33,333. Tenant A needs only 10,000, leaving 90,000 for two: 45,000 each. B needs 40,000 (less than 45,000) and takes it, leaving 50,000 for C. Result: 10,000, 40,000 and 50,000, using all 100,000. Static shares of one third each would waste A's unused capacity while C is throttled. Max-min is work-conserving, guarantees nobody gets less than their equal share unless they asked for less, and stops a heavy tenant hurting others. Weighted versions allocate in proportion to plan weights. Enforce with a token bucket per tenant and return a clear 429 with Retry-After."
+    },
+    {
+     "level": "mid",
+     "q": "How do you forecast the monthly LLM bill and why use the mean rather than the median request cost?",
+     "a": "$C = U \\rho D \\bar c$: users times requests per user per day times days times mean cost per request. 8,000 users, 5 requests, 30 days, \\$0.01 gives \\$12,000. Token counts are heavy-tailed, so the median request is cheap but the mean carries the money: a median of \\$0.006 with a mean of \\$0.010 would understate the bill by 40%. Add growth, $C_m = C_0(1+g)^m$: 15% monthly takes \\$12,000 to about \\$27,757 in six months. Forecast low, expected and high scenarios (5%, 15%, 30% give roughly \\$16k, \\$28k and \\$58k), include retries and cache savings, break down by feature and reforecast against actuals monthly."
+    },
+    {
+     "level": "senior",
+     "q": "A $30,000 monthly budget shows $14,000 spent on day 10. How do you set alerts and what do you do?",
+     "a": "Burn rate $\\beta = (14000/10)/(30000/30) = 1.4$: projected \\$42,000, budget exhausted around day 21. Alert on burn rate, not raw totals: warn at $\\beta > 1.2$ over 24 hours, page at $\\beta > 3$ over an hour, with anomaly detection on hourly spend ($z > 4$ against the same hour on previous days). Diagnose with tokens per request, requests per user and spend by feature and tenant to distinguish growth from a prompt blow-up or loop. Mitigate with soft limits (cheaper model, shorter context), per-feature caps and, if critical, a kill switch. Decide beforehand what hard limits do for paid core workflows. Rehearse the switch."
+    },
+    {
+     "level": "senior",
+     "q": "An agent bug caused loops that cost thousands of dollars overnight. How do you contain this class of incident and prevent it?",
+     "a": "Contain: flip the kill switch for the agent route, cap or revoke the offending keys, check provider billing for the window and drain the queue of stuck jobs. Quantify: each step with an 8,000-token context at \\$3 per million is \\$0.024, so 200 loops is \\$4.80 per run; 1,000 stuck runs is \\$4,800 an hour. Prevent with per-run limits (max steps, token budget, wall-clock), a per-output cap, per-user daily token caps, idempotent de-duplication so a failing job is not retried forever, per-feature budgets in the gateway, alerts on tokens per request and burn rate within minutes, and loop detection (repeated identical tool calls). Run a postmortem and add the loop case to tests."
+    }
+   ]
+  },
+  {
+   "slug": "observability",
+   "title": "Observability and Incident Analysis",
+   "lesson": "observability",
+   "questions": [
+    {
+     "level": "junior",
+     "q": "What should you log for every LLM call, and what should you be careful about?",
+     "a": "A structured record per call from the gateway: request and trace ids, timestamp, tenant and feature, model and model version, prompt and router versions, input, output and cached token counts, TTFT and total latency, status and finish reason, retries and fallback used, guardrail flags and cost. Be careful with prompt and answer text: it may hold personal data, so store it separately, redacted, for a sample plus failures, with short retention and restricted access. Put logging in the gateway so every feature uses the same schema, and return the request id to users so a bug report joins to its log in one search."
+    },
+    {
+     "level": "junior",
+     "q": "Compute p50 and p95 for these ten latencies in seconds: 1, 1, 1, 2, 2, 2, 3, 3, 10, 20.",
+     "a": "Nearest-rank: position $k = \\lceil p/100 \\cdot n \\rceil$ in the sorted list. p50: $k = 5$, value 2 s. p95: $k = \\lceil 9.5 \\rceil = 10$, value 20 s (with only ten points the p95 is the maximum, which is why you need thousands of requests per window). The mean is 4.5 s, which describes nobody's experience: most requests take 1-3 s while one in ten takes 10-20 s. Report percentiles with the sample size, split by model, feature and length, and use histograms so you can merge across servers."
+    },
+    {
+     "level": "mid",
+     "q": "Why can't you average p99 values across servers, and what do you do instead?",
+     "a": "Percentiles are not linear: three servers with p99 of 2, 2 and 8 s do not have a pooled p99 of 4 s. The pooled value depends on how many requests each served and on the shape of each distribution. Record latency histograms (counts per bucket such as 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30 s), which can be summed across servers and windows, and compute percentiles from the merged histogram. Accuracy is limited by bucket width, so choose edges near your SLO thresholds."
+    },
+    {
+     "level": "mid",
+     "q": "Explain cost per successful outcome with a numeric example.",
+     "a": "$c_{\\text{success}} = c_{\\text{attempt}}/\\sigma$ plus any cost of failures. A small model at \\$0.010 solving 70% costs \\$0.0143 per success; a large one at \\$0.030 solving 95% costs \\$0.0316, so the gap is 2.2x rather than the 3x of attempt prices. If each failure needs a human at \\$2, add $0.30 \\times 2 = \\$0.60$ to the small model (total \\$0.61) and $0.05 \\times 2 = \\$0.10$ to the large (total \\$0.13): the large model becomes much cheaper. Always put a price on failure before comparing models or deciding whether a router saves money."
+    },
+    {
+     "level": "mid",
+     "q": "A trace shows gateway 20 ms, input guardrail 60 ms and retrieval 120 ms plus rerank 80 ms (guardrail parallel to retrieval), then an LLM call of 1,800 ms and an output guardrail of 40 ms. What is the total and what should you optimise?",
+     "a": "Critical path: $20 + \\max(60, 120 + 80) + 1800 + 40 = 2060$ ms. The LLM call is 87% of the total. Halving the input guardrail saves nothing because it is off the critical path; halving retrieval saves 60 ms (3%); cutting output length so the call takes 1,200 ms saves 600 ms (29%). Optimise spans on the critical path, ranked by share, and re-measure because the critical path can move. Propagate the trace id through every service and use tail sampling so slow, errored and flagged traces are always kept."
+    },
+    {
+     "level": "mid",
+     "q": "How many graded production samples do you need to estimate a pass rate, and how does it scale?",
+     "a": "$n = z^2 p(1-p)/m^2$ for margin $m$ at 95% confidence ($z = 1.96$). For $p \\approx 0.9$ and $m = 0.03$: $3.8416 \\times 0.09 / 0.0009 \\approx 384$. With unknown $p$ use 0.5: about 1,067. Because $n \\propto 1/m^2$, halving the margin quadruples the sample (about 1,537 for 1.5 points). Layer signals: automatic checks on everything, user feedback, an LLM judge on 5-10% and human review of a small sample to calibrate the judge. Stratify by feature and tenant and report intervals, not point values."
+    },
+    {
+     "level": "senior",
+     "q": "Quality complaints rose but nothing was deployed. Walk through your investigation and the postmortem.",
+     "a": "Ask \"what changed\" without a deploy: model alias repointed, provider degradation, input mix shift, retrieval source stale, a dependency or tool change. Group graded quality, refusal rate, answer length, `finish_reason=length` share and retrieval hit rate by `model_version`, tenant and feature; compare against the SLO baseline. Pull redacted payload samples of failures and traces for slow steps. Mitigate first: pin the previous model version or fail over, or roll back any config. Postmortem: blameless, timeline, impact (affected requests, SLO budget consumed), five whys (why were moving aliases allowed, why no quality alert), and owned action items such as pinning versions, a daily graded sample and a version-change alert."
+    },
+    {
+     "level": "senior",
+     "q": "Define SLOs and burn-rate alerts for an LLM assistant at 99.9% availability.",
+     "a": "SLIs: valid answer within 10 s over all requests (availability), p95 TTFT under 1.2 s, sampled pass rate at least 90% over a week, and safety incidents per 10,000 responses. A 99.9% SLO over 30 days gives a 43.2-minute budget, or 5,000 failed requests per 5 million. Burn rate $\\beta$ = observed error rate / 0.1%. Page when $\\beta > 14.4$ over 1 hour and 5 minutes (2% of the budget per hour), page when $\\beta > 6$ over 6 hours and 30 minutes (5%), ticket when $\\beta > 1$ over 3 days. Two windows avoid paging for finished incidents. Set the SLO below what dependencies deliver, write what the team does when the budget is spent and review it quarterly."
+    }
+   ]
+  },
+  {
+   "slug": "guardrails",
+   "title": "Guardrails and Safe Deployment",
+   "lesson": "guardrails",
+   "questions": [
+    {
+     "level": "junior",
+     "q": "Where can guardrails sit around a model, and which layer is most reliable?",
+     "a": "Input checks (injection and PII detection, topic and length limits), output checks (policy, PII, grounding, schema validation) and action checks (permissions, spend limits, human approval). The action layer is most reliable because it is deterministic code outside the model: a refund tool that only accepts the authenticated user's own order ids holds even if the model is fully fooled. Text classifiers are probabilistic, can be rephrased around and miss indirect injection arriving in documents. So prefer making the bad action impossible over detecting bad intent, and stack independent layers."
+    },
+    {
+     "level": "junior",
+     "q": "Define precision and recall for a guardrail classifier and say what each tells you.",
+     "a": "Precision $= TP/(TP + FP)$: when we block, how often is it a real attack. Recall $= TP/(TP + FN)$: of real attacks, how many we block. With TP = 40, FP = 10, FN = 20, precision is 80% and recall 67%. Raising the threshold generally raises precision and lowers recall; lowering it does the reverse. $F_1 = 2TP/(2TP + FP + FN)$ combines them but treats both mistakes equally, which is rarely true in security, so choose thresholds by expected cost."
+    },
+    {
+     "level": "mid",
+     "q": "Choose a threshold: at 10,000 requests with 100 attacks, t=0.5 gives TP 90 and FP 300, t=0.7 gives TP 75 and FP 80. A false block costs \\$2 and a miss \\$100.",
+     "a": "Cost $= 2 \\cdot FP + 100 \\cdot FN$. At $t = 0.5$: FN = 10, cost $= 600 + 1000 = \\$1{,}600$. At $t = 0.7$: FN = 25, cost $= 160 + 2500 = \\$2{,}660$. So 0.5 is cheaper even though its precision is only 23% versus 48%, because a miss costs 50 times a false block. If a miss cost only \\$20 the ranking would flip. Pick by minimising expected cost at the production base rate, check any hard recall requirement, and revisit when costs or base rates change. A middle band (block above 0.9, review 0.5-0.9) is often better than one threshold."
+    },
+    {
+     "level": "mid",
+     "q": "A vendor claims 99% accuracy. Attacks are 0.1% of traffic. Why do security staff say it flags mostly benign traffic?",
+     "a": "Take recall 99% and false-positive rate 1%. Per 100,000 requests: 100 attacks, 99 caught; 99,900 benign, 999 wrongly flagged. Precision $= 99/1098 = 9\\%$. Bayes: $P(A|F) = r\\pi/(r\\pi + f(1-\\pi)) = 0.00099/0.01098 = 9\\%$; in odds form prior 1:999 times likelihood ratio 99 gives about 1:10. Fixes: cut the false-positive rate (at 0.01% precision is 91%), add a second precise stage on flagged items (odds multiply again), respond by degrading instead of blocking, and always evaluate at the real base rate, never on a balanced test set."
+    },
+    {
+     "level": "mid",
+     "q": "Three independent guardrails each catch 80% of an attack and wrongly block 2% of benign traffic. What are the combined catch and false-block rates, and what breaks the assumption?",
+     "a": "Catch: $1 - 0.2^3 = 99.2\\%$. False blocks: $1 - 0.98^3 = 5.9\\%$ of benign requests. So stacking trades benign blocks for recall. Independence rarely holds: classifiers trained on the same data are fooled by the same attacks, so with full correlation recall stays at 80%. Use different mechanisms (deterministic rules, a learned classifier, a model judge, permission checks), different training data and test the stack with a red-team set. Run independent checks in parallel to limit latency to the slowest, not the sum."
+    },
+    {
+     "level": "mid",
+     "q": "A service handles 1,000,000 messages a day, 3% contain PII and the redactor has 95% recall. How much leaks, and what do you conclude?",
+     "a": "$L = N p (1 - r) = 1{,}000{,}000 \\times 0.03 \\times 0.05 = 1{,}500$ messages a day; at 99% recall, 300; over 30-day retention the 95% detector leaves 45,000 stored messages with PII. Redaction never reaches zero leakage, so it is not a substitute for access control and short retention: assume stored text still has some PII. Raise recall where retention is longest, test per entity type and language, redact before logging, and use typed consistent placeholders with a separate token vault if values must be restored."
+    },
+    {
+     "level": "senior",
+     "q": "Design guardrails for an assistant that can look up orders and issue refunds.",
+     "a": "Start from the worst outcome (refund to the wrong person) and remove it structurally: the refund tool accepts only order ids owned by the authenticated user, enforced in code with the tenant and user from the session, caps per refund and per day, and human approval above \\$100. Input layer: injection phrase and PII detectors, secrets redacted before the model. Output layer: schema validation, no foreign ids or other people's data, groundedness against order records. Per-user rate limits so an attack cannot scale. Fail closed for refund actions, fail soft (tools off, read-only) for chat. Log blocks, red-team set per release, shadow new thresholds before enforcing, and size the review queue: 0.5% of 1M requests at 2 minutes each is about 21 reviewers."
+    },
+    {
+     "level": "senior",
+     "q": "Fail open or fail closed when the guardrail service is down? Justify with numbers.",
+     "a": "Compare expected cost per request during the outage: open $= \\pi c_{\\text{miss}}$, closed $= (1-\\pi) c_{\\text{block}}$. With $\\pi = 0.001$ and a blocked good request costing \\$2: general chat with $c_{\\text{miss}} = \\$100$ is \\$0.10 open versus \\$2.00 closed, so fail open; refunds with $c_{\\text{miss}} = \\$5{,}000$ is \\$5.00 versus \\$2.00, so fail closed. A third option is fail soft: continue with dangerous capabilities removed (no tools, read-only, conservative prompt). Decide per feature in advance, test it with a simulated outage as a release gate, alert when a guardrail is down, and keep a deterministic last layer (permissions) that does not depend on the classifier service."
+    }
+   ]
+  },
+  {
+   "slug": "rollouts",
+   "title": "Shipping Changes: Shadow, Canary and Rollback",
+   "lesson": "rollouts",
+   "questions": [
+    {
+     "level": "junior",
+     "q": "How do shadow traffic and a canary differ?",
+     "a": "Shadow sends a copy of real requests to the candidate and discards its output, so no user sees it: you learn about crashes, cost, latency and how outputs differ from the baseline, but not how users react, and tools must be read-only or mocked. A canary serves the candidate's answers to a small share of real users, so you see real user-visible failures, with limited blast radius. Typical order: offline evaluation, shadow, 1-5% canary, ramp to 25% and 50%, then 100%, with a rollback path at every stage."
+    },
+    {
+     "level": "junior",
+     "q": "Why are prompt, retrieval and router changes as risky as code deploys?",
+     "a": "Output depends on everything in the context and routing, so any edit changes behaviour: a prompt sentence can alter tone or format, a chunk size changes which documents the model sees, a router threshold changes which model answers. Offline sets are small: with 200 cases and 90% pass rate the 95% margin is about ±4 points, and detecting a true drop from 90% to 87% needs about 1,770 samples per version. So treat all of them as versioned releases, log the versions and put them through shadow and canary."
+    },
+    {
+     "level": "mid",
+     "q": "A defect hits 1 request in 2,000. How large must the canary be to see it, and how long will it take at 5% of 2,000 requests per minute?",
+     "a": "$P(\\text{detect}) = 1 - (1-p)^n$. Solve $n = \\ln(1-P)/\\ln(1-p)$; for 95% this is about $3/p$ (rule of three), so $n \\approx 6{,}000$ requests. A canary of 1,000 requests would miss it 60% of the time ($1 - 0.9995^{1000} = 39\\%$ detection). The canary receives $0.05 \\times 2000 = 100$ requests per minute, so 6,000 requests take 60 minutes; at 1% it takes 300 minutes, at 25% 12 minutes. If you require 3 failures before alerting, detection at $n = 6{,}000$ drops to 58%, so you need roughly twice as much traffic."
+    },
+    {
+     "level": "mid",
+     "q": "How should guard metrics be compared, and why does peeking matter?",
+     "a": "Compare the canary with a concurrent control, not yesterday, since load, traffic mix and provider health change over time. If the control error rate is 0.5% and the canary served 6,000 requests, expect 30 errors; observing 54 gives $z = 24/\\sqrt{6000 \\times 0.005 \\times 0.995} \\approx 4.4$, clearly worse. Peeking inflates false alarms: ten looks at a 5% threshold give about $1 - 0.95^{10} = 40\\%$ chance of some false alarm (approximately, as looks share data). For safety rollback accept jumpy alarms since a false rollback is cheap; for promotion use a pre-set sample size or sequential methods. Slice by tenant and require no slice to breach, with a minimum count per slice."
+    },
+    {
+     "level": "mid",
+     "q": "Quantify how rollout design and rollback speed reduce harm.",
+     "a": "$H = \\lambda s p T$: traffic times share on the bad version times failure probability times minutes until rollback. With $\\lambda = 2000$ per minute and $p = 5\\%$: straight to 100% with 30-minute manual rollback harms $2000 \\times 1 \\times 0.05 \\times 30 = 3{,}000$ requests; automatic 6-minute rollback gives 600; a 5% canary with manual rollback 150; a 5% canary with automatic rollback 30. The levers multiply, a factor of 100 here. Make rollback a switch: versioned prompts and configs, pinned model versions, feature flags, warm old version, and automatic triggers on guard metrics."
+    },
+    {
+     "level": "mid",
+     "q": "Which changes cannot be undone by a simple rollback, and how do you design around that?",
+     "a": "A new embedding model (vectors incompatible with the old index), data written in a new format, caches holding the bad version's answers, irreversible actions already taken, and stored summaries or memory containing bad content. Design for backward compatibility so old and new can run together: build the new index alongside and keep the old one live until cut-over is proven, expand-then-contract schema migrations, include `prompt_version` in cache keys, put irreversible actions behind approval during a canary and version stored artefacts so they can be regenerated. Rehearse rollbacks quarterly, including checking the old version still exists."
+    },
+    {
+     "level": "senior",
+     "q": "Design the rollout of a prompt change for an assistant that can call tools with side effects.",
+     "a": "Version the prompt and ship behind a flag. Offline gate on the evaluation set, including slices and tool-call correctness. Shadow with read-only or mocked tools and compare the tool calls the candidate would make against the baseline's real ones; judge pairwise, count wins with ties as half, read all disagreements. Canary 1-5% sticky per user, with guard metrics: error and invalid-call rates, tokens per request, latency, guardrail blocks, tool failure rate, plus graded quality as a slow metric. Irreversible tools require approval during the canary. Automatic rollback on breach, hold times covering the weekly cycle, ramp to 25%, 50%, 100% and keep the old prompt warm for a week. One change at a time, and a postmortem if anything breached."
+    },
+    {
+     "level": "senior",
+     "q": "A regression affects 1 in 100,000 requests but is severe. Can a canary catch it, and what else do you need?",
+     "a": "Rule of three: $n \\approx 3/p = 300{,}000$ requests for 95% detection. At 5% of 2,000 requests per minute that is 3,000 minutes, 50 hours, and the exposure is real because severe failures reach users. A canary protects against common regressions, not rare severe ones. Add red-team and adversarial test sets targeted at the severe category, deterministic checks and guardrails on outputs, least-privilege tools so the worst case is bounded, shadow traffic at higher volume (no user impact) with automated flagging of the severe pattern, production sampling of outputs, and fast detection from user reports plus a tested kill switch. Treat the canary as necessary, not sufficient."
+    }
+   ]
+  },
+  {
+   "slug": "privacy-and-compliance",
+   "title": "Privacy, Security and Compliance",
+   "lesson": "privacy-and-compliance",
+   "questions": [
+    {
+     "level": "junior",
+     "q": "What is data minimisation and how does it apply to LLM prompts?",
+     "a": "Collect, send and keep only the data the task needs. For prompts: drop fields the task does not use (a billing explanation needs the last invoice lines and error code, not the whole profile), replace names with typed placeholders, generalise quasi-identifiers (age band, city), redact secrets and PII before sending and before logging. Every field you remove cannot be leaked by the model, retained by a provider or echoed to the wrong person, and it also shortens the prompt, which saves money. This is engineering principle, not legal advice: involve legal and privacy teams for obligations."
+    },
+    {
+     "level": "junior",
+     "q": "Why must the tenant id used for retrieval come from authentication and not from the model or request body?",
+     "a": "Anything a user or the model can influence can be spoofed, including through prompt injection (\"also show documents from other customers\"). The tenant id and group memberships must come from the authenticated session and be enforced in code outside the model, as a mandatory filter in the retrieval and cache layers. A system prompt saying \"never reveal other customers' data\" is a hope, not a control. Test with isolation tests: plant unique marker strings in tenant A and try to elicit them as tenant B directly, indirectly and via injection."
+    },
+    {
+     "level": "mid",
+     "q": "Show with numbers how retention drives exposure.",
+     "a": "Steady-state sensitive records held in a store is inflow times retention, $E = \\sum_s R_s D_s$. With a million messages a day and 3% PII, $R = 30{,}000$ per day. Stores kept 30, 30, 90 and 365 days hold $30{,}000 \\times 515 = 15{,}450{,}000$ records, 71% in the 365-day archive. Cutting the archive to 30 days gives $30{,}000 \\times 180 = 5{,}400{,}000$, a 65% reduction. With an illustrative 2% yearly incident probability, expected exposed records fall from about 309,000 to 108,000 a year. Shorter retention lowers likelihood and impact; automate deletion with TTLs and check derived tables, caches and backups."
+    },
+    {
+     "level": "mid",
+     "q": "What belongs in a logging policy for an LLM service?",
+     "a": "Never log secrets; do not log raw prompt and answer text by default (log ids, token counts, versions, latency, cost); log text only for a redacted sample plus failures and flagged items; keep content logs separate from operational logs with stricter access and 7-30 day retention while metadata lasts 13 months; redact at the source before the line is written; require a purpose for viewing content logs and audit that access; and extend the rules to tickets, chat threads and notebooks. Verify deletion with tests (oldest record age) and remember derived warehouse tables. Start by turning off raw-text logging and see what you miss; most teams find metadata plus samples enough."
+    },
+    {
+     "level": "mid",
+     "q": "Why is post-filtering the wrong way to isolate tenants in a shared vector index?",
+     "a": "If own chunks are a fraction $f = 0.02$ of the index (50 equal tenants), the top-10 results contain 0.2 own chunks on average and at least one with probability $1 - 0.98^{10} = 18\\%$, so 82% of queries return nothing after filtering. Raising $k$ to 500 wastes compute and, worse, if the filter has a bug almost everything returned is foreign. Pre-filter by tenant id inside the search (or use a namespace or index per tenant) so candidates are only the tenant's; also filter by document ACL for within-tenant permissions. Add a second independent enforcement layer: leak probability multiplies, $0.01 \\times 0.01 = 0.01\\%$."
+    },
+    {
+     "level": "mid",
+     "q": "How should caches be isolated, and what other copies of data do LLM systems create?",
+     "a": "Every cache key must include tenant id and permission set; a semantic cache applies the tenant filter before similarity matching; do not cache answers containing user-specific data unless the key includes the user. Provider prompt caches are usually org-scoped, so never put one tenant's data in a shared prefix. Extra copies LLM systems create: provider-side retention of prompts and outputs, response caches, embeddings in vector indexes (which can leak information), evaluation and fine-tuning sets built from traffic, conversation memory and traces. Put them all on the data-flow map with class, retention and access, and ensure each record carries user and tenant ids so deletion and access control are queries."
+    },
+    {
+     "level": "senior",
+     "q": "A user requests deletion of their data. Design the process across an LLM product's stores.",
+     "a": "Verify identity, record the request in the audit log, and walk the data-flow map: account DB, request and trace logs, response cache, vector index chunks, evaluation sets, conversation memory, analytics, backups and vendors. This only works if every record is tagged with a user and tenant id, including vector chunks and cache entries. Automate per-store deletion hooks, instruct vendors to delete, record completion times and note what remains until backups expire. Effort manually is $R \\times S \\times m$: $40 \\times 6 \\times 15 = 3{,}600$ minutes a month versus 480 with hooks. Fine-tuned weights cannot reliably forget, so keep personal data out of training sets or use retrieval. This is engineering, not legal advice; confirm deadlines with counsel."
+    },
+    {
+     "level": "senior",
+     "q": "A production API key was posted publicly. Walk through the response and the design that limits damage.",
+     "a": "Revoke or rotate immediately, then check provider usage for the exposure window (unusual models, regions, volume), find how it leaked (commit, log, ticket, client bundle), scrub it from history and replace it with a scoped, capped credential. Damage is rate times time: 200,000 output tokens per minute at \\$15 per million is \\$3 per minute, \\$4,320 a day, so a per-key spend cap of \\$500 bounds loss. Design: one key per service and environment, secret manager injection, scoped tool credentials acting on the user's behalf, short-lived tokens or rotation (expected exposure about $L/2$: 45 days at 90-day rotation versus 3.5 at 7), secret scanning in CI, log scrubbing, never secrets in prompts, per-key anomaly alerts. Write a postmortem and add the missing control."
+    }
+   ]
+  },
+  {
+   "slug": "when-to-fine-tune",
+   "title": "When to Fine-Tune, and a Production-Readiness Plan",
+   "lesson": "when-to-fine-tune",
+   "questions": [
+    {
+     "level": "junior",
+     "q": "When should you use RAG and when fine-tuning?",
+     "a": "Use retrieval for knowledge: facts that change, need citations, must be deletable or must respect per-user permissions. Updating a fact is a re-index, not a retrain. Use fine-tuning for behaviour: consistent format, tone, terminology, how to use retrieved context, or teaching a small model a narrow skill so you can stop paying for a large one. Fine-tuning is a poor way to add facts: recall is unreliable, sources cannot be shown, knowledge goes stale and weights cannot enforce permissions. Often the best design uses both: retrieval for facts, a small tuned model for behaviour."
+    },
+    {
+     "level": "junior",
+     "q": "What are the main kinds of failure and the cheapest fix for each?",
+     "a": "Knowledge (missing or stale facts): retrieval or put the facts in the prompt. Behaviour (wrong format, tone, verbosity): clearer instructions, examples and structured output first, then fine-tuning if failures stay consistent. Capability (the task exceeds the model's reasoning): a stronger model, decomposition or tools. Other: ambiguous requirements, label errors and pipeline bugs, fixed by clarifying the spec, data or code. Sample 100-200 real failures, sort them and fix the cheapest large category first; fine-tuning rarely adds capability beyond the base model."
+    },
+    {
+     "level": "mid",
+     "q": "A feature passes 80%. Of 100 sampled failures, 45 are knowledge and 25 format. Retrieval fixes 70% of knowledge failures, a fine-tune 85% of format failures. Estimate the gains.",
+     "a": "$\\Delta = F \\cdot s_k \\cdot \\phi_k$ with $F = 0.20$. Retrieval: $0.20 \\times 0.45 \\times 0.70 = 6.3$ points (80% to 86.3%). Fine-tune on format: $0.20 \\times 0.25 \\times 0.85 = 4.25$ points. A better prompt at 50% on the same format failures gives 2.5 points at a fraction of the cost. So do retrieval first, try the prompt, and fine-tune only if format failures remain a large share. The fix rates are estimates: test each with a quick experiment on the failing cases before investing. Re-sample failures after each change."
+    },
+    {
+     "level": "mid",
+     "q": "Compute the fine-tuning break-even: \\$9,100 up front, saving \\$0.008 per request, 200,000 requests a month, \\$500 monthly maintenance.",
+     "a": "Gross saving $= 200{,}000 \\times 0.008 = \\$1{,}600$ a month; net $= 1600 - 500 = \\$1{,}100$; payback $= 9100/1100 = 8.3$ months (5.7 ignoring maintenance). Sensitivity to volume: at 50,000 requests net is negative, never; at 100,000, 30 months; at 1,000,000, 1.2 months. The saving only covers maintenance above $V = M/\\Delta c = 62{,}500$ requests a month. Also weigh quality and latency changes, risk, opportunity cost and cheaper alternatives (routing, caching, shorter outputs). Require the calculation in the proposal and recheck after launch with real volumes."
+    },
+    {
+     "level": "mid",
+     "q": "Why does prompt caching weaken the token-cost argument for fine-tuning?",
+     "a": "Fine-tuning's economic case is removing a long instruction and example prefix from every request. With 1,800 tokens at \\$3 per million and 1,000,000 requests, overhead is \\$5,400 a month. A prompt cache with 90% hits at 10% price gives multiplier $0.9 \\times 0.1 + 0.1 = 0.19$, so overhead falls to about \\$1,026, an 81% drop in the saving the fine-tune would capture. A tuned model with a 200-token cached prompt costs about \\$114, so the real difference is about \\$912, not \\$5,400. Price the cached prompt before using token cost to justify tuning; the stronger case is a small tuned model replacing a large one."
+    },
+    {
+     "level": "mid",
+     "q": "What quality and operational risks come with fine-tuning?",
+     "a": "Regressions on tasks you did not train on (forgetting), overfitting (high training score, low held-out score), leakage of evaluation data into training (split by source, deduplicate), learning bad habits from historical examples, safety drift from the base model, memorisation of personal data in the training set, and dependency on a base model that will be deprecated. Operationally you need versioned data, code, base model and weights, an evaluation gate including general and safety checks, rollout through shadow and canary, production monitoring, a retraining schedule and a working untuned fallback. Data quality beats quantity: hundreds of consistent reviewed examples beat noisy tens of thousands."
+    },
+    {
+     "level": "senior",
+     "q": "A team wants to fine-tune a model on the company wiki to 'know the product'. How do you respond?",
+     "a": "Diagnose first. \"Know the product\" is a knowledge problem: build a basic RAG pipeline over the wiki and evaluate on real failing questions. Retrieval gives updates in minutes, citations, deletion and per-user permissions; a snapshot fine-tune is stale $1 - 0.98^{13} = 23\\%$ after a quarter at 2% weekly change and costs \\$52,000 a year to refresh weekly versus about \\$260 to re-index. Separately, if behaviour failures remain (format, tone, citation style) after prompt work, a small tuned model can handle those on top of retrieval; do the break-even and TCO calculation including quarterly retraining. Write down the behaviour to learn in one sentence; if you cannot, you are not ready to tune."
+    },
+    {
+     "level": "senior",
+     "q": "Your fine-tune looked like an 8-month payback. What changes when you include total cost of ownership?",
+     "a": "Add retraining as the base model changes or data drifts: $\\text{TCO}(t) = C + tM + \\lfloor t/3 \\rfloor R$ with $C = \\$9{,}100$, $M = \\$500$, $R = \\$1{,}500$ per quarter. Effective ongoing cost becomes \\$1,000 a month, so net saving is $1600 - 1000 = \\$600$ and payback is $9100/600 = 15.2$ months. At 12 months you are still \\$1,900 behind (TCO \\$21,100 versus savings \\$19,200), at 24 months \\$5,300 ahead. So the project is sensitive to the model's useful life and to volume. Include evaluation and red-team cost per retrain, base-model deprecation dates and the cost of keeping the prompt fallback. Consider capturing most of the saving with routing, caching or shorter outputs instead."
+    },
+    {
+     "level": "senior",
+     "q": "How do you run a production-readiness review and decide whether to launch?",
+     "a": "Walk a checklist by area (quality, model choice, reliability, cost, observability, safety, release, privacy and security, operations) with a yes or no and evidence for each. Score areas with weights $w_i$ and scores 0-4: $R = \\sum w_i s_i/(4\\sum w_i)$; for eight areas with weights totalling 19 and a weighted sum of 47, $R = 61.8\\%$, with the lowest weighted areas (rollout, fallbacks, observability, privacy) forming the work plan. Use hard gates for launch, independent of the score: no realistic evaluation, no fast off switch, personal data in a forbidden place, no approval on irreversible actions, no tenant isolation test, nobody on call. Launch in tiers (internal, limited beta, GA) and re-review quarterly and after big changes."
+    }
+   ]
+  }
+ ]
+}

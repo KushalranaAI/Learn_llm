@@ -1,0 +1,22 @@
+{
+  "title": "Comparing Systems You Can Trust: Samples, Variance and Significance",
+  "summary": "A higher score on an eval set does not mean a better system. This lesson shows how to put error bars on pass rates, test whether a difference is real, exploit paired data, bootstrap anything, plan the sample size, and avoid fooling yourself with many comparisons.",
+  "objectives": [
+    "Compute a standard error and 95% confidence interval for a pass rate",
+    "Run a two-proportion z-test and interpret the p-value correctly",
+    "Use a paired comparison and McNemar's test when both systems answer the same items",
+    "Build a bootstrap confidence interval for any metric",
+    "Compute the sample size needed to detect a given improvement, and correct for multiple comparisons"
+  ],
+  "prerequisites": "The idea that an eval score is an average, and the standard error formula, from [Success Criteria](/learn/evaluation/success-criteria). Judge agreement from [Using a Model as a Judge](/learn/evaluation/llm-as-judge) is useful but not required.",
+  "sims": ["ab-significance"],
+  "labs": ["is-it-really-better"],
+  "sandbox": [],
+  "sources": [
+    { "title": "Statistical Methods for Research Workers", "authors": "R. A. Fisher", "year": 1925, "note": "Significance testing and p-values" },
+    { "title": "An Introduction to the Bootstrap", "authors": "Efron and Tibshirani", "year": 1993, "note": "Chapters 1 to 6: the bootstrap and percentile intervals" },
+    { "title": "Note on the Sampling Error of the Difference Between Correlated Proportions or Percentages", "authors": "Quinn McNemar", "year": 1947, "note": "McNemar's test for paired binary outcomes" },
+    { "title": "Controlling the False Discovery Rate", "authors": "Benjamini and Hochberg", "year": 1995, "note": "The BH procedure for multiple comparisons" },
+    { "title": "Adding Error Bars to Evals: A Statistical Approach to Language Model Evaluations", "authors": "Evan Miller", "year": 2024, "note": "Applying standard errors and paired differences to LLM benchmarks" }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "title": "Hybrid Search and Reranking",
+  "summary": "Keyword and embedding retrievers fail on different queries, so production systems fuse them and then rerank a wide candidate list with a more accurate model. This lesson defines the retrieval metrics, works through Reciprocal Rank Fusion and shows how to size the retrieve-then-rerank funnel.",
+  "objectives": [
+    "Compute recall@k, precision@k, MRR and nDCG for a ranked list by hand",
+    "Fuse two ranked lists with Reciprocal Rank Fusion (k = 60) and compare it with weighted score fusion",
+    "Explain why a cross-encoder reranker raises precision and compute its latency from N, tokens and model size",
+    "Size N (candidates) and k (kept) from a recall target, a latency budget and a cost budget",
+    "Use maximal marginal relevance to reduce redundant context"
+  ],
+  "prerequisites": "You should know how BM25 and dense retrieval score documents, and the difference between a bi-encoder and a cross-encoder ([Term-Based and Embedding Retrieval](/learn/retrieval-and-rag/sparse-and-dense)). Index recall from [Vector Indexes](/learn/retrieval-and-rag/vector-indexes) is a different quantity from the retrieval metrics defined here.",
+  "sims": ["retrieval-compare", "rerank-depth"],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "Reciprocal Rank Fusion outperforms Condorcet and individual Rank Learning Methods", "authors": "Cormack, Clarke and Buettcher", "year": 2009, "note": "The RRF paper; k = 60 as the default constant" },
+    { "title": "Passage Re-ranking with BERT", "authors": "Nogueira and Cho", "year": 2019, "note": "Cross-encoder reranking of retrieved passages" },
+    { "title": "Cumulated Gain-Based Evaluation of IR Techniques", "authors": "Järvelin and Kekäläinen", "year": 2002, "note": "Defines DCG and nDCG" },
+    { "title": "The Use of MMR, Diversity-Based Reranking for Reordering Documents and Producing Summaries", "authors": "Carbonell and Goldstein", "year": 1998, "note": "Maximal marginal relevance" },
+    { "title": "BEIR: A Heterogeneous Benchmark for Zero-shot Evaluation of Information Retrieval Models", "authors": "Thakur et al.", "year": 2021, "note": "Shows BM25 is a strong out-of-domain baseline and that rerankers and hybrids help" }
+  ]
+}

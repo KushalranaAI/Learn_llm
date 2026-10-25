@@ -1,0 +1,21 @@
+{
+  "title": "Vector Indexes: Exact, IVF and HNSW",
+  "summary": "Comparing a query with every stored vector costs O(N·d) and stops being viable around millions of vectors. Approximate nearest-neighbour indexes (IVF, HNSW, product quantisation) trade a little recall for orders of magnitude in speed and memory. This lesson works out the costs and how to tune them.",
+  "objectives": [
+    "Compute the time and memory cost of exact nearest-neighbour search for N vectors of dimension d",
+    "Explain how IVF partitions space and what nlist and nprobe trade off, with a worked scan count",
+    "Explain HNSW's layered graph, why search is roughly logarithmic, and what M and efSearch control",
+    "Compute the memory saving of product quantisation and describe its accuracy cost",
+    "Tune an index against a recall target, a latency budget and a memory budget, including the effect of metadata filters"
+  ],
+  "prerequisites": "You should understand embeddings and cosine similarity ([Term-Based and Embedding Retrieval](/learn/retrieval-and-rag/sparse-and-dense)) and the offline and online pipelines of [How RAG Works](/learn/retrieval-and-rag/rag-architecture). Big-O notation and bytes-per-number arithmetic are used.",
+  "sims": ["hnsw-recall"],
+  "labs": ["tune-the-index"],
+  "sandbox": [],
+  "sources": [
+    { "title": "Efficient and robust approximate nearest neighbor search using Hierarchical Navigable Small World graphs", "authors": "Malkov and Yashunin", "year": 2016, "note": "The HNSW algorithm: layered proximity graphs, the parameters M and efConstruction/efSearch" },
+    { "title": "Product Quantization for Nearest Neighbor Search", "authors": "Jégou, Douze and Schmid", "year": 2011, "note": "Product quantisation and the IVFADC scheme" },
+    { "title": "Billion-scale similarity search with GPUs", "authors": "Johnson, Douze and Jégou", "year": 2017, "note": "The Faiss library: flat, IVF and PQ indexes at scale" },
+    { "title": "Video Google: A Text Retrieval Approach to Object Matching in Videos", "authors": "Sivic and Zisserman", "year": 2003, "note": "Early inverted-file style quantisation of vectors, the idea behind IVF" }
+  ]
+}

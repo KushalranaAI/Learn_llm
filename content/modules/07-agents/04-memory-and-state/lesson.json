@@ -1,0 +1,20 @@
+{
+  "title": "State, Memory and Context Over Many Steps",
+  "summary": "A model remembers nothing between calls except what is in its context, and the context fills up as an agent works. This lesson shows how to budget the window, compress history, keep state outside the transcript, and add long-term memory without drowning the model.",
+  "objectives": [
+    "After this lesson you can distinguish working state, the transcript and long-term memory, and say where each should live",
+    "Compute how many steps fit in a context window and the total tokens read over a run",
+    "Estimate the savings from summarisation and from pruning old tool results",
+    "Use a scratchpad or structured state object so that critical facts survive compaction",
+    "Rank long-term memories by relevance and recency and explain the retrieval trade-offs"
+  ],
+  "prerequisites": "The cost of a run (quadratic input growth) from [/learn/agents/agent-loop](/learn/agents/agent-loop), and context windows from [/learn/model-foundations/context-and-kv-cache](/learn/model-foundations/context-and-kv-cache). Embeddings and similarity are introduced in [/learn/model-foundations/embeddings](/learn/model-foundations/embeddings).",
+  "sims": ["context-position"],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "Lost in the Middle: How Language Models Use Long Contexts", "authors": "Liu et al.", "year": 2023, "note": "Recall depends on where in the context a fact sits" },
+    { "title": "Generative Agents: Interactive Simulacra of Human Behavior", "authors": "Park et al.", "year": 2023, "note": "Memory stream with relevance, recency and importance scoring" },
+    { "title": "MemGPT: Towards LLMs as Operating Systems", "authors": "Packer et al.", "year": 2023, "note": "Paging information between context and external storage" }
+  ]
+}

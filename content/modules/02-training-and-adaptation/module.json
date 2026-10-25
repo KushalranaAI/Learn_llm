@@ -1,0 +1,1 @@
+{ "title": "Training and Adapting Models", "summary": "How models are pretrained, aligned and specialised, and what each step costs: data, scaling laws, memory and parallelism, SFT, RLHF and DPO, LoRA, distillation and multimodal inputs.", "icon": "layers", "cover": "scaling-laws" }

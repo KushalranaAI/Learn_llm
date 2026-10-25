@@ -1,0 +1,21 @@
+{
+  "title": "Capacity Planning and Cost per Request",
+  "summary": "Turn traffic into a GPU count and a bill. This lesson derives per-GPU capacity from the batching model, sizes a fleet for peak load with target utilisation and redundancy, and computes cost per million tokens, per request and per useful answer, including the build-versus-buy break-even.",
+  "objectives": [
+    "Estimate one GPU's sustainable requests per second from prefill and decode time",
+    "Compute GPUs needed as ceil(peak load / (per-GPU capacity x target utilisation)) and add redundancy",
+    "Compute cost per million tokens, per request and per useful answer, including the effect of utilisation and retries",
+    "Find the break-even between a hosted API and self-hosting",
+    "Choose the levers (caching, quantization, routing, batching) that reduce cost most for a given workload"
+  ],
+  "prerequisites": "This lesson combines the whole module: latency metrics ([Measuring Inference](/learn/inference-and-serving/measuring-inference)), the memory-bound decode model ([Where the Time Goes](/learn/inference-and-serving/memory-and-compute)), batching ([Batching and Scheduling](/learn/inference-and-serving/batching)), quantization and caching.",
+  "sims": ["gpu-capacity", "token-cost", "llm-batching"],
+  "labs": ["capacity-plan"],
+  "sandbox": [],
+  "sources": [
+    { "title": "Site Reliability Engineering", "authors": "Beyer, Jones, Petoff and Murphy (eds.)", "year": 2016, "note": "Chapters on capacity planning, load and headroom" },
+    { "title": "Efficient Memory Management for Large Language Model Serving with PagedAttention", "authors": "Kwon et al.", "year": 2023, "note": "Throughput gains from larger effective batches" },
+    { "title": "Efficiently Scaling Transformer Inference", "authors": "Pope et al.", "year": 2022, "note": "Cost and latency trade-offs of serving large transformers across chips" },
+    { "title": "FrugalGPT: How to Use Large Language Models While Reducing Cost and Improving Performance", "authors": "Chen, Zaharia and Zou", "year": 2023, "note": "Cascades of models and the cost of correct answers" }
+  ]
+}

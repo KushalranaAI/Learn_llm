@@ -1,0 +1,39 @@
+{
+  "title": "Design a Real-Time Voice Agent",
+  "summary": "A phone agent that listens, thinks and speaks fast enough to feel like a conversation. The design is a latency budget: streaming speech recognition, a fast first token, early speech synthesis, and clean handling of interruptions.",
+  "objectives": [
+    "Turn call volume and call length into concurrent sessions, tokens per day and cost per minute",
+    "Build a mouth-to-ear latency budget under about 800 ms and say where each millisecond goes",
+    "Choose an endpointing strategy and quantify the trade-off between cut-offs and slow replies",
+    "Design barge-in so the agent stops quickly and its memory matches what the caller actually heard",
+    "Plan evaluation, safety and failure handling for a live audio system"
+  ],
+  "prerequisites": "Work through [A Framework for LLM System Design](/learn/llm-system-design/design-framework) first. You should know TTFT and TPOT from [Measuring Inference](/learn/inference-and-serving/measuring-inference) and prompt caching from [Caching Repeated Work](/learn/inference-and-serving/caching).",
+  "sims": [
+    "latency-breakdown"
+  ],
+  "labs": [],
+  "sandbox": [
+    "voice-agent"
+  ],
+  "sources": [
+    {
+      "title": "Robust Speech Recognition via Large-Scale Weak Supervision",
+      "authors": "Radford et al.",
+      "year": 2022,
+      "note": "The Whisper speech-recognition model; useful background on ASR quality and latency"
+    },
+    {
+      "title": "Queueing Systems, Volume 1: Theory",
+      "authors": "Leonard Kleinrock",
+      "year": 1975,
+      "note": "Little's law and the queueing ideas behind concurrency estimates"
+    },
+    {
+      "title": "Designing Data-Intensive Applications",
+      "authors": "Martin Kleppmann",
+      "year": 2017,
+      "note": "Chapter 1: describing load and percentile latency"
+    }
+  ]
+}

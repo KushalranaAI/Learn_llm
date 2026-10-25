@@ -1,0 +1,110 @@
+[
+  {
+    "term": "Parameter",
+    "slug": "parameter",
+    "def": "A number inside a model that training adjusts, such as a weight or a bias. Model size is quoted as a parameter count.",
+    "lesson": "model-foundations/how-networks-learn"
+  },
+  {
+    "term": "Loss function",
+    "slug": "loss-function",
+    "def": "A function that turns how wrong a model's predictions are into a single number to minimise. Language models use cross-entropy on the next token.",
+    "lesson": "model-foundations/how-networks-learn"
+  },
+  {
+    "term": "Cross-entropy",
+    "slug": "cross-entropy",
+    "def": "The loss $-\\ln p$ of the probability a model gave to the correct class or token, averaged over examples. It heavily penalises confident wrong predictions.",
+    "lesson": "model-foundations/how-networks-learn"
+  },
+  {
+    "term": "Gradient descent",
+    "slug": "gradient-descent",
+    "def": "An optimisation method that repeatedly moves each parameter a small step against the gradient of the loss: $w \\leftarrow w - \\eta \\, \\partial L / \\partial w$.",
+    "lesson": "model-foundations/how-networks-learn"
+  },
+  {
+    "term": "Backpropagation",
+    "slug": "backpropagation",
+    "def": "The algorithm that computes the gradient of the loss with respect to every parameter by applying the chain rule backwards from the output, layer by layer.",
+    "lesson": "model-foundations/how-networks-learn"
+  },
+  {
+    "term": "Token",
+    "slug": "token",
+    "def": "A unit of text from a model's fixed vocabulary, often a word or a piece of a word, identified by an integer ID.",
+    "lesson": "model-foundations/tokenization"
+  },
+  {
+    "term": "Byte-pair encoding (BPE)",
+    "slug": "byte-pair-encoding",
+    "def": "A tokenizer-training method that starts from characters or bytes and repeatedly merges the most frequent adjacent pair into a new vocabulary entry.",
+    "lesson": "model-foundations/tokenization"
+  },
+  {
+    "term": "Embedding",
+    "slug": "embedding",
+    "def": "A learned vector of numbers that represents a token or a piece of text, placed so that similar items have nearby vectors.",
+    "lesson": "model-foundations/embeddings"
+  },
+  {
+    "term": "Cosine similarity",
+    "slug": "cosine-similarity",
+    "def": "The cosine of the angle between two vectors, $a \\cdot b / (\\|a\\| \\|b\\|)$, ranging from $-1$ to $1$. Used to compare embeddings regardless of their length.",
+    "lesson": "model-foundations/embeddings"
+  },
+  {
+    "term": "Self-attention",
+    "slug": "self-attention",
+    "def": "The operation where each token computes weights over the other tokens from query-key dot products and takes a weighted sum of their value vectors.",
+    "lesson": "model-foundations/attention"
+  },
+  {
+    "term": "Causal mask",
+    "slug": "causal-mask",
+    "def": "A mask that sets attention scores for future positions to $-\\infty$ before softmax, so each token can only attend to itself and earlier tokens.",
+    "lesson": "model-foundations/attention"
+  },
+  {
+    "term": "Multi-head attention",
+    "slug": "multi-head-attention",
+    "def": "Running several attention operations in parallel on slices of width $d_h = d/h$, so different heads can learn different patterns, then concatenating and projecting the results.",
+    "lesson": "model-foundations/attention"
+  },
+  {
+    "term": "Residual connection",
+    "slug": "residual-connection",
+    "def": "Adding a sub-layer's input to its output, $x + F(x)$, which keeps a direct path for information and gradients through deep networks.",
+    "lesson": "model-foundations/transformer-block"
+  },
+  {
+    "term": "Temperature (sampling)",
+    "slug": "sampling-temperature",
+    "def": "A divisor applied to logits before softmax. Values below 1 sharpen the next-token distribution; values above 1 flatten it.",
+    "lesson": "model-foundations/sampling"
+  },
+  {
+    "term": "Top-p (nucleus) sampling",
+    "slug": "top-p-sampling",
+    "def": "Sampling only from the smallest set of tokens whose probabilities add up to at least $p$, after renormalising them.",
+    "lesson": "model-foundations/sampling"
+  },
+  {
+    "term": "Perplexity",
+    "slug": "perplexity",
+    "def": "The exponential of the average negative log-probability a model assigns to the actual tokens. Lower means the model predicts the text better.",
+    "lesson": "model-foundations/sampling"
+  },
+  {
+    "term": "KV cache",
+    "slug": "kv-cache",
+    "def": "Stored key and value vectors for all previous tokens at every layer, reused at each generation step so they are not recomputed. Its size is $2 \\cdot L \\cdot h_{kv} \\cdot d_h$ times bytes per value, per token.",
+    "lesson": "model-foundations/context-and-kv-cache"
+  },
+  {
+    "term": "Hallucination",
+    "slug": "hallucination",
+    "def": "Fluent model output that is false or not supported by the given sources, arising because the model generates probable text rather than verified text.",
+    "lesson": "model-foundations/limits"
+  }
+]

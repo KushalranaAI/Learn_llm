@@ -1,0 +1,1 @@
+{ "title": "Prompt and Context Engineering", "summary": "Getting reliable behaviour from a model through what you put in its context: templates and roles, few-shot examples, structured outputs, context budgets, tool schemas, regression tests and defences against prompt injection.", "icon": "sliders", "cover": "constrained-decoding" }

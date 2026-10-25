@@ -1,0 +1,389 @@
+{
+  "module": "retrieval-and-rag",
+  "sections": [
+    {
+      "slug": "rag-architecture",
+      "title": "How RAG Works: Retrieve, Then Generate",
+      "lesson": "rag-architecture",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What problem does retrieval-augmented generation solve, and what does it not solve?",
+          "a": "RAG fixes **knowledge** problems: facts newer than the model's training cutoff, private or proprietary data, rare precise details, and the need to cite sources. It does this by searching your documents at query time and putting the best passages into the prompt, so the model reads the facts instead of recalling them.\n\nIt does not fix **behaviour or skill** problems: tone, output format, or reasoning the model cannot do. It also does not fix questions whose answer is absent from your data. Similarity search always returns its top-k, relevant or not, so without a 'not found' path the model may build a confident answer from irrelevant text. Use prompting or fine-tuning for behaviour, and retrieval for facts."
+        },
+        {
+          "level": "junior",
+          "q": "Describe the offline and online pipelines of a RAG system.",
+          "a": "**Offline (indexing):** parse documents, split them into chunks, embed each chunk with an embedding model, and store the vectors (plus the text and metadata such as source, date and permissions) in a vector index, often with a keyword index beside it. Cost is driven by total tokens embedded and runs whenever documents change.\n\n**Online (query):** embed the query with the *same* model, search for the top-k chunks (optionally hybrid and filtered by permissions), optionally rerank, assemble a prompt with numbered sources, and generate an answer with citations. Every millisecond here is user-visible, so budgets differ: indexing can take hours; the retrieval part of the query path usually has under 200 ms."
+        },
+        {
+          "level": "junior",
+          "q": "Why must the query and the documents be embedded with the same model?",
+          "a": "Each embedding model learns its own coordinate system. The same sentence maps to unrelated vectors in two different models, even if both have, say, 768 dimensions. Similarity between a query vector from model B and chunk vectors from model A is therefore close to meaningless, and results degrade silently rather than raising an error.\n\nPractical consequences: record the model name and version with the index, pin the version, and re-embed the entire collection whenever you change it. Matching dimension sizes only avoids shape errors; it does not make the spaces compatible."
+        },
+        {
+          "level": "mid",
+          "q": "Explain P(correct) ≈ P(retrieved) × P(faithful | retrieved) and how you would use it.",
+          "a": "By the law of total probability, $P(A) = P(R)P(A\\mid R) + P(\\bar R)P(A\\mid\\bar R)$, where $R$ is 'the evidence was retrieved and placed in the prompt'. For private data the last term is near zero, leaving the product.\n\nUse it to decide what to fix. With recall 0.70 and faithfulness 0.90, accuracy is about $0.63$. Raising recall to 0.90 gives $0.81$; raising faithfulness to 0.95 gives only $0.665$. The gain from one factor is proportional to the other, so fix the weaker one first. It also tells you to measure both factors separately: recall@k from labelled questions, faithfulness from answers checked against their context."
+        },
+        {
+          "level": "mid",
+          "q": "How does the choice of k affect accuracy, cost and latency?",
+          "a": "Recall@k never decreases as k grows, but faithfulness tends to fall because a longer, noisier context makes the model less likely to use the one useful passage. Their product therefore typically peaks at a moderate k and then declines. In one example, accuracy went 0.76 (k=5), 0.80 (k=10), 0.79 (k=20).\n\nCost and latency rise linearly with k: each 400-token chunk adds 400 input tokens, and prefill time grows with prompt length. The standard answer is 'retrieve wide, pass narrow': fetch 50 to 100 candidates cheaply, rerank, and send only 3 to 8 to the model."
+        },
+        {
+          "level": "mid",
+          "q": "Compute the cost of a RAG request with 300 instruction tokens, 5 chunks of 400 tokens, a 50-token question and a 250-token answer, at 3 per million input tokens and 15 per million output tokens.",
+          "a": "Input tokens: $300 + 5 \\times 400 + 50 = 2{,}350$. Input cost: $2350 \\times 3 / 10^6 = 0.00705$. Output cost: $250 \\times 15 / 10^6 = 0.00375$. Total 0.0108 per request (in whatever currency unit the prices use).\n\nAt 100,000 requests per day that is 1,080 per day. Chunks are $2000/2350 \\approx 85\\%$ of the input, so k and chunk size are the main levers. Going to k=10 raises input to 4,350 tokens and the request cost to about 0.0168, which is a 56% increase."
+        },
+        {
+          "level": "mid",
+          "q": "When would you choose long-context stuffing over RAG, and when the reverse?",
+          "a": "Stuffing fits when the material is small enough to fit with room for output, is needed as a whole (summarise this contract), and has few queries so the repeated cost is tolerable. It needs no index and has no retrieval misses.\n\nRAG wins when the collection exceeds the window (a 50,000-page wiki is about $1.5\\times10^8$ tokens, while a 1M-token window holds under 1% of it), when per-request cost matters (a 150,000-token prompt cost about 42 times a 2,350-token RAG prompt in our example, about 4.5 times with 90% cached input), when freshness matters, and when you need citations. Quality also differs: very long contexts bury facts in the middle. Measure both on your own questions."
+        },
+        {
+          "level": "senior",
+          "q": "Your RAG bot answers 70% of questions correctly. How do you find out whether retrieval or generation is at fault?",
+          "a": "Log, for every evaluation question, the candidate chunk IDs, the chunk IDs actually in the prompt, and the ground-truth supporting chunk. Then classify each failure with a flow: is the fact indexed at all? In the top-N candidates? In the k chunks sent? If it was in the prompt and the answer is still wrong, it is a generation problem.\n\nTally the categories: missed retrieval, ranking failure, ignored context, stale data, bad label. Compute context recall (retrieval) and faithfulness (generation) separately. Fix the largest category first, with the cheapest fix (a reranker for ranking failures, hybrid or chunking for misses, prompt and model for ignored context). Re-run the same labelled set after each change."
+        },
+        {
+          "level": "senior",
+          "q": "Design the access-control story for a RAG system over company documents.",
+          "a": "Treat anything in the prompt as potentially leaked into the answer. So enforce permissions **before** chunks reach the prompt: store an ACL (user, group or tenant IDs) as metadata on every chunk and filter at retrieval time, not after generation. Prefer pre-filtering inside the search, and remember that selective filters hurt ANN recall or need over-fetching (for a filter passing 1% of data, fetch about 100 times k).\n\nSync permissions when documents change, since a revoked user must stop seeing chunks quickly. Do not cache answers across users with different rights. Log which chunks were used. Test with canary documents that certain users must never retrieve, and treat retrieved text as untrusted data for prompt injection."
+        },
+        {
+          "level": "senior",
+          "q": "A teammate proposes fine-tuning the model on the company handbook instead of building RAG. What do you say?",
+          "a": "Fine-tuning teaches behaviour (style, format, vocabulary) well but is a poor store of facts: it blurs rare details, cannot cite sources, cannot forget deleted policies, and needs a new training run for every handbook revision. A model that sounds like the handbook can still invent specifics.\n\nRAG updates in minutes by re-indexing, gives each claim a source, supports per-user permissions, and makes errors debuggable by inspecting the retrieved chunks. The usual answer is RAG for knowledge, optionally plus light fine-tuning or prompting for tone and format. If the team still wants to test fine-tuning, define a labelled question set first and compare both on it, including freshness (change a policy and see how long each system takes to reflect it)."
+        }
+      ]
+    },
+    {
+      "slug": "sparse-and-dense",
+      "title": "Term-Based (BM25) and Embedding Retrieval",
+      "lesson": "sparse-and-dense",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What is an inverted index and why is keyword search fast?",
+          "a": "An inverted index maps each term to the list of documents containing it (a postings list, usually with term frequencies), like the index at the back of a book. To answer a query the engine reads only the postings lists of the query terms and scores the documents in them, instead of scanning every document.\n\nWith ten million documents and a rare query term appearing in 200 of them, scoring touches about 200 documents. Documents are sparse vectors over the vocabulary (mostly zeros), which is why keyword retrieval is called sparse. Tokenisation (case, stemming, handling of codes such as ERR_4012) matters as much as the scoring formula."
+        },
+        {
+          "level": "junior",
+          "q": "What do TF and IDF measure in TF-IDF?",
+          "a": "**Term frequency** counts how often a term occurs in a document: more mentions suggest the document is more about it. **Inverse document frequency**, $\\ln(N/\\text{df})$, weights terms by rarity: a word in every document gets $\\ln 1 = 0$ and cannot discriminate, while a word in 10 of 1,000 documents gets $\\ln 100 \\approx 4.6$.\n\nThe score is $\\sum_{t\\in Q}\\text{tf}(t,D)\\cdot\\text{idf}(t)$. Its weaknesses are unbounded growth with repetition and a bias towards long documents, which BM25 addresses."
+        },
+        {
+          "level": "junior",
+          "q": "Give one query where BM25 beats dense retrieval and one where dense wins.",
+          "a": "BM25 wins on exact, rare tokens: an error code like 'E42', a product SKU, a person's name. A dense embedding blurs 'E42' with 'E17' because they mean nearly the same thing to the model.\n\nDense wins on paraphrase and vocabulary mismatch: 'my laptop won't turn on' should match 'device fails to power up', which shares no words. 'Does it work without wifi?' should match an offline-mode article that never says wifi. This is why production systems commonly combine them with hybrid search."
+        },
+        {
+          "level": "mid",
+          "q": "Write the BM25 formula and explain k1 and b.",
+          "a": "$$\\text{BM25}(D,Q)=\\sum_{t\\in Q}\\text{idf}(t)\\,\\frac{\\text{tf}\\,(k_1+1)}{\\text{tf}+k_1\\left(1-b+b\\,|D|/\\text{avgdl}\\right)}$$\n\n$k_1$ (about 1.2 to 2.0) controls saturation: the term-frequency factor approaches $k_1+1$, so 100 mentions are not worth 100 times one mention (for $k_1=1.2$ and average length, tf of 1, 3, 10 gives 1.0, 1.57, 1.96). $b$ (about 0.75) controls length normalisation: 0 ignores length, 1 fully normalises, so a document twice the average length has its term counts discounted. Defaults are robust; tune against labelled queries."
+        },
+        {
+          "level": "mid",
+          "q": "Work out BM25 for a query term appearing once in a 3-token document, with N=3, df=2, avgdl=4.33, k1=1.2, b=0.75.",
+          "a": "idf with the smoothed form: $\\ln\\!\\left(\\frac{3-2+0.5}{2+0.5}+1\\right)=\\ln 1.6=0.470$.\n\nLength factor: $K = 1.2\\,(1-0.75+0.75\\times 3/4.333)=1.2\\times 0.769=0.923$.\n\nTF part: $\\frac{1\\times 2.2}{1+0.923}=1.144$. Score: $0.470\\times 1.144 = 0.538$.\n\nA 6-token document with the term three times has $K=1.546$, TF part $3\\times2.2/(3+1.546)=1.452$, score 0.682. Three mentions in a document twice as long score only 27% higher than one mention in the short document, which is the saturation and length effect."
+        },
+        {
+          "level": "mid",
+          "q": "Why does cosine similarity of normalised embeddings give the same ranking as Euclidean distance?",
+          "a": "For unit vectors, $\\lVert q-d\\rVert^2=\\lVert q\\rVert^2+\\lVert d\\rVert^2-2q\\cdot d=2-2\\cos(q,d)$. Squared distance is a decreasing linear function of cosine, so ordering by smallest distance and by largest cosine (or largest dot product) is identical.\n\nThat is why vector databases let you pick any of the three after you normalise at indexing time. Without normalisation, dot product also rewards long vectors, and cosine ignores length; choose according to what your embedding model was trained with, and follow the model documentation."
+        },
+        {
+          "level": "mid",
+          "q": "Compare a bi-encoder and a cross-encoder for search, with latency numbers.",
+          "a": "A bi-encoder embeds query and document separately, so document vectors are precomputed and search is a nearest-neighbour lookup: about 20 ms to embed the query plus 10 ms of ANN search. A cross-encoder reads the pair jointly, with full query-document attention, which makes it more accurate (it can see negation and fine constraints) but nothing can be precomputed.\n\nAt 2 ms per pair, a cross-encoder over $10^6$ documents takes 2,000 s, about 67,000 times slower than the bi-encoder. So use the bi-encoder to retrieve candidates and the cross-encoder to rerank the top 50: $30 + 50\\times 2 = 130$ ms."
+        },
+        {
+          "level": "mid",
+          "q": "How is a dense retriever trained? What is the role of hard negatives?",
+          "a": "Contrastive learning on (query, positive passage) pairs. With a batch of B pairs and similarity $s_{ij}=\\cos(q_i,d_j)$, the InfoNCE loss is $-\\log\\frac{e^{s_{ii}/\\tau}}{\\sum_j e^{s_{ij}/\\tau}}$: classify which of the B passages belongs to the query. Other positives in the batch are free negatives.\n\nRandom negatives are easy, so the loss is tiny (with $\\tau=0.05$ and similarities 0.8, 0.3, 0.1 the loss is about 0.00005). **Hard negatives**, topically similar passages that do not answer the question, mined with BM25 or an earlier model, give a much larger loss (about 0.31 for a negative at 0.75) and teach fine distinctions. Filter false negatives, which are relevant but unlabelled."
+        },
+        {
+          "level": "senior",
+          "q": "Users search an IT knowledge base using exact codes and also natural-language symptoms. Dense-only retrieval misses the codes. How do you fix it, and how do you prove it worked?",
+          "a": "Add BM25 (check the tokeniser keeps codes like KB-30871 as single tokens) and fuse with dense via RRF, optionally with a field-aware boost for codes. Detect code-shaped queries with a regex and route or upweight keyword retrieval.\n\nProve it: build a labelled set of at least 200 real queries tagged by type (code lookup, symptom, mixed). Report recall@5 and MRR per slice for BM25, dense and hybrid. Expect BM25 to win the code slice, dense the symptom slice, hybrid to be best overall. Use confidence intervals (at n=200, about ±5 points) and check no slice regresses. Also compare latency, since hybrid runs two searches in parallel."
+        },
+        {
+          "level": "senior",
+          "q": "Your company wants to fine-tune an embedding model. How do you decide whether it is worth it and how do you do it safely?",
+          "a": "First measure the base model on 200 to 500 labelled in-domain queries (recall@k, nDCG). If it already reaches the target, fix chunking, hybrid search or reranking instead, which are cheaper. If specialised vocabulary (legal, medical, internal codes) causes misses, fine-tuning on a few thousand in-domain pairs with hard negatives often adds several points.\n\nBuild pairs from real queries with clicked or labelled passages, plus LLM-generated questions per chunk. Mine hard negatives and filter false negatives with a cross-encoder. Hold out a test set, check for regression on general queries, and watch the maximum input length. Re-embed the whole index after any model change, version the model with the index, and keep the old index for rollback."
+        }
+      ]
+    },
+    {
+      "slug": "vector-indexes",
+      "title": "Vector Indexes: Exact, IVF and HNSW",
+      "lesson": "vector-indexes",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What does a flat (exact) vector index cost for N vectors of dimension d?",
+          "a": "Memory is $N\\cdot d\\cdot b$ bytes, where b is bytes per number (4 for float32). Each query needs a dot product with every vector, about $2Nd$ FLOPs, so time is linear in both N and d. For $N=10^7$, $d=768$: 30.7 GB of memory and $1.5\\times10^{10}$ FLOPs per query; reading 30.7 GB at 20 GB/s takes about 1.5 s.\n\nFlat search is exact, has no tuning, and is the right choice under about $10^5$ to $10^6$ vectors. It is also the ground truth used to measure the recall of approximate indexes."
+        },
+        {
+          "level": "junior",
+          "q": "What is ANN recall@10 and how is it different from retrieval recall?",
+          "a": "ANN recall@10 is $|\\text{ANN top-10}\\cap\\text{exact top-10}|/10$: how many of the true nearest neighbours the approximate index returned. It measures the *index* against exact search on the same vectors.\n\nRetrieval recall asks a different question: whether a *relevant document* appears in the results. An index with recall 0.95 returns almost the same neighbours as exact search, so it loses at most a little retrieval recall, and often less because the missed neighbours are the borderline ones. A poor embedding model can have perfect index recall and poor retrieval recall."
+        },
+        {
+          "level": "mid",
+          "q": "Explain IVF and compute the distances scanned for N=10^7, nlist=4096, nprobe=16.",
+          "a": "IVF clusters vectors with k-means into nlist cells. Each vector is stored in its nearest centroid's list. At query time you compare the query with the nlist centroids, pick the nprobe closest, and scan only those lists.\n\nAverage list size: $10^7/4096=2{,}441$. Scanned vectors: $16\\times2441=39{,}062$. Plus 4,096 centroid comparisons gives $43{,}158$ distances, a $10^7/43158\\approx232\\times$ reduction (0.39% of the data). Recall rises with nprobe: neighbours lying across cell boundaries are missed at low nprobe. At nprobe=nlist it becomes exact. nprobe is a query-time knob, so no rebuild is needed to tune it."
+        },
+        {
+          "level": "mid",
+          "q": "Explain how HNSW works and why its search cost is roughly logarithmic.",
+          "a": "HNSW builds a multi-layer proximity graph. Layer 0 holds all vectors; each higher layer is a random sample (a node reaches layer $\\ell$ with probability $M^{-\\ell}$). Search starts at the top, greedily walks to the neighbour closest to the query until no improvement, drops a layer and repeats. At layer 0 it does a beam search with a candidate list of size efSearch.\n\nEach layer reduces the remaining distance by a roughly constant factor, so reaching the right neighbourhood takes $O(\\log N)$ hops with at most M neighbours examined per hop. Distance computations are roughly $M(c\\cdot ef+\\ln N)$: for $M=16$, $ef=64$ about 1,750 against $10^6$ exact. Multiplying N by 100 raises it only about 4%."
+        },
+        {
+          "level": "mid",
+          "q": "What do M, efConstruction and efSearch control in HNSW?",
+          "a": "**M**: links per node (upper layers; layer 0 allows about 2M). Larger M gives a better connected graph and a higher recall ceiling, at the cost of memory (about $2M\\times4$ bytes per vector at layer 0: 128 B for M=16) and build time. **efConstruction**: candidate list size while building; higher gives a better graph but slower builds. **efSearch**: candidate list size at query time; raising it explores more of the graph, increasing recall and latency roughly linearly.\n\nTypical start: M=16, efConstruction 100 to 200, efSearch 50 to 200. Because efSearch is query-time, sweep it first to find the recall-latency knee; rebuild with larger M only if the ceiling is too low."
+        },
+        {
+          "level": "mid",
+          "q": "Compute the memory saving of product quantisation for d=768 float32 vectors with m=96 and 8-bit codes.",
+          "a": "Original: $768\\times4=3{,}072$ bytes. PQ splits the vector into $m=96$ sub-vectors of 8 dimensions, each replaced by the index (1 byte) of the nearest of 256 learned centroids: 96 bytes. Compression $=3072/96=32\\times$ (general form $4d/m$). For $10^7$ vectors: 0.96 GB instead of 30.7 GB.\n\nCodebooks are tiny: $96\\times256\\times8\\times4=786{,}432$ bytes, shared by all vectors. Distances use lookup tables: for a query, precompute distances to each sub-codebook entry, then each vector's distance is a sum of 96 table lookups. Accuracy drops, so rerank the top few hundred with full vectors."
+        },
+        {
+          "level": "mid",
+          "q": "A tenant filter passes 0.5% of vectors and you post-filter ANN results. What goes wrong and what do you do?",
+          "a": "Post-filtering takes the ANN top-k' and discards results that fail the filter. If the filter passes a fraction $s$ of the data, you keep about $k's$ results. For $k=10$ and $s=0.005$ you must fetch about $10/0.005=2{,}000$ to expect ten, otherwise you often return too few or none.\n\nOptions: pre-filtering or filtered search inside the index (check how your engine handles restrictive filters, since they can disconnect an HNSW graph and hurt recall); a separate index per tenant or partition by the filter field when filters are very selective; or over-fetch by $1/s$ when the filter is mild. Always measure recall under realistic filters, not only unfiltered."
+        },
+        {
+          "level": "senior",
+          "q": "You must serve 200 million 768-dimensional embeddings within 40 GB of RAM at 95% recall@10 and 50 ms p95. Design it.",
+          "a": "Flat float32 is $2\\times10^8\\times3072=614$ GB, so compression is mandatory. IVF-PQ with 96-byte codes plus 8-byte IDs is about $104$ B per vector: about 21 GB, leaving room for centroids and overhead. Use nlist in the tens of thousands, nprobe tuned for recall, and store the original float16 vectors on SSD for reranking the top 100 to 200 candidates (recovering the recall PQ loses).\n\nAlternatively shard across machines, or use HNSW over PQ-compressed vectors. Build a ground-truth set with exact search on a sample, sweep nprobe and the rerank depth to meet 0.95 and 50 ms, load test with realistic filters, and plan rebuilds as data drifts."
+        },
+        {
+          "level": "senior",
+          "q": "Recall in production is lower than in your benchmark and drifting downward. What do you investigate?",
+          "a": "Check, in order: (1) **Data drift**: for IVF, centroids trained on old data no longer match new documents or languages; retrain and rebuild. (2) **Filters**: production queries carry tenant and ACL filters the benchmark lacked, which can sharply reduce HNSW or IVF recall. (3) **Parameters**: someone lowered efSearch or nprobe to meet a latency target. (4) **Deletes and updates**: HNSW graphs with many tombstones degrade; rebuild periodically. (5) **Embedding model changes** mixing old and new vectors in one index. (6) **Query distribution** differing from the benchmark queries.\n\nMeasure with a canary set of queries whose exact neighbours are computed offline with a flat index, run nightly against production, and alert on recall drops, so you notice drift before users do."
+        }
+      ]
+    },
+    {
+      "slug": "hybrid-and-reranking",
+      "title": "Hybrid Search and Reranking",
+      "lesson": "hybrid-and-reranking",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "Define recall@k, precision@k and MRR.",
+          "a": "Let top-k be the first k results and Rel the relevant set. **precision@k** $=|\\text{top-}k\\cap\\text{Rel}|/k$: how much of what you returned is useful. **recall@k** $=|\\text{top-}k\\cap\\text{Rel}|/|\\text{Rel}|$: how much of the useful material you found. **MRR** is the mean over queries of $1/\\text{rank}$ of the first relevant result (0 if none).\n\nExample: relevant {A,C,E,G}, results A,B,C,D,E: precision@5 $=3/5=0.6$, recall@5 $=3/4=0.75$. First-hit ranks 1, 3 and none give MRR $=(1+1/3+0)/3=0.444$. For RAG, recall at the k you send to the model matters most, because a missing passage cannot be recovered later."
+        },
+        {
+          "level": "junior",
+          "q": "Why use hybrid search?",
+          "a": "BM25 and dense retrieval fail on different queries. BM25 excels at exact codes, names and rare terms but misses paraphrases; dense retrieval handles paraphrase and vocabulary mismatch but blurs identifiers, negation and new jargon. Real query logs contain both kinds, so running both and fusing the ranked lists is usually better on average than either alone.\n\nIn practice you retrieve 50 to 100 candidates from each, fuse (commonly with Reciprocal Rank Fusion), and optionally rerank. The cost is one extra search, which runs in parallel, so added latency is small."
+        },
+        {
+          "level": "mid",
+          "q": "Compute RRF with k=60 for these lists: BM25 gives D3, D1, D5, D2; dense gives D1, D4, D3, D2.",
+          "a": "$\\text{RRF}(d)=\\sum_r 1/(60+\\text{rank}_r(d))$.\n\nD1: ranks 2 and 1: $1/62+1/61=0.01613+0.01639=0.03252$. D3: ranks 1 and 3: $1/61+1/63=0.03227$. D2: ranks 4 and 4: $2/64=0.03125$. D4: dense rank 2 only: $1/62=0.01613$. D5: BM25 rank 3 only: $1/63=0.01587$.\n\nFused order: D1, D3, D2, D4, D5. Documents found by both retrievers fill the top. No score normalisation is needed, which is the main reason RRF is a robust default. A weakness is that it ignores score margins: a runaway first place counts little more than a close one."
+        },
+        {
+          "level": "mid",
+          "q": "Why can you not simply add BM25 and cosine scores, and what are the alternatives to RRF?",
+          "a": "BM25 scores are unbounded and depend on query length and corpus statistics (14.2 for a good match), while cosine similarities sit in a narrow band (0.83). Adding them lets BM25 dominate. You must normalise first, for example min-max per query: $x'=(x-\\min)/(\\max-\\min)$, then combine with a weight: $s=\\alpha s'_{\\text{bm25}}+(1-\\alpha)s'_{\\text{dense}}$.\n\nThis works if you tune $\\alpha$ on labelled data, but the normalisation depends on which candidates were returned, and rankings can flip with small changes in $\\alpha$. RRF uses ranks only, needs no tuning, and handles any number of retrievers. Learned fusion or a reranker over the union of candidates is the heavier alternative."
+        },
+        {
+          "level": "mid",
+          "q": "Compute nDCG@5 for graded relevance [3,0,2,0,1].",
+          "a": "$\\text{DCG}=\\sum_i \\text{rel}_i/\\log_2(i+1)$. Discounts for ranks 1 to 5: 1, 0.631, 0.5, 0.431, 0.387. Gains: $3\\times1=3$; $0$; $2\\times0.5=1.0$; $0$; $1\\times0.387=0.387$. DCG@5 $=4.387$.\n\nIdeal order [3,2,1,0,0]: $3+2/1.585+1/2=3+1.262+0.5=4.762$. nDCG@5 $=4.387/4.762=0.921$.\n\nnDCG handles graded relevance and rewards putting the best results first through the log discount; precision and recall ignore order within the top k. Use it to compare rankers and rerankers; use recall@k for choosing k."
+        },
+        {
+          "level": "mid",
+          "q": "Explain the retrieve-then-rerank funnel and estimate its gain.",
+          "a": "A cheap first stage (BM25, dense or hybrid) returns N candidates (50 to 200) tuned for recall; a cross-encoder scores each (query, candidate) pair jointly and you keep the top k (3 to 8), tuned for precision.\n\nReranked recall@k $\\approx\\text{recall@}N\\times P(\\text{top-}k\\mid\\text{in candidates})$. If the first stage has recall@5 of 0.70 and recall@50 of 0.92, and the reranker places the answer in its top 5 on 92% of those cases, reranked recall@5 is about $0.92\\times0.92=0.846$, up 14.6 points. The ceiling is recall@N; reranking cannot recover documents the first stage missed."
+        },
+        {
+          "level": "mid",
+          "q": "Estimate cross-encoder reranking latency for N=100 pairs of 350 tokens with a 110M-parameter model.",
+          "a": "A forward pass costs about $2P$ FLOPs per token, so one pair costs $2\\times1.1\\times10^8\\times350=7.7\\times10^{10}$ FLOPs, and 100 pairs cost $7.7\\times10^{12}$. On a GPU with an effective $5\\times10^{13}$ FLOP/s that is about 154 ms. Latency is linear in N and in passage length: N=50 gives about 77 ms, N=200 about 308 ms.\n\nCompare with the first stage at about 30 ms. Real systems batch the pairs, truncate passages to the model's limit, and add a timeout that falls back to the unreranked order if the reranker is slow."
+        },
+        {
+          "level": "mid",
+          "q": "What is MMR and when would you use it?",
+          "a": "Maximal marginal relevance selects results one at a time: $\\arg\\max_d[\\lambda\\,\\text{sim}(d,q)-(1-\\lambda)\\max_{d'\\in S}\\text{sim}(d,d')]$, balancing relevance to the query against similarity to what is already selected. $\\lambda=1$ is plain top-k.\n\nExample: with $\\lambda=0.7$, a near-duplicate (relevance 0.88, similarity 0.95 to the first pick) scores $0.616-0.285=0.331$, while a different passage (relevance 0.70, similarity 0.20) scores $0.49-0.06=0.43$ and wins. Use it when queries need several distinct facts or the corpus has many near-duplicates (overlapping chunks, versions). Avoid it for single-fact lookups where the close sibling may hold the needed detail."
+        },
+        {
+          "level": "senior",
+          "q": "Design the retrieval stage for a 250 ms latency budget. How do you choose N and k?",
+          "a": "Subtract fixed stages: query embedding 20 ms, hybrid search 30 ms (parallel), fusion 2 ms leaves about 198 ms. With a reranker at 1.54 ms per candidate, $N_{\\max}\\approx128$; leave headroom for p95 (about 1.5 times median) and choose N around 80, about 123 ms median.\n\nThen measure on labelled queries: recall@N for N in 10 to 200, and reranked recall and nDCG for k in 3, 5, 8. Choose the knee: the smallest N within a point of the plateau, and the smallest k whose end-to-end answer accuracy is within a point of best. Add guard rails: cap on N, reranker timeout with fallback, and a nightly canary set. Check cost too: rerank price per search versus the prompt tokens saved by a smaller k."
+        },
+        {
+          "level": "senior",
+          "q": "Hybrid search with RRF made some queries worse. How do you investigate?",
+          "a": "Slice the labelled set by query type (code, paraphrase, long natural language, short keyword) and compare BM25, dense and hybrid per slice. Look at the rank positions of the relevant document in each list for the regressed queries. Typical causes: one retriever returns confidently wrong results at rank 1 and the fused score promotes them; chunk IDs differ between retrievers so the same chunk is counted twice and votes split; candidate depth is too shallow so the relevant document is below the cut in one list; or a weak retriever dilutes a strong one for that slice.\n\nFixes: deeper candidate lists, weighted RRF, routing by query type, or a reranker over the union. Verify with confidence intervals so you do not chase noise."
+        }
+      ]
+    },
+    {
+      "slug": "chunking",
+      "title": "Chunking and Indexing Documents",
+      "lesson": "chunking",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "Why do we chunk documents instead of embedding them whole?",
+          "a": "Three pressures: embedding models have a maximum input length (often 512 tokens) and silently truncate; one vector must summarise the whole chunk, so a fact in a long chunk is diluted and scores lower against its question; and retrieved text goes into the prompt, so large chunks cost tokens and bury the useful sentence.\n\nToo small is also bad: sentences lose antecedents ('This limit does not apply...') and answers spanning sentences are split. Chunk size is a trade-off, typically 200 to 500 tokens for prose, tuned on labelled questions."
+        },
+        {
+          "level": "junior",
+          "q": "What is chunk overlap and why is it used?",
+          "a": "Overlap makes consecutive chunks share some tokens, so a fact cut by one chunk's boundary appears whole in the neighbour. It is insurance against naive boundaries.\n\nIts premium: more chunks, more storage and embedding cost, and duplicate hits in results. With chunk size s and overlap o, storage inflates by about $s/(s-o)$: 12.5% overlap costs about 14% more. A common default is 10 to 20% of chunk size, or none when splitting on real structure such as headings."
+        },
+        {
+          "level": "mid",
+          "q": "Derive the number of chunks for a document of L tokens with chunk size s and overlap o.",
+          "a": "The stride between chunk starts is $t=s-o$. Chunk j covers $jt$ to $jt+s$. The last chunk must reach the end: $(n-1)t+s\\ge L$, so $n=\\lceil(L-s)/(s-o)\\rceil+1=\\lceil(L-o)/(s-o)\\rceil$.\n\nExample: $L=10{,}000$, $s=512$, $o=64$: $\\lceil9936/448\\rceil=\\lceil22.18\\rceil=23$ chunks, versus $\\lceil10000/512\\rceil=20$ with no overlap. With $o=256$ it is 39, nearly double. Total stored tokens are about $n\\cdot s$, an inflation of $s/(s-o)$ over L."
+        },
+        {
+          "level": "mid",
+          "q": "What is the probability that a fact of f tokens is split by a chunk boundary? How does overlap change it?",
+          "a": "Assume the fact starts at a uniformly random position. It is intact if some chunk contains it entirely, which happens when its offset within the stride is at most $s-f$. So $P(\\text{intact})=\\min(1,(s-f)/(s-o))$ and $P(\\text{split})=\\max(0,(f-o)/(s-o))$.\n\nFor $s=200$, $f=40$: $o=0$ gives 0.20, $o=20$ gives 0.111, $o=40$ gives 0. Once the overlap is at least the fact length no such fact can be split, and more overlap only adds cost (overhead 1.25 at $o=40$, 2.0 at $o=100$). Real facts vary in length, so verify on your labelled questions."
+        },
+        {
+          "level": "mid",
+          "q": "Compare fixed-size, sentence, heading-aware and semantic chunking.",
+          "a": "**Fixed windows**: trivial and predictable but cut mid-sentence and shift every later chunk after an edit. **Sentence packing**: never splits a sentence; chunks are uneven but coherent (sentences of 40, 55, 30, 70, 25, 60 tokens with a cap of 150 pack into 125, 95, 60). **Heading-aware**: one chunk per section, split long ones by paragraph, merge tiny ones; matches author structure and is stable under edits. **Semantic**: cut where adjacent-sentence similarity drops below a threshold; follows topic shifts without headings but needs sentence embeddings and noisy thresholds.\n\nPrepend the heading path to each chunk to restore context. Tables, code and slides need format-specific units."
+        },
+        {
+          "level": "mid",
+          "q": "Estimate the vector index size and embedding cost for 50,000 documents of 3,000 tokens, chunk 512, overlap 64, d=1024.",
+          "a": "Chunks per document: $\\lceil(3000-64)/448\\rceil=7$, so $N=350{,}000$. Vectors in float32: $350000\\times1024\\times4=1.43$ GB (0.72 GB in float16, 0.36 GB int8). Raw text about 0.7 GB; an HNSW graph with M=16 adds about 45 MB.\n\nEmbedding tokens: $50000\\times(3000+6\\times64)=1.69\\times10^8$. At an illustrative 0.02 per million tokens that is about 3.4 in currency units. Indexing is cheap; the effort is in parsing, re-chunking and re-embedding after a model change. Estimate peak memory during a rebuild, when old and new indexes coexist."
+        },
+        {
+          "level": "mid",
+          "q": "Explain parent-child retrieval and its token cost.",
+          "a": "Index small child chunks (say 128 tokens) for precise matching, but give the model the larger parent (512 tokens or the section) that each hit belongs to. Hits are mapped to parent IDs and deduplicated.\n\nIf the top 5 children map to parents [P1, P1, P2, P1, P3], the prompt holds three unique parents: $3\\times512=1{,}536$ tokens, versus 640 for children alone and 2,560 for naive parents. You pay more prompt tokens but get precise vectors and complete passages. Parents can be ranked by the sum or max of child scores. Watch for parents drifting out of sync with children after partial updates."
+        },
+        {
+          "level": "senior",
+          "q": "Retrieval fails on questions whose answer spans two paragraphs. Diagnose and fix.",
+          "a": "First confirm: for failed questions, check whether the supporting span is split across chunk boundaries (compute the split-fact rate on the labelled set with span-level labels). If yes, options: heading- or paragraph-aware chunking so related paragraphs stay together; overlap at least as long as the typical fact; larger chunks if the embedding model allows; parent-child or sentence-window retrieval so the model receives neighbouring text; merging adjacent hits before prompting.\n\nEvaluate each change with context recall on the labelled set, comparing recall@k and prompt tokens, and check with confidence intervals (at n=200, about ±5 points). Keep the chunker deterministic and versioned, and re-embed once."
+        },
+        {
+          "level": "senior",
+          "q": "How do you decide whether to add LLM-generated context to every chunk?",
+          "a": "Contextual chunking costs one LLM call per chunk. For 350,000 chunks with a 3,000-token document, 512-token chunk and 80-token output at 3 and 15 per million tokens, it is about 1,273 with the document prefix cached versus 4,108 uncached. It is a one-off cost, repeated only for changed documents.\n\nDecide on evidence: error analysis should show failures from ambiguous chunks ('the company's revenue grew 3%'). Run an experiment on the labelled set measuring recall@k with and without context; if the gain is a few points on the failing slice, the cost is justified. Cheaper alternatives to try first: document title and heading path prepended, or per-document summaries."
+        }
+      ]
+    },
+    {
+      "slug": "advanced-rag",
+      "title": "Query Rewriting, Multi-Hop and Graph RAG",
+      "lesson": "advanced-rag",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What is query rewriting and why do chat-style RAG systems need it?",
+          "a": "Users type fragments and follow-ups: 'and for annual plans?', 'it still doesn't work'. Embedding that text verbatim gives the retriever nothing to match. Query rewriting uses an LLM to turn the message plus recent conversation into a standalone search query: 'refund policy for annual plans'.\n\nIt fixes missing context, vague wording, and vocabulary mismatch (adding synonyms). Cost: an extra LLM call, typically 300 to 600 ms with a small model. Log the rewritten query next to the original, because bad rewrites are a common cause of retrieval failure."
+        },
+        {
+          "level": "junior",
+          "q": "What is HyDE?",
+          "a": "Hypothetical Document Embeddings: ask an LLM to write a short passage that would answer the query, embed that passage instead of the question, and search with it. Questions and answers look different, so an answer-shaped vector can land nearer to the true answer than the question does.\n\nThe hypothetical text may contain wrong facts; only its style and vocabulary steer the search, and real documents supply the facts. It helps vague, question-shaped queries over passage-shaped documents. It hurts for private or recent facts the model cannot guess, for exact codes, and adds a full generation of latency."
+        },
+        {
+          "level": "mid",
+          "q": "Show with numbers how HyDE can retrieve better than the question.",
+          "a": "Take toy vectors: question $q=(0.9,0.3,0.1)$, hypothetical answer $h=(0.3,0.8,0.5)$, true answer $d_1=(0.2,0.9,0.4)$, a wording-match distractor $d_2=(0.8,0.2,0.3)$.\n\n$\\cos(q,d_1)=0.511$ but $\\cos(q,d_2)=0.968$, so the question retrieves the distractor. $\\cos(h,d_1)=0.985$ and $\\cos(h,d_2)=0.633$, so the hypothetical answer retrieves the true answer. Check: $h\\cdot d_1=0.98$, $\\lVert h\\rVert=0.990$, $\\lVert d_1\\rVert=1.005$, giving $0.98/0.995=0.985$.\n\nIn production, generate several hypotheses and average them, and fuse HyDE results with plain dense and BM25 so one bad hypothesis cannot sink the query."
+        },
+        {
+          "level": "mid",
+          "q": "How does multi-query retrieval work and how much does it help?",
+          "a": "Generate m rewrites of the query, search with each, and fuse the lists with RRF so chunks found by several rewrites accumulate score. If each rewrite independently succeeded with probability p, at least one would succeed with $1-(1-p)^m$: for $p=0.7$, $m=3$ that is 0.973.\n\nThat is an upper bound. Rewrites of one question are strongly correlated, so real gains are much smaller (0.70 to 0.80 is a good outcome). Cost: one LLM call (300 to 600 ms) plus m embeddings and searches, parallelisable. Keep the original query in the mix as insurance, and measure on the labelled set before adopting."
+        },
+        {
+          "level": "mid",
+          "q": "Why do multi-hop questions fail in basic RAG, and how does decomposition help?",
+          "a": "The documents needed for later hops are not similar to the question: 'Who founded the company that acquired the maker of Aurora?' contains none of the names that appear in the later documents. One search cannot reach them.\n\nDecomposition asks sub-questions in sequence, feeding each answer into the next query: which startup makes Aurora, who acquired it, who founded the acquirer. Failures compound: with per-hop success $p$ and $h$ hops, success is $p^h$ ($0.9^3=0.729$, and times 0.9 for composition gives 0.656). Latency adds about 1.1 s per sequential hop, so run independent sub-questions in parallel and cap hops at 3 or 4."
+        },
+        {
+          "level": "mid",
+          "q": "What is graph RAG and what is it good for?",
+          "a": "An LLM extracts entities and relations from chunks, a graph is built (merging duplicate entities), and communities of related entities are detected and summarised. Local queries traverse an entity's neighbourhood (1 to 2 hops); global queries are answered by map-reducing over community summaries.\n\nIt suits relational questions ('which projects depend on the payments service?') and global questions ('main themes across 8,000 tickets') where top-k chunks cannot cover the answer. It is poor value for ordinary fact lookup. Indexing needs an LLM call per chunk: about 0.0038 per chunk in our example, around 1,300 for 350,000 chunks versus roughly 3 to embed them. Extraction errors need their own evaluation."
+        },
+        {
+          "level": "mid",
+          "q": "Describe adaptive and corrective RAG and compute what routing saves.",
+          "a": "**Adaptive**: a small classifier routes each query: no retrieval (greetings), single retrieval, multi-step, or another tool. **Corrective**: a grader judges retrieved chunks as correct, ambiguous or incorrect; ambiguous triggers a rewrite and retry, incorrect after retries leads to a fallback source or 'not found'.\n\nSavings: a RAG request costs 0.0108, a non-retrieval request 0.0048. If 40% need retrieval and the router costs 0.0001: $0.4\\times0.0108+0.6\\times0.0048+0.0001=0.0073$, a 32% saving, plus lower latency on the skipped 60%. The risk is a wrongly skipped retrieval, so optimise the router for recall on 'needs retrieval'."
+        },
+        {
+          "level": "senior",
+          "q": "Your chat RAG bot answers poorly on follow-up questions. How do you fix it and measure the fix?",
+          "a": "Log the retrieval query. If it is the raw last message, add query condensation with the last few turns, outputting only a standalone query; keep the original query fused in as a fallback. Make the condenser preserve entities and constraints (product, version), and consider extracting metadata filters.\n\nMeasure: build a labelled multi-turn set where the supporting passage is known for the final turn, and compare context recall@k with and without condensation. Also watch latency (an extra 300 to 600 ms) and regressions on standalone questions, where rewriting can hurt exact-match queries. Use a small, fast model for the condenser and cache by conversation state if traffic repeats."
+        },
+        {
+          "level": "senior",
+          "q": "How would you decide between plan-and-execute decomposition and an agentic retrieval loop?",
+          "a": "Plan-and-execute writes the sub-question list up front. It is predictable, easy to test and log, bounded in cost, and parallelisable, but cannot adapt when a hop returns something unexpected. An agentic loop (reason, retrieve, observe, repeat) adapts and handles open-ended research, but latency and cost vary with step count, errors compound (series reliability $p^n$), and debugging is harder.\n\nPractical stance: route. Most questions are single-hop and need neither. Use plan-and-execute for questions with known structure, and an agentic loop with a step budget and a 'give up' path for the hard minority. Evaluate each route on labelled questions with accuracy, tokens, and p95 latency, and log every hop's query and chunk IDs."
+        }
+      ]
+    },
+    {
+      "slug": "evaluating-rag",
+      "title": "Evaluating RAG: Retrieval, Grounding and Failures",
+      "lesson": "evaluating-rag",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What are context precision and context recall?",
+          "a": "**Context recall**: the fraction of the facts needed for a complete answer that appear in the retrieved context. **Context precision@k**: the fraction of the k retrieved chunks that are relevant.\n\nExample: a question needs 4 facts; the top 5 chunks contain 3 of them in 3 relevant chunks. Recall $=3/4=0.75$ and precision@5 $=3/5=0.60$. Low recall with high precision means more evidence must be found (hybrid search, rewriting, chunking); high recall with low precision means noise (rerank, smaller k, MMR). Report both at the k you send to the model."
+        },
+        {
+          "level": "junior",
+          "q": "What is faithfulness (groundedness) and how is it measured?",
+          "a": "Faithfulness is the fraction of claims in the answer that are supported by the retrieved context: split the answer into atomic claims and check each against the context with a human, an entailment model or an LLM judge. $\\text{faithfulness}=\\text{supported claims}/\\text{all claims}$.\n\nA claim that is true in the world but absent from the context counts as unsupported, because the question is whether the system used its evidence. An answer with 5 claims, 3 supported, scores 0.60. Treat contradicted claims as a separate, more serious category than merely unsupported ones."
+        },
+        {
+          "level": "mid",
+          "q": "Compute average precision for a ranked list with relevant chunks at ranks 1, 2 and 4 in the top 5.",
+          "a": "For each relevant chunk, take precision at its rank, then average: $P@1=1/1=1$, $P@2=2/2=1$, $P@4=3/4=0.75$. $\\text{AP}=(1+1+0.75)/3=0.917$.\n\nIf the same three relevant chunks were at ranks 2, 3 and 5: $P@2=0.5$, $P@3=0.667$, $P@5=0.6$, so AP $=0.589$. Same chunks, worse order. Plain precision@5 is 0.6 in both cases, which is why rank-aware measures matter when the model attends more to early context."
+        },
+        {
+          "level": "mid",
+          "q": "How do you evaluate citation quality?",
+          "a": "Treat each citation as a checkable claim. **Citation precision** $=$ citations that support their claim / citations made. **Citation recall** $=$ claims backed by a correct citation / claims.\n\nExample: five claims, four cited, three of those citations correct: precision $3/4=0.75$, recall $3/5=0.60$. Automate the cheap checks (cited IDs exist, format valid) and sample the semantic check (does the cited text entail the claim) with an LLM judge validated against human labels. Decide whether you score at chunk, page or document level and stay consistent, since a citation to the right document but wrong chunk can be partly acceptable."
+        },
+        {
+          "level": "mid",
+          "q": "List and distinguish the RAG failure modes. What does each point to?",
+          "a": "**Missed retrieval**: the evidence is not in the candidate list (chunking, vocabulary mismatch, filters, never indexed). Fix retrieval. **Wrong chunk**: the evidence was a candidate but ranked below the k sent to the model. Fix ranking (reranker, k, version handling). **Ignored context**: the right chunk was in the prompt and the answer is still wrong (prompt, model, long-context burying, conflicting chunks). Fix generation. **Stale data**: the index holds an outdated truth (slow re-index, undeleted documents). Fix operations.\n\nAdd bad labels or ambiguous questions, and out-of-scope questions that should return 'not found'. Classify with three logged facts: candidates, prompt chunks, ground truth."
+        },
+        {
+          "level": "mid",
+          "q": "How big should an evaluation set be?",
+          "a": "Accuracy on n questions has standard error $\\sqrt{p(1-p)/n}$, so the 95% half-width is about $1.96\\sqrt{p(1-p)/n}$. For p=0.8: n=100 gives ±7.8 points, n=300 gives ±4.5, and ±3 needs about 683.\n\nSo 150 to 300 questions catch large regressions during development; 500 to 1,000 are needed before claiming a small gain. Paired comparisons on the same questions need fewer. Include real user questions, hard cases, 10 to 20% unanswerable questions, and keep a held-out test split. Label evidence spans, not chunk IDs, so labels survive re-chunking."
+        },
+        {
+          "level": "mid",
+          "q": "How do you estimate staleness of an index?",
+          "a": "If a fraction u of documents change per day and you re-index every T days, a changed document is stale from its change until the next rebuild, on average T/2 days. The expected stale fraction is about $uT/2$ when $uT$ is small: $u=2\\%$, $T=7$ gives 7%; a daily rebuild gives 1%.\n\nWeight by query popularity, because volatile documents (prices, policies) are often the most queried. Measure index lag (time from source change to searchable) on sampled documents, alert above your SLA, and test deletions explicitly with canary documents, since a deleted but still searchable document can be worse than an outdated one."
+        },
+        {
+          "level": "senior",
+          "q": "A RAG bot scores 80% on 500 questions. Failures: 38 missed retrieval, 17 ranking, 21 ignored context, 12 stale, 12 bad labels. What do you do this quarter?",
+          "a": "Missed retrieval is the largest bucket: 38/500 is 7.6 points; halving it with hybrid search and better chunking gains about 3.8 points. Ranking failures (17, 3.4 points) have a cheap fix, a reranker; fixing 60% gains about 2 points for little work, so do it first. Ignored context (21, 4.2 points): test a stricter grounding prompt, fewer chunks (k), and a stronger model on exactly those 21 questions. Stale data (12): shorten re-index intervals and handle deletions. Bad labels (12): fix them; true accuracy may be higher than measured.\n\nSequence: reranker, then hybrid and chunking, then freshness, re-running the full labelled set after each change and tracking the category mix."
+        },
+        {
+          "level": "senior",
+          "q": "Design production monitoring for a RAG assistant.",
+          "a": "Log query and rewrite, candidate IDs and scores, prompt chunk IDs, document versions, answer and citations, per-stage latency and cost, and user feedback. Track unlabelled signals: top-1 similarity distribution (a shift of 80 standard errors after a provider model update is a clear alarm), not-found rate, citation validity, rephrase and thumbs-down rates, index lag, p95 latency.\n\nRun a nightly canary set of 50 to 100 known-answer questions (including unanswerable ones) and alert on recall, faithfulness and not-found drops. Sample 20 to 30 conversations weekly, classify failures into the taxonomy, and feed them into the evaluation set. Report cost per successful answer (cost per request / success rate). Few, actionable alerts beat many ignored ones."
+        },
+        {
+          "level": "senior",
+          "q": "How do you validate an LLM judge used for faithfulness before trusting it?",
+          "a": "Label 50 to 100 answers by hand (claims supported, unsupported, contradicted) with at least two annotators on a subset to measure human agreement, which caps what any judge can achieve. Run the judge on the same items and compute agreement and Cohen's kappa overall and per slice (long answers, numbers, tables). Check known biases: leniency towards fluent claims, favouring longer answers, sensitivity to claim ordering and to the judge model version.\n\nUse the judge for relative comparisons only if agreement is high (for example 90%), and spot-check regularly. Pin the judge model and prompt, re-validate when either changes, and keep critical gates (zero contradictions on key questions) under human review."
+        }
+      ]
+    }
+  ]
+}

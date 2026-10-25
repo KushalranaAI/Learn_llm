@@ -1,0 +1,1 @@
+{ "title": "Agents and Tool Use", "summary": "Models that act: the agent loop, tools and MCP, memory over many steps, failure handling, multi-agent designs, evaluation and the limits that keep autonomy safe.", "icon": "workflow", "cover": "agent-reliability" }

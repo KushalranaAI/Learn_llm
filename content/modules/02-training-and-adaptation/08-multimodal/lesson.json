@@ -1,0 +1,23 @@
+{
+  "title": "Multimodal Models: Images, Audio and Text",
+  "summary": "Multimodal models turn pictures and sound into sequences of vectors the same transformer can read. This lesson counts the tokens an image, a minute of audio or a video produces, derives the CLIP contrastive loss, shows how a vision encoder is wired into a language model, and budgets what all of this costs in context and compute.",
+  "objectives": [
+    "Compute how many patch tokens an image produces and the size of the patch-embedding layer",
+    "Write the CLIP symmetric contrastive loss and evaluate it on a small similarity matrix",
+    "Describe how a vision encoder, a projector and an LLM are combined and trained in stages",
+    "Estimate audio tokens per second for spectrogram encoders and neural codecs",
+    "Budget the context and compute of images, audio and video in a request"
+  ],
+  "prerequisites": "You should know how a transformer treats a sequence of vectors ([The Transformer Block](/learn/model-foundations/transformer-block)), what embeddings are ([Embeddings](/learn/model-foundations/embeddings)), and how context length drives cost ([Context Windows, Prefill and the KV Cache](/learn/model-foundations/context-and-kv-cache)). Softmax and cross-entropy are used as in earlier lessons.",
+  "sims": [],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale", "authors": "Dosovitskiy et al.", "year": 2020, "note": "The Vision Transformer: patch embedding, 224x224 images with 16x16 patches" },
+    { "title": "Learning Transferable Visual Models From Natural Language Supervision", "authors": "Radford et al.", "year": 2021, "note": "CLIP: contrastive image-text pretraining and the symmetric loss" },
+    { "title": "Visual Instruction Tuning", "authors": "Liu, Li, Wu and Lee", "year": 2023, "note": "LLaVA: CLIP encoder, projector, two-stage training; 576 image tokens at 336 pixels with 14x14 patches" },
+    { "title": "Robust Speech Recognition via Large-Scale Weak Supervision", "authors": "Radford et al.", "year": 2022, "note": "Whisper: log-mel spectrogram input and 1500 encoder positions per 30 seconds" },
+    { "title": "High Fidelity Neural Audio Compression", "authors": "Defossez, Copet, Synnaeve and Adi", "year": 2022, "note": "EnCodec: residual vector quantisation with several codebooks per frame" },
+    { "title": "Flamingo: a Visual Language Model for Few-Shot Learning", "authors": "Alayrac et al.", "year": 2022, "note": "Perceiver resampler to compress visual features into a fixed number of tokens" }
+  ]
+}

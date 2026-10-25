@@ -1,0 +1,386 @@
+{
+  "module": "agents",
+  "sections": [
+    {
+      "slug": "agent-loop",
+      "title": "Agents, Tools and the Loop",
+      "lesson": "agent-loop",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What is an agent, as opposed to a single LLM call?",
+          "a": "An agent is a language model placed inside a loop that it controls. Each iteration the model reads the context, then either emits a **tool call** or a final answer. Your code executes the tool, appends the result (the **observation**) to the context, and calls the model again. The loop ends when the model answers or a limit is hit.\n\nA single call is one function from context to text. What makes it an agent is that the model decides the number and order of steps. A fixed pipeline that always retrieves once and then generates is a workflow, even though it uses a tool. The model's weights never change during the run; all memory of what happened is the growing context."
+        },
+        {
+          "level": "junior",
+          "q": "Who actually executes a tool call: the model or your code?",
+          "a": "Your code does. The model only produces a structured request: a tool name plus arguments that should match a schema. The application parses it, validates it, runs the function (or calls the API), and sends the output back as a tool-result message tagged with the call's id.\n\nThis matters because the gap between request and execution is the control point. It is where you validate arguments, check permissions, apply rate limits, require human approval, log the call and enforce timeouts. A common beginner mistake is to imagine the model \"has access\" to systems. It does not: it has whatever your executor chooses to run on its behalf, and nothing else."
+        },
+        {
+          "level": "mid",
+          "q": "Describe the agent loop as a state machine. Why is that useful?",
+          "a": "States are Observe (build the context), Think (call the model), Act (validate and run the tool), plus terminal states Done and Stopped. Transitions: Think goes to Act on a tool call, to Done on a final answer, back to Observe on malformed output, and to Stopped when the step counter reaches the limit $N$. Act always returns to Observe, with the result or the error text as the observation.\n\nIt is useful because every case has a defined outcome: malformed output, tool exceptions, limits. The guard $t < N$ guarantees termination. You can log every transition, test the loop with a scripted fake model, and add states cleanly later (for example, an 'awaiting approval' state before Act)."
+        },
+        {
+          "level": "mid",
+          "q": "Write out the messages for one tool call and its result. What goes wrong if the result is sent back without the call id?",
+          "a": "The history is: a user message with the task; an assistant message containing a tool call with an id (say `call_1`), the tool name and JSON arguments; a tool message carrying `tool_call_id: call_1` and the result content; then the assistant's next message.\n\nThe id pairs each result with its request. If it is missing or mismatched, most APIs reject the request outright, because they require every tool call to have exactly one result. If you drop the assistant message that contained the call and send only the result, the pairing also breaks. With parallel calls the ids are essential: three results must map to three calls, regardless of the order in which they finished."
+        },
+        {
+          "level": "mid",
+          "q": "A run reads 1,000 tokens initially and each step appends 200. How many input tokens are read over 6 model calls, and what does this say about cost?",
+          "a": "Call $k$ (from 0) reads $1000 + 200k$ tokens, so over $K = 6$ calls: $I = Kc_0 + \\Delta K(K-1)/2 = 6000 + 200 \\times 15 = 9{,}000$ tokens. That is 50% more than the 6,000 you would pay if the context did not grow.\n\nThe general lesson is that input tokens grow quadratically in the number of steps, because every call re-reads the history. Doubling steps roughly triples or quadruples cost. So the main levers are fewer steps, smaller observations (they set $\\Delta$), prompt caching for the stable prefix, and compaction of old history. Output tokens are usually a small share of agent cost."
+        },
+        {
+          "level": "mid",
+          "q": "With a per-step finish probability of 0.25 and a cap of 10 calls, what fraction of runs finish, and what is the mean number of calls?",
+          "a": "Treat the number of calls as geometric. The chance of finishing within $N$ calls is $1 - (1-q)^N = 1 - 0.75^{10} = 1 - 0.0563 = 0.944$. The expected number of calls with the cap is $(1-(1-q)^N)/q = 0.9437/0.25 = 3.77$.\n\nWithout a cap the mean would be $1/q = 4$. So raising the cap barely changes the average cost (3.77 versus 3.97 at $N=17$), but it changes how many runs are cut off (5.6% versus 0.75%). Caps protect the tail. In reality $q$ is not constant, and stuck runs have a much lower finish chance, so you set the cap from the measured step distribution of successful runs."
+        },
+        {
+          "level": "senior",
+          "q": "Your agent's average run is 4 steps but the monthly bill is 5 times the forecast. How do you investigate?",
+          "a": "Averages hide the tail. First pull the distribution of steps and tokens per run, not the mean: the cost is dominated by the few runs with 30 to 100 steps, since input tokens grow roughly with $K^2$. A run of 100 steps can cost twenty times a run of 20.\n\nThen read traces of the most expensive runs and classify them: loops repeating one tool call, a tool returning huge observations that inflate $\\Delta$, a tool failing so the model keeps retrying, or context never compacted. Check the stop reasons: many runs ending at the step cap is a red flag. Fixes are per cause: loop detection, result truncation and pruning, backoff and a retry budget, a cost cap per run, plus alerts on the 95th percentile of tokens per run rather than the mean."
+        },
+        {
+          "level": "senior",
+          "q": "How would you decide the step cap for a new agent, and how do you handle a run that hits it?",
+          "a": "Measure rather than guess. Run a representative task set, take the successful runs and set the cap near a high percentile of their step counts (say the 99th) with a modest margin of 1.5 to 2 times. A cap that is too low truncates good runs; too high lets stuck runs burn money, and the cost grows quadratically with steps.\n\nHitting the cap must be a defined outcome, not a crash: the state machine moves to Stopped with a reason. The final message is built from the state object: what was completed, what remains, and what the user can do. Log it, alert if the share of runs ending at the cap rises, and read a sample of those traces because the cause is usually a loop, a failing tool or a task type that needs a higher cap."
+        },
+        {
+          "level": "senior",
+          "q": "Where do you put validation, permissions and logging in the agent loop, and why there?",
+          "a": "All of them sit between the model's request and the tool's execution, because that is the only place your code stands between a probabilistic decision and a real side effect. After Think produces a call: validate the arguments against the tool's schema (rejecting with a helpful error as an observation), apply the permission policy (allow, require approval or deny, based on the tool and the arguments), enforce rate limits and the run's budgets, then execute with a timeout, then log the span with arguments, result size, latency and error class.\n\nPutting these in code rather than in the prompt matters: a prompt is advice the model may ignore, a code check holds for every call, including ones influenced by injected text. It also makes the behaviour testable with a scripted model."
+        }
+      ]
+    },
+    {
+      "slug": "workflows-vs-agents",
+      "title": "Workflows or Agents: Who Decides the Next Step",
+      "lesson": "workflows-vs-agents",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What is the difference between a workflow and an agent?",
+          "a": "In a **workflow**, your code defines the sequence of steps in advance, like a recipe. Models do work inside steps (classify this, summarise that), but they never decide what happens next. In an **agent**, the model decides at run time which tool to call and whether to continue or stop.\n\nWorkflows are predictable, cheaper and easier to test, since the set of paths is small and known. Agents are flexible and can handle tasks where the steps depend on what is discovered, but their paths cannot be enumerated and their reliability decays with length. Real systems sit on a spectrum, and many production 'agents' are workflows with one or two model-controlled steps."
+        },
+        {
+          "level": "junior",
+          "q": "If each step of a 20-step process succeeds 95% of the time, why is the overall success only about 36%?",
+          "a": "The run succeeds only if every step does. Assuming independence, the probabilities multiply: $P = 0.95^{20}$. Squaring repeatedly gives $0.95^{16} \\approx 0.440$ and $0.95^{4} \\approx 0.815$, so $0.95^{20} \\approx 0.358$.\n\nA shortcut: the expected number of failures is $n(1-p) = 20 \\times 0.05 = 1$, and success is roughly $e^{-1} \\approx 0.37$. So a 5% per-step failure rate, which sounds small, means one expected failure per run. This is why demos mislead (one success looks impressive) and why the main fixes are fewer steps, higher per-step reliability and verification that lets you recover."
+        },
+        {
+          "level": "mid",
+          "q": "How long can a chain be if each step succeeds with p = 0.98 and you need at least 80% overall success?",
+          "a": "Solve $p^n \\ge 0.8$ for $n$: $n \\le \\ln 0.8 / \\ln 0.98 = -0.2231/-0.0202 \\approx 11.05$. So 11 steps at most: $0.98^{11} = 0.801$, while 12 steps gives $0.785$.\n\nThe same formula generalises: $n \\le \\ln P^\\star / \\ln p$. It also runs the other way: for a 30-step task at 90% overall, you need per-step reliability $0.9^{1/30} = 0.9965$. Each extra 'nine' of per-step reliability buys roughly ten times the chain length. In practice steps differ in reliability, so improve the weakest first, and remember recovery (retries, models noticing errors) can beat the baseline while correlated failures can fall below it."
+        },
+        {
+          "level": "mid",
+          "q": "A gate detects 80% of bad outputs and triggers one rerun. For a step with p = 0.9, what is the new per-step success and what does a 4-step chain gain?",
+          "a": "A step succeeds if it works first time, or fails, is caught and the rerun works: $p' = p + (1-p)\\,d\\,p = 0.9 + 0.1 \\times 0.8 \\times 0.9 = 0.972$. Without gates the chain gives $0.9^4 = 0.656$; with them $0.972^4 = 0.893$.\n\nCost: the rerun only happens after a caught failure, so expected calls per step are $1 + (1-p)d = 1.08$, about 8% more calls for 23 points more success. The gate's detection rate caps the gain: a gate that catches nothing leaves $p' = p$. Gates that abort instead of rerunning do not improve success but still save the cost of later steps by failing fast."
+        },
+        {
+          "level": "mid",
+          "q": "Explain routing and voting as workflow patterns, with the maths of each.",
+          "a": "**Routing** sends each input to a specialised branch chosen by a classifier. Overall success is $a\\,s_\\text{right} + (1-a)\\,s_\\text{wrong}$ with routing accuracy $a$. For $a = 0.9$, $s_\\text{right} = 0.95$, $s_\\text{wrong} = 0.4$: $0.855 + 0.04 = 0.895$. It also lets you send easy traffic to cheaper models.\n\n**Voting** asks the same question $n$ times and takes the majority. With independent attempts each right with probability $p$, majority of 3 is right with $p^3 + 3p^2(1-p)$: for $p=0.8$ that is $0.512 + 0.384 = 0.896$. It helps only if $p > 0.5$, costs $n$ times the tokens, and gains shrink as $n$ grows. Samples from one model are correlated, so real gains are smaller than the binomial predicts."
+        },
+        {
+          "level": "mid",
+          "q": "Describe evaluator-optimiser. What limits how much it can improve quality?",
+          "a": "One call generates a draft; another judges it against criteria; failed drafts return with feedback for another attempt, up to $R$ rounds. If a draft is good with probability $g$ and the evaluator catches a bad draft with probability $c$, each round accepts a good draft with probability $g$, wrongly accepts a bad one with $(1-g)(1-c)$, and rejects with $r = (1-g)c$.\n\nFor $g=0.6$, $c=0.8$, $R=3$: good accepted $= 0.6(1+0.32+0.1024) = 0.853$, bad accepted $0.114$, exhausted $0.033$. The evaluator's recall caps the gain: 11% of runs still deliver a bad draft. A test-based evaluator has $c$ near 1; a vague 'is it good?' judge often approves its own work. Also decide what happens on exhaustion."
+        },
+        {
+          "level": "senior",
+          "q": "A team proposes replacing a 4-step workflow with an autonomous agent. How do you evaluate the proposal?",
+          "a": "Compare on the dimensions that matter, with numbers. **Cost**: an agent re-reads a growing context, so for 8 calls with $c_0 = 2000$ and $\\Delta = 600$ it reads 32,800 tokens versus 8,000 for four focused calls, about 4 times as many. **Latency**: sequential model-chosen steps against fixed, possibly parallel steps. **Reliability**: the $p^n$ decay, plus variance across runs, and paths you can no longer enumerate (an agent with 5 tools and 6 steps has about 19,500 tool sequences).\n\nThen ask what flexibility buys: does the task really vary in steps, and what success lift do you measure on 100s of real tasks? If the lift is within noise, keep the workflow. If it is real, consider a hybrid: keep the outer graph fixed and embed a capped agent loop in the one node that needs flexibility."
+        },
+        {
+          "level": "senior",
+          "q": "Design the control flow for a document-processing system where most documents are routine but 10% need open-ended investigation.",
+          "a": "Use a workflow for the common path and an agent only for the exceptions. A cheap router (or a rule plus a small classifier) labels each document as routine or exceptional, with a conservative threshold and a log of its decisions so you can measure routing accuracy against human labels. The routine branch is a fixed chain: extract, validate with programmatic gates, format, with a rerun on a gate failure. That branch is cheap, fast and testable, and handles about 90% of volume.\n\nThe exceptional branch runs a bounded agent: a small toolset, a step cap and budget set from measured runs, state stored outside the transcript, and human approval for any consequential action. Route unsure cases to the agent or to a human, not to the routine path. Evaluate the branches separately and monitor the share of traffic each gets, since a drift in that share is an early warning."
+        }
+      ]
+    },
+    {
+      "slug": "tools-and-mcp",
+      "title": "Designing Tools and the Model Context Protocol (MCP)",
+      "lesson": "tools-and-mcp",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What makes a tool definition good for a model?",
+          "a": "The model sees only the tool's name, description and argument schema, on every call, with no memory of earlier use. So the definition acts as a tiny prompt. A good one has an outcome-based name (`refund_order`, not `do_action`), one clear job, a description that says when to use it and when not to, and a schema with types, required fields and enums that narrow the choices.\n\nIt also returns only what the model needs, in compact form, because every result stays in the context for later steps. Most tool-use failures are definition failures: vague names, overlapping tools, or a 'mode' argument that hides five behaviours in one tool. Test descriptions on realistic requests and look at which tool the model picks first."
+        },
+        {
+          "level": "junior",
+          "q": "Why should tool errors be written for the model rather than for a developer?",
+          "a": "The error text is the only information the model gets about why a call failed. `Error: invalid input` or a stack trace gives it nothing to act on. A useful message says what happened, what was expected and what to try next: \"'days' must be between 1 and 7, got 10. Retry with days=7.\"\n\nThis changes the recovery rate. If a vague error recovers on the next try with probability 0.3 and an actionable one with 0.8, expected attempts per failure are 3.3 versus 1.25. Return errors as normal tool results with an error flag so they reach the context, keep them short, never include secrets or stack traces, and log the technical detail separately."
+        },
+        {
+          "level": "mid",
+          "q": "How does the number of tools affect an agent, and what would you do about 40 tools?",
+          "a": "Tool definitions are re-sent on every model call, so $m$ tools of $s$ tokens over $K$ calls cost $m \\cdot s \\cdot K$ input tokens: 40 tools at 150 tokens over 10 calls is 60,000 tokens. More importantly, selection accuracy drops as the set grows and tools overlap, and the drop compounds over steps: 0.99 per call over 5 calls is 0.95, but 0.93 gives 0.70.\n\nWith 40 tools, first merge tools that are always called together and delete overlap. Then expose only a relevant subset per request: route first and give each branch its own toolset, or retrieve tool definitions on demand. Use prompt caching for the stable definitions prefix. Measure first-tool accuracy on a set of recorded tasks before and after."
+        },
+        {
+          "level": "mid",
+          "q": "Explain what a JSON Schema does for a tool and what it cannot do.",
+          "a": "The schema declares each argument's type, which are required, allowed values (`enum`), bounds, and whether extra properties are rejected. It guides the model toward valid arguments and lets your code reject malformed ones before anything runs, returning a readable problem list as an observation.\n\nIf a model is valid with probability $v$ per attempt, validation plus retries gives $1-(1-v)^r$ valid within $r$ attempts: for $v = 0.9$ and $r = 3$, 99.9%. What a schema cannot do is check meaning: `days: 7` is valid when the user asked for tomorrow, and an `order_id` can be well-formed but belong to someone else. Semantic checks (does it exist, is the user allowed, is the amount under the limit) belong in the tool's code, not in the prompt."
+        },
+        {
+          "level": "mid",
+          "q": "What problem does MCP solve, and what are the roles in it?",
+          "a": "MCP, the Model Context Protocol, is an open standard for connecting AI applications to tools and data. Without it, $N$ applications and $M$ services need $N \\times M$ custom connectors; with a shared protocol each side implements it once, so $N + M$ pieces (5 hosts and 8 services: 40 versus 13).\n\nThe **host** is the AI application that owns the model, conversation and user permissions. A **client** inside the host keeps a one-to-one connection to a **server**, which exposes capabilities. Servers can offer **tools** (model-invoked functions), **resources** (data the application can read into context, identified by URI) and **prompts** (user-selected templates). The model never talks to a server directly: the host mediates, which is where approvals belong."
+        },
+        {
+          "level": "mid",
+          "q": "Walk through the JSON-RPC messages in an MCP session up to a tool call.",
+          "a": "MCP uses JSON-RPC 2.0: requests have an `id` and `method`, responses echo the `id` with a `result` or `error`, and notifications have no `id` and no reply. The client sends `initialize` with its protocol version and capabilities; the server replies with its own. The client then sends the notification `notifications/initialized`.\n\nNext `tools/list` returns each tool's name, description and input schema, which the host turns into tool definitions for the model. When the model chooses a tool, the client sends `tools/call` with the name and arguments, and the server's result carries a `content` list and an `isError` flag. A tool that ran but failed should return a normal result with `isError: true`, not a protocol error, so the model reads it as an observation."
+        },
+        {
+          "level": "senior",
+          "q": "What are the security risks of connecting MCP servers, and how would you mitigate them?",
+          "a": "Everything a server returns, including its tool descriptions, becomes text in the model's context, which cannot reliably separate data from instructions. Risks: **prompt injection through results** (a fetched page says to exfiltrate files), **poisoned descriptions**, **over-broad permissions** (a filesystem server with the whole home directory), **confused deputy** (a server with broad credentials acting for a user it should refuse) and **supply-chain changes** when a server updates.\n\nMitigations: least privilege per server (one directory, a read-only role), human approval in the host for consequential tools, vetting and pinning server versions, treating results as untrusted data that cannot authorise actions on their own, per-user credentials for remote servers, and full call logging. Risk also compounds with count: ten servers at 2% each gives about 18% that at least one is bad, so each must earn its place."
+        },
+        {
+          "level": "senior",
+          "q": "Compare stdio and streamable HTTP transports. Which would you use for an internal ticketing server shared by 200 engineers?",
+          "a": "With **stdio** the host launches the server as a child process and exchanges newline-delimited JSON over stdin and stdout. It needs no network or auth, inherits the user's local permissions, and is ideal for local tools. The server must log to stderr, because stdout carries the protocol.\n\nWith **streamable HTTP** the server runs independently and clients POST JSON-RPC messages to an endpoint; responses can be a plain JSON reply or a stream when the server sends several messages. It suits shared and remote services but needs real authentication and authorisation.\n\nFor a ticketing server shared by 200 engineers I would use HTTP: one deployment, central updates, per-user OAuth or tokens so the server enforces who can see which tickets, rate limits, and audit logs. A per-laptop stdio server would mean 200 copies and credentials stored locally."
+        }
+      ]
+    },
+    {
+      "slug": "memory-and-state",
+      "title": "State, Memory and Context Over Many Steps",
+      "lesson": "memory-and-state",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What is the difference between the transcript, working state and long-term memory?",
+          "a": "The **transcript** is the log of every message, tool call and result in one run, living in the context window. **Working state** is a small structured object (goal, constraints, plan, established facts, IDs) that your code owns and renders into every call, so it survives compaction. **Long-term memory** is an external store of facts that outlive the run, such as user preferences, retrieved when relevant.\n\nThe model has no memory between calls except what is in its context, so these are design choices about what to put on the desk each time. Treat the transcript as a log, not a database: keep what must never be lost in state, and what should persist across sessions in long-term memory."
+        },
+        {
+          "level": "junior",
+          "q": "Why not just keep appending everything to the context?",
+          "a": "Three reasons. **Cost**: every call re-reads the history, so input tokens grow roughly with the square of the steps. **Capacity**: windows are finite, and a run can overflow them. **Attention**: facts in the middle of a long context are used less reliably than those at the edges, and the effect grows with length.\n\nSo a 5-step run is fine but a 50-step run is not. The fix is to treat the context as something you build each call from several sources: system prompt, a state object, a few retrieved memories and the most recent steps, with older history summarised or pruned. Compaction thresholds at 60 to 70% of the window are common."
+        },
+        {
+          "level": "mid",
+          "q": "How many steps fit in a 128,000-token window with 6,000 fixed tokens, a 4,000-token output reserve and 2,500 tokens added per step?",
+          "a": "$k_{\\max} = \\lfloor (W - R - c_0)/\\Delta \\rfloor = \\lfloor (128000 - 4000 - 6000)/2500 \\rfloor = \\lfloor 47.2 \\rfloor = 47$ steps. At 47 steps the context is $6000 + 47 \\times 2500 = 123{,}500$ tokens.\n\nIf observations are halved ($\\Delta = 1250$) it becomes 94 steps, so observation size is the strongest lever. In practice you do not run to the limit: long contexts cost more, respond more slowly and recall worse, so teams compact at a threshold well below the window and set alarms when a run passes about 70% of it. Also note fixed overhead (system prompt, tool definitions) is paid on every call and shrinks the room for history."
+        },
+        {
+          "level": "mid",
+          "q": "Compare summarisation with pruning of old tool results. When would you use each?",
+          "a": "**Pruning** is mechanical: replace old tool results with a short stub like \"[result discarded; re-run to see]\". It costs no model call and works because results are the heaviest part of the transcript and are rarely needed once used. In the worked example (20 calls, 2,000-token results, last 2 kept in full) it cuts input tokens by 62%. It is safe only after the agent has extracted what it needs into state.\n\n**Summarisation** costs a call but keeps the gist of reasoning, decisions and dead ends. Compaction every 10 steps in a 40-step run cut input by about 60% and bounded the context at 20,500 tokens. A common stack prunes first, then summarises when the pruned transcript is still too long. Summaries are lossy, so use a template and keep constraints in state."
+        },
+        {
+          "level": "mid",
+          "q": "How do you rank long-term memories for retrieval, and what can go wrong?",
+          "a": "A common score combines similarity and recency: $\\text{score} = \\cos\\theta \\cdot 2^{-a/h}$ with age $a$ and half-life $h$. With $h=30$ days, a 2-day-old memory at cosine 0.82 scores $0.783$ and a 60-day-old one at 0.88 scores $0.22$. Some systems add an importance term. Tune $h$ per memory type: preferences should barely decay.\n\nFailure modes: stale or contradictory facts (use timestamps and overwrite rather than pile up), wrong memories stored and repeated, top-$k$ always returning $k$ items even when none are relevant (add a minimum score), and privacy (scope per user, allow deletion). It also costs tokens every call: 5 memories of 120 tokens is 600 per call, so retrieve at task start and refresh only when the topic changes."
+        },
+        {
+          "level": "mid",
+          "q": "What belongs in a state object, and why render it into every call instead of relying on the transcript?",
+          "a": "Goal, constraints, plan with step status, established facts and IDs needed by later tools, plus a few free notes. Render it as compact text near the top of every call, and let the model update it through a tool while your code validates changes (rejecting an attempt to delete a user's constraint).\n\nThe point is robustness: compaction, pruning and attention failures can drop facts from the transcript, but never from state. It costs $wK$ tokens: a 400-token state over 30 calls is 12,000 tokens, about 1% of an uncompacted 40-step run, in return for a guaranteed copy of the goal and constraints on every call. Persist it outside the process and it also makes runs resumable after a crash."
+        },
+        {
+          "level": "senior",
+          "q": "An agent that works well on short tasks starts violating user constraints around step 40. Diagnose and fix.",
+          "a": "Likely causes, in order of suspicion: the constraint was stated early and has either been compacted away, been pushed into the poorly attended middle of a long context, or never been recorded anywhere but the transcript. Check by reading a trace at the step of the violation: was the constraint in the context at all, and where?\n\nFixes: put constraints in a state object rendered into every call (top, and restated near the current goal), use a summarisation template with an explicit constraints slot, prune bulky old observations so contexts stay short, and compact at a threshold well before the window fills. Add a programmatic check on risky actions that validates against the constraints in code. Then test with long synthetic runs and questions about early constraints, since 5-step demos never expose this."
+        },
+        {
+          "level": "senior",
+          "q": "Design the memory architecture for a customer-support agent that handles multi-day cases and returning customers.",
+          "a": "Three layers. **Per-run working state**: the case goal, customer constraints, plan, order and ticket IDs, and facts established, rendered into every call and persisted after each step so a run can resume. **Case memory**: a per-case record (summary, decisions, open items) written when a session ends and loaded when the case resumes, as a structured summary rather than a raw transcript. **Customer memory**: a small profile (language, preferences, past issue types) first, kept short enough to include wholesale; only if it grows beyond that add embedding retrieval with a recency-weighted score and a minimum similarity.\n\nControls: scope strictly per customer, allow viewing and deletion, store sources and timestamps, never store secrets, and prefer overwriting facts. Compaction uses a template and keeps the last few steps verbatim, and the full transcript is archived for audit. Evaluate with recall tests: can the agent answer what the customer asked last week?"
+        }
+      ]
+    },
+    {
+      "slug": "failures-and-recovery",
+      "title": "When Steps Fail: Retries, Timeouts, Idempotency",
+      "lesson": "failures-and-recovery",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What are the main kinds of failure an agent step can have, and how does the response differ?",
+          "a": "Four. **Transient**: timeouts, rate limits (429), brief 503s: retry with backoff. **Permanent**: invalid arguments, not found, no permission: do not retry unchanged; return an actionable error to the model. **Semantic**: the tool worked but returned something wrong for the task, such as irrelevant results: the model must reformulate or change tool, because repeating the call repeats the error. **Silent**: success with stale or empty data, or a misread value: only verification catches it.\n\nThe first two raise errors your code can see; the last two do not, which is why agents can fail while every log line says 'ok'. Log the failure class on every failure, so a week of data tells you where to invest."
+        },
+        {
+          "level": "junior",
+          "q": "Why do exponential backoff retries need jitter?",
+          "a": "Backoff alone makes clients wait longer each time, but if many clients failed at the same moment (a shared service blip) they all wait the same amounts and retry together, producing synchronised spikes against a service that is trying to recover. Jitter randomises the waits so retries spread out.\n\nWith 1,000 clients and a 4-second ceiling, no jitter sends 1,000 requests in one instant; full jitter, uniform over $[0, 4]$ s, averages $1000/4 = 250$ per second. If the service handles 300 per second the first fails and the second fits. The delay formula is $\\min(C, b\\cdot 2^a)$ for retry $a$, with full jitter drawing uniformly between 0 and that ceiling. Also respect `Retry-After` headers and cap total attempts."
+        },
+        {
+          "level": "mid",
+          "q": "A tool has p = 0.95 per step over 20 steps. What do two or three attempts per step do to the success of the run?",
+          "a": "With every failure detected and independent attempts, a step succeeds with $1-(1-p)^r$. For $r=1$: $0.95$, run success $0.95^{20} = 0.358$. For $r=2$: $1-0.05^2 = 0.9975$, run $0.9975^{20} = 0.951$. For $r=3$: $0.999875$, run $0.9975$.\n\nSo one retry lifts the run from 36% to 95% at tiny cost, since retries happen only after failures (about 5% of steps, so roughly 1.05 calls per step). The assumption that matters is detection: with imperfect detection $d$, a retry occurs only with probability $x=(1-p)d$ and the step success is $p(1-x^r)/(1-x)$. With $d=0.5$ and $r=2$ the run reaches only about 59%. Retries buy reliability only for failures you can see."
+        },
+        {
+          "level": "mid",
+          "q": "How do you set timeouts and a deadline so that a retry policy cannot blow the latency budget?",
+          "a": "Per call, set the timeout just above a high percentile of healthy latency (p99 of 4 s suggests about 6 s). The worst case for one call with $r$ attempts is $rT + \\sum d_j$: three attempts at 5 s with delays of 1 and 2 s is 18 s. Across six such calls, the worst case is far beyond a 30 s budget, so per-call policy is not enough.\n\nEnforce a **run-level deadline** and pass the remaining time into each call: the attempt timeout is $\\min(T, \\text{remaining})$, retries are skipped when too little time is left, and the run ends in Stopped with a partial result. Also use a stall timeout on streaming model calls, and retry at one layer only; stacking three retry loops of three multiplies to 27 attempts."
+        },
+        {
+          "level": "mid",
+          "q": "A timeout occurs on a payment call. What do you know, and how do you retry safely?",
+          "a": "You know nothing about whether the charge happened: a timeout means no reply arrived in time, not that the work did not occur. Retrying blindly may charge twice; giving up may leave a charged customer unconfirmed. At 10,000 charges a day with 0.5% of responses lost after commit, blind retries cause 50 duplicates a day.\n\nUse an **idempotency key**: generated once per logical action before the first attempt, reused on every retry, and sent with the request. The server stores results by key and returns the stored result on a replay. For agents, derive the key from run id, step number, tool name and a hash of the arguments, so replays after a crash or after the model repeats a call are harmless. The key store needs an atomic check-and-insert."
+        },
+        {
+          "level": "mid",
+          "q": "What do checkpoints buy you, and what does the arithmetic look like?",
+          "a": "A checkpoint persists the state object, transcript (or compacted form) and step number after each step, so a crashed run resumes instead of restarting. With per-step failure probability $f$ and $n$ steps, without checkpoints the expected work is $\\frac{(1-(1-f)^n)/f}{(1-f)^n}$; with them it is $n/(1-f)$.\n\nAt $f=2\\%$: for $n=20$, 24.9 steps versus 20.4 (18% saved); for $n=100$, 327 versus 102 (69% saved), and a single attempt completes only 13% of the time. So checkpoints matter more as runs get longer. Combine with idempotency keys so a step that was in flight at the crash can be re-issued safely. Keep checkpoints small and atomic, and test resume by killing the process at random steps."
+        },
+        {
+          "level": "senior",
+          "q": "Design loop and stall detection for an agent. What do you do when you detect one?",
+          "a": "Combine three signals. **Signature repeats**: hash `(tool, normalised arguments)` and count occurrences in a recent window; three identical calls with identical results is a loop. **Cycle detection** for longer patterns like A, B, A, B. **Progress checks**: has the state object changed or a new fact been recorded in the last $w$ steps? If not, the run is stalled even if actions vary slightly.\n\nResponses, gentlest first: tell the model (\"you have run this search 3 times with the same result; try a different approach\"), force a re-plan, restrict or swap the tool, switch to a stronger model, or stop and escalate to a human with the state object summary. Log every detection with its category, alert if the rate rises, and review traces: loops usually trace back to unhelpful tool errors or missing tools."
+        },
+        {
+          "level": "senior",
+          "q": "Your agent has 60% end-to-end success. How do you decide between adding retries, verification, shorter chains or a better model?",
+          "a": "Diagnose from traces before choosing. Classify failures by the first bad span: transient, permanent unrecovered, semantic, silent. Transient failures call for retries with backoff (cheap, high yield). Permanent unrecovered ones point to tool schemas and error messages. Silent and semantic failures need verification, whose value depends on its catch rate (a weak, correlated checker helps little), ideally programmatic checks or independent evidence.\n\nThen use the product rule: if the task is long, shortening the chain (merge tools that are always called together, move deterministic steps to code) raises every step's contribution at once, and each extra nine of per-step reliability buys about ten times the chain length. A bigger model helps semantic errors but raises cost and latency. Predict the gain with $p(1-x^r)/(1-x)$ for your measured $p$ and $d$, then validate on a test set."
+        }
+      ]
+    },
+    {
+      "slug": "multi-agent",
+      "title": "Multi-Agent Systems: When More Agents Help",
+      "lesson": "multi-agent",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "Give three genuine reasons to use multiple agents instead of one.",
+          "a": "**Parallelism**: independent subtasks run at the same time, so wall-clock time falls. **Context isolation**: each sub-agent works in a small, clean context containing only its subtask and returns a short result, so the lead never carries tens of thousands of tokens of raw reading, which saves tokens and keeps recall high. **Specialisation**: a sub-agent with a focused prompt, a small toolset and perhaps a different model can do one job better than a generalist, partly because tool selection accuracy falls as the toolset grows.\n\nA bad reason is that it feels sophisticated. A single agent with good tools often matches a team at lower cost and with simpler debugging, so start with one and name the specific mechanism before splitting."
+        },
+        {
+          "level": "junior",
+          "q": "What are the common shapes of multi-agent systems?",
+          "a": "**Orchestrator with sub-agents**: a lead plans, delegates pieces (often in parallel) and combines results; good for broad tasks with independent parts, but the lead is a bottleneck. **Pipeline**: each agent hands output to the next (research, write, review); good for staged work, but errors flow downstream and handoffs lose detail. **Peer review**: one agent produces, another critiques; good when quality matters, but a same-model reviewer shares blind spots. **Debate or ensemble**: several agents answer independently and reconcile or vote; helps on hard reasoning but costs scale with the number of agents.\n\nEach participant is the same kind of loop (model, tools, context); the difference is that several contexts exist and exchange messages."
+        },
+        {
+          "level": "mid",
+          "q": "Eight independent 20-second subtasks, four parallel agents, 10 seconds of coordination. What is the speedup?",
+          "a": "Single agent: $8 \\times 20 = 160$ s. Four agents process in $\\lceil 8/4 \\rceil = 2$ rounds of 20 s, plus 10 s: 50 s. Speedup $160/50 = 3.2\\times$, below the ideal $4\\times$ because coordination is serial (Amdahl's law). With eight agents: $20 + 10 = 30$ s and $5.3\\times$, only $1.7\\times$ better than four agents for twice the agents, since the fixed 10 s is now a third of the time.\n\nReal speedups are lower still: rate limits throttle simultaneous calls, subtasks are rarely equal in length (the slowest sets the finish), and a failed worker may need a retry. Give each worker its own step cap and deadline so one stuck worker cannot hold up the rest."
+        },
+        {
+          "level": "mid",
+          "q": "Can multiple agents use fewer tokens than one agent? Show the calculation.",
+          "a": "Yes, because one long context grows quadratically and isolated contexts do not. Take $c_0 = 3000$, $\\Delta = 1000$, 8 subtasks of 5 steps. One agent doing 40 steps in one context reads $40 \\times 3000 + 1000 \\times 780 = 900{,}000$ tokens. Eight isolated sub-agents each read $5 \\times 3000 + 1000 \\times 10 = 25{,}000$, so 200,000, plus about 10,800 for the orchestrator's plan and synthesis: roughly 211,000, 77% less.\n\nIt depends: if the single agent compacts or prunes, the gap narrows; if subtasks need large shared background copied into each brief, $c_0$ grows and savings shrink. Compute with your own numbers rather than assuming either direction."
+        },
+        {
+          "level": "mid",
+          "q": "How many communication channels do n agents have in fully connected versus hub-and-spoke designs, and why does it matter?",
+          "a": "Fully connected: $n(n-1)/2$ pairs, so 6 agents have 15 and 10 agents have 45. Hub and spoke (everything via an orchestrator): about $n$. If each channel carries 2,400 tokens of conversation, six agents cost 36,000 tokens fully connected versus 14,400 via a hub.\n\nBeyond tokens, each message is a chance to misread or invent something, so error opportunities grow with channels. Prefer a hub where workers report to the orchestrator and never chat with one another, use structured messages with schemas, and cap rounds in any back-and-forth. Debate costs scale as $A(A-1)Rs$ for $A$ agents, $R$ rounds and answers of $s$ tokens: 3 agents, 2 rounds, 500 tokens gives 6,000 extra input tokens."
+        },
+        {
+          "level": "mid",
+          "q": "How do handoffs and unverified outputs compound errors in a pipeline of agents?",
+          "a": "Each stage can be wrong (probability $p$ right), and each handoff can lose information (fraction $h$ survives). Over $k$ stages: $P = p^k h^{k-1}$. For three stages at $p=0.9$ with $h=0.95$: $0.729 \\times 0.9025 = 0.658$, though each stage is 90% reliable. Downstream agents usually trust upstream output, so an early error is built on rather than caught.\n\nIndependent verification breaks the chain: with a reviewer catching fraction $c$ of wrong outputs, the delivered-wrong rate is $(1-p^k)(1-c)$: $0.271 \\times 0.3 = 0.081$ for $c=0.7$. Independence is what matters: tests, re-reading original sources and different framing beat a same-model reviewer reading the same summary. Reduce handoff loss with structured data, references to sources and constraints copied from shared state."
+        },
+        {
+          "level": "senior",
+          "q": "A multi-agent research system gives wrong answers but every agent's log looks fine. How do you debug it?",
+          "a": "Use one trace across agents: propagate a trace id from the orchestrator to every sub-agent so all spans form one tree. Then find the **first** span with wrong content and read the span just before it, since later agents only inherit the error.\n\nTypical culprits: a thin or lossy brief (a constraint missing from the sub-agent's prompt), a summary that dropped a caveat or confidence, sub-agents returning free prose that the synthesiser misread, the orchestrator planning overlapping or incomplete subtasks, and a reviewer sharing the producer's blind spot. Fixes: structured handoff schemas with sources and confidence, constraints passed verbatim from shared state, a plan-coverage gate, and an independent check against original sources. Add the failing trace to a regression set with fixtures for tool results."
+        },
+        {
+          "level": "senior",
+          "q": "Single agent: 80% success, 0.30 dollars per task. Multi-agent: 90% success, 0.55 dollars. How do you decide?",
+          "a": "Compare expected net value $E = sV - c$ for task value $V$. At $V = 2$: single $= 1.60 - 0.30 = 1.30$, multi $= 1.80 - 0.55 = 1.25$, so single wins despite lower quality. The break-even is $V^\\star = (0.55-0.30)/(0.90-0.80) = 2.50$ dollars; above that the multi-agent design wins (at $V=10$, 7.70 versus 8.45).\n\nThen check non-monetary constraints: if the single agent takes 160 s and users leave after 60 s, parallelism may be the only viable option. Confirm the success rates with enough tasks that the 10-point gap is outside noise (hundreds per arm). Examine which mechanism produced the gain; if it was an independent verifier, you might add that to the single agent alone. Choose the simpler system when the difference is within noise."
+        }
+      ]
+    },
+    {
+      "slug": "traces-and-evaluation",
+      "title": "Traces and Evaluating Agents",
+      "lesson": "traces-and-evaluation",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What is a trace, and what is a span?",
+          "a": "A **trace** is the recording of one agent run, and a **span** is one unit of work inside it: a model call, a tool call, a verification check. Each span has a name, start time, duration, status, a parent span and attributes such as input and output tokens, tool arguments, result size, retry count or error class. Spans nest, so a trace is a tree, and a shared trace id ties together everything from one run, including sub-agents when the id is propagated.\n\nTraces answer 'what happened in this run': where time and tokens went, which call went wrong first. Without them, debugging an agent means guessing from the final answer. Treat traces as sensitive data: they contain user inputs and tool outputs, so they need access control and retention limits."
+        },
+        {
+          "level": "junior",
+          "q": "Name three metrics for evaluating an agent beyond 'did the final answer look right'.",
+          "a": "**Task success**: the share of tasks completed correctly, ideally checked against the final state of the world (the refund exists, the tests pass). **Step efficiency**: best-known steps divided by actual steps on successful runs, so 0.5 means twice the steps needed. **Tool-call accuracy**: the share of calls that used the right tool with correct arguments.\n\nAdd cost per success (total cost over runs divided by successes), latency percentiles, stop reasons (how many runs end at a limit), and recovery rate (runs that hit a tool error and still succeeded). Two agents can both reach the right answer, one in 4 clean steps and one in 14 messy ones, and only trajectory metrics distinguish them."
+        },
+        {
+          "level": "mid",
+          "q": "Five runs: successes use 6, 4 and 8 steps (best known 4, 4, 5); calls correct are 5/6, 4/4, 6/12, 7/8, 2/3. Compute success, mean efficiency and tool-call accuracy.",
+          "a": "Task success: 3 of 5 runs succeeded gives 60%. Step efficiency over the three successful runs: $4/6 = 0.667$, $4/4 = 1$, $5/8 = 0.625$, mean $0.764$. Tool-call accuracy: correct calls $5+4+6+7+2 = 24$ out of $6+4+12+8+3 = 33$, so $72.7\\%$. (The failed runs contribute to accuracy but not to efficiency.)\n\nInterpretation: success is only 60%, successes waste about a quarter of their steps, and a quarter of all calls are wrong. The failed run with 12 steps and half its calls correct is the obvious one to read first. Keep per-task results rather than only averages, because which tasks fail is the useful information."
+        },
+        {
+          "level": "mid",
+          "q": "What is the difference between pass@k and pass^k, and which would you report for a customer-facing agent?",
+          "a": "With per-run success probability $p$ and $k$ independent runs, pass@k $= 1-(1-p)^k$ is the chance that **at least one** succeeds; pass^k $= p^k$ is the chance that **all** succeed. For $p = 0.8$ and $k=4$: pass@4 $= 0.998$ and pass^4 $= 0.410$.\n\npass@k measures capability when you can verify outputs and keep the best attempt (code with tests). pass^k measures consistency, which is what users experience when every run is delivered with no safety net, so I would report pass^k, or the fraction of tasks solved on every run, alongside pass@1. A big gap signals nondeterministic failure: look at sampling temperature, live tool variability and races. Compute both per task, then average across tasks."
+        },
+        {
+          "level": "mid",
+          "q": "70% success on 100 tasks versus 78% on 100 tasks. Is the new version better?",
+          "a": "Not demonstrably. The standard error of the difference is $\\sqrt{0.7\\cdot0.3/100 + 0.78\\cdot0.22/100} = \\sqrt{0.003816} = 0.0618$, so $z = 0.08/0.0618 = 1.29$, below 1.96. Each rate alone has a 95% interval about $\\pm 9$ points.\n\nTo detect an 8-point gap with 80% power you need about $2(1.96+0.84)^2\\bar p(1-\\bar p)/\\delta^2 \\approx 471$ tasks per arm, and sample size scales as $1/\\delta^2$. If both versions ran on the same tasks, use a paired comparison on the discordant tasks, which is more sensitive. Run each task several times, but remember repeats of one task are correlated, so they do not replace more distinct tasks. If it is within noise, prefer the cheaper or simpler version."
+        },
+        {
+          "level": "mid",
+          "q": "How would you diagnose a wrong final answer from a trace?",
+          "a": "Five questions in order. How did the run end (done, step cap, error)? Where did time and tokens go? What is the **first** span whose output is wrong: walk forward checking observations against ground truth. What did the model see when it made the bad decision: was the needed fact present, buried mid-context, or hidden by a truncated result? Which failure class is it: transient, permanent, semantic or silent?\n\nIf every observation was right, the fault is in how the model used correct information, so look at context and grounding rather than tools. If a tool result was stale or misleading, fix the tool or data (for example, include `last_updated` and sort newest first). Then aggregate: tally first-bad-span categories over 200 failures, fix the biggest ones, and add each diagnosed trace to a regression set."
+        },
+        {
+          "level": "senior",
+          "q": "Design the monitoring for a production agent. What would you alert on and how do you avoid noisy alerts?",
+          "a": "Signals: a success proxy (user feedback, rephrase rate, reverted actions, a sampled graded slice), steps and tokens per run at median and p95, stop-reason mix, tool error rate by tool and class, cost per run and per success, latency percentiles, escalation rate. Alert on distribution tails and on shifts, not just means.\n\nFor noise, use a statistical threshold: with baseline rate $\\bar p$ and $n$ runs per window, alert when $\\hat p > \\bar p + 3\\sqrt{\\bar p(1-\\bar p)/n}$. A 3% baseline with 500 runs a day gives a threshold near 5.3%; with 50 runs a day the standard error is about 2.4 points, so aggregate over a week instead. Segment by task type, tool and model version so a regression is visible. Keep all failed and slow traces, sample successes, and review a few weekly. Feed every real failure into a regression suite."
+        },
+        {
+          "level": "senior",
+          "q": "Your offline eval says 85% but production success proxies say 70%. What could explain the gap and how do you close it?",
+          "a": "Candidates: the offline set is unrepresentative (easier, cleaner or older than live traffic), tools in the test environment are mocked or stable while live tools vary, the grader is lenient or biased (a model judge approving verbose answers), the proxy metric measures something different (users rephrase for reasons other than failure), and drift (tools, data or the provider's model changed since the set was built). Also check variance: a small set gives an interval of ±9 points at 100 tasks.\n\nClose it by sampling real production traces into the eval set with human grading, measuring judge-human agreement, running the offline suite against live tools occasionally, tracking the gap by task type, and refreshing the set regularly. Keep a stable benchmark for trends plus a growing regression set of production failures. Treat the gap itself as a metric."
+        }
+      ]
+    },
+    {
+      "slug": "bounded-autonomy",
+      "title": "Bounded Autonomy: Limits, Permissions and Sandboxes",
+      "lesson": "bounded-autonomy",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "Why do we put limits on steps, tokens, cost and time in agents, and where are they enforced?",
+          "a": "Because an unbounded loop has an unbounded worst case. With input tokens growing quadratically in steps, a stuck run of 100 steps costs about twenty times a normal 20-step run, and one of 300 steps about \\$200 at typical prices. Limits make the worst case a number you can state. Each guards a different failure: step caps stop loops, token and cost caps stop runaway spend and context bloat, deadlines stop slow dependencies, per-user and daily budgets stop abuse.\n\nEnforce them in orchestration code, checked before each step, never in the prompt: telling a model to use at most 10 steps is a request, a `for` loop with a cap is a guarantee. Hitting a limit should move the run to a defined Stopped state with a useful partial result."
+        },
+        {
+          "level": "junior",
+          "q": "What does least privilege mean for an agent's tools?",
+          "a": "Each tool and credential should allow exactly what the job needs and no more, so that a confused, manipulated or simply wrong model can only do bounded damage. A search tool gets read-only access; a refund tool gets a payment token limited to refunds under a ceiling; each user's session carries that user's permissions rather than a shared admin token.\n\nGroup tools into tiers: read-only, reversible write, consequential write, privileged or destructive, with policies from 'allow' down to 'human approval always'. Default to deny for anything unknown. Crucially the restriction lives in code and in credentials, not in prompt instructions, because a prompt can be ignored or overridden by injected text. Review the tier table like a security artefact whenever a tool is added."
+        },
+        {
+          "level": "mid",
+          "q": "How do you decide which actions need human approval? Give the calculation.",
+          "a": "Approval pays when the expected loss it prevents exceeds its cost: require approval if $c\\,e\\,L > r$, where $e$ is the error rate, $L$ the loss when wrong, $c$ the reviewer's catch rate and $r$ the review cost. The break-even loss is $L^\\star = r/(ce)$.\n\nWith $e=2\\%$, $c=90\\%$ and $r=0.50$ dollars: $L^\\star = 0.5/0.018 = 27.8$ dollars. A 10-dollar refund (expected prevented loss 0.18) is automated; an 80-dollar refund (1.44) needs approval. If reliability improves to $e = 0.5\\%$, $L^\\star$ rises to 111 dollars: better agents earn more autonomy. Estimate $e$ from traces and a labelled sample, and re-measure $c$ by inserting known-bad requests. Also account for irreversibility, which raises effective $L$."
+        },
+        {
+          "level": "mid",
+          "q": "What makes human approval effective rather than a rubber stamp?",
+          "a": "Attention is the scarce resource. Show a concise request: the action in plain words, the agent's reason with evidence, a before and after diff, how to undo it, and clear choices (approve, reject with a reason, edit). Ask rarely and about the right things: 200 requests a day with 2% bad and a fatigued 40% catch rate stops 1.6 of 4 bad actions; 100 higher-impact requests at an 85% catch rate stops 3.4.\n\nCheck capacity: 1,000 actions with 12% needing review at 30 s each is 1 reviewer hour a day; 60% would be 5 hours. Bind approvals to the exact arguments, expire stale ones, make them asynchronous (checkpoint, tell the user, resume), feed rejection reasons back, and keep an audit trail. A 100% approval rate is a warning: test with a planted bad request."
+        },
+        {
+          "level": "mid",
+          "q": "How does a sandbox help, and how do layered defences combine?",
+          "a": "A sandbox runs model-written code where it cannot reach anything important: scratch filesystem only, no network by default (or an allow-list), CPU time and memory caps, process limits, no or short-lived scoped credentials, destroyed after the run. Default deny, explicit grants, destroy after use.\n\nLayers multiply: if each of $m$ independent layers stops a harmful action with probability $s_i$, it gets through only if all miss, so blocked $= 1-\\prod(1-s_i)$. Layers at 70%, 80% and 90% give $1 - 0.3\\times0.2\\times0.1 = 99.4\\%$. The condition is independence: if one flaw, such as a shared unvalidated path, defeats two layers, protection collapses toward one layer's. Choose layers that fail for different reasons: a code policy, kernel-level isolation and credentials the attacker never sees. A bare subprocess is not a sandbox."
+        },
+        {
+          "level": "mid",
+          "q": "Define blast radius and show how rate limits bound it.",
+          "a": "Blast radius is how much damage can happen before the problem is stopped. For an action with maximum single impact $L_\\text{max}$ allowed at most $\\rho$ times per hour, damage over $T$ hours is at most $\\rho T L_\\text{max}$. With refunds capped at 25 dollars and 10 per hour that is 250 dollars an hour, versus 180,000 dollars an hour if a compromised agent issued 2 per second; a daily cap of 1,000 bounds even an unattended day.\n\nDetection time is part of it: if alerts fire and a kill switch acts within 15 minutes, the realistic worst case is $10 \\times 0.25 \\times 25 = 62.50$ dollars. Other containment: scoped credentials, per-tenant isolation, dry-run diffs, soft delete and versioning (smaller $L$), circuit breakers, audit logs, and a kill switch that has actually been tested."
+        },
+        {
+          "level": "senior",
+          "q": "Design the autonomy policy for an agent that can read tickets, add notes, refund orders and delete accounts.",
+          "a": "Tier the tools. `read_ticket`, `get_order`: tier 0, allowed, rate-limited and logged. `add_note`: tier 1, reversible (append only with undo metadata), allowed. `refund_order`: tier 2, auto-approved under about 25 dollars (from the break-even $r/(ce)$) and under a per-hour quota, otherwise approval; context-aware so many small refunds cannot sum to a large one. `delete_account`: tier 3, not available to the agent, only a human-initiated process, or approval with a soft delete and a grace period.\n\nUnderneath: default deny for unknown tools, policy in a function between proposal and execution, scoped credentials per tool, step, token, cost and time caps from measured successful runs, a sandbox for any code, per-day dollar caps, anomaly alerts, a kill switch and circuit breaker. Launch to a small traffic share, red-team it, and widen tiers as measured error rates justify."
+        },
+        {
+          "level": "senior",
+          "q": "An agent processes web pages and has a send_email tool. How would you reduce the risk of prompt-injection-driven data exfiltration?",
+          "a": "Assume page content is hostile and the model may follow it, so the guarantees must live outside the model. Make `send_email` consequential: require human approval showing recipient and body, bind the approval to those arguments, and restrict recipients to an allow-list (the requesting user or known domains). Strip or flag untrusted content in the prompt, and never let tool results alone authorise an action.\n\nReduce what can leak: scope credentials so the agent session cannot read data it does not need, avoid combining private data access and untrusted content with an outbound channel in one run (split the agent or sandbox it with no network). Rate-limit outbound messages, log and alert on unusual recipients or large bodies, and keep a kill switch. Test with a red-team set of injection pages and add successes to the regression suite. Layers matter because any single filter can be bypassed."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "title": "Anatomy of a Prompt: Roles, Templates and Instruction Hierarchy",
+  "summary": "A chat request is rendered into one long token sequence before the model ever sees it. Knowing how roles, templates and the system prompt turn into tokens tells you what a prompt costs, what the model will prioritise and why instructions get dropped.",
+  "objectives": [
+    "Explain how a chat template renders system, user, assistant and tool messages into one token sequence",
+    "Compute the token and cost overhead of a system prompt and of a growing multi-turn conversation",
+    "Describe the instruction hierarchy and predict what a model should do when instructions conflict",
+    "Estimate the probability that a model follows all of k independent instructions, and use it to decide when a prompt has too many rules",
+    "Rewrite a vague prompt into a specific one and justify the extra tokens with expected-retry arithmetic"
+  ],
+  "prerequisites": "You should know what a token is and how text is split into tokens ([Tokenization](/learn/model-foundations/tokenization)), and that a model predicts one next token at a time from everything in its context ([Next-token prediction and sampling](/learn/model-foundations/sampling)). The idea of a context window from [Context windows and the KV cache](/learn/model-foundations/context-and-kv-cache) helps.",
+  "sims": ["token-cost"],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "Training language models to follow instructions with human feedback", "authors": "Ouyang et al.", "year": 2022, "note": "Why instruction-tuned chat models respond to roles and instructions at all" },
+    { "title": "The Instruction Hierarchy: Training LLMs to Prioritize Privileged Instructions", "authors": "Wallace et al.", "year": 2024, "note": "Training models to rank system, user and tool instructions by privilege" },
+    { "title": "Language Models are Few-Shot Learners", "authors": "Brown et al.", "year": 2020, "note": "Prompting as the main interface to a pretrained model" }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "title": "Pretraining Data: What Models Learn From",
+  "summary": "A pretrained model is a compressed summary of its training corpus. This lesson follows the data from raw web crawl to training tokens: the objective it is used for, how sources are mixed, how it is filtered and deduplicated, and how much of it a model of a given size needs.",
+  "objectives": [
+    "Write the next-token cross-entropy objective over a corpus and compute it and its perplexity for a short sequence",
+    "Turn mixture weights and source sizes into tokens drawn and epochs per source",
+    "Compute Jaccard similarity on shingles and explain why MinHash with banding finds near-duplicates cheaply",
+    "Compare models by tokens per parameter and estimate a corpus size in tokens from bytes",
+    "Detect and reason about benchmark contamination with n-gram overlap"
+  ],
+  "prerequisites": "You should know what a token is ([Tokenization](/learn/model-foundations/tokenization)) and what cross-entropy loss measures ([How a Network Learns](/learn/model-foundations/how-networks-learn)). Log-probabilities and perplexity are introduced in [Next-Token Prediction and Sampling](/learn/model-foundations/sampling); they are re-derived here, so that lesson helps but is not required.",
+  "sims": [],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "Language Models are Few-Shot Learners", "authors": "Brown et al.", "year": 2020, "note": "GPT-3: 175B parameters trained on about 300B tokens drawn from a weighted mixture of sources" },
+    { "title": "On the Resemblance and Containment of Documents", "authors": "Andrei Broder", "year": 1997, "note": "Shingling and min-wise hashing for near-duplicate detection" },
+    { "title": "Deduplicating Training Data Makes Language Models Better", "authors": "Lee et al.", "year": 2022, "note": "Exact-substring and near-duplicate removal; less memorisation, same or better quality" },
+    { "title": "The RefinedWeb Dataset for Falcon LLM", "authors": "Penedo et al.", "year": 2023, "note": "Shows that carefully filtered and deduplicated web data alone can train strong models" },
+    { "title": "Scaling Data-Constrained Language Models", "authors": "Muennighoff et al.", "year": 2023, "note": "How much repeating data for several epochs costs compared with fresh tokens" }
+  ]
+}

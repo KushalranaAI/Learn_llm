@@ -1,0 +1,23 @@
+{
+  "title": "Few-Shot Examples and Structured Outputs",
+  "summary": "Examples in the prompt teach a model a task without changing its weights, and schemas plus constrained decoding make its output machine-readable every time. This lesson puts numbers on both: what an example is worth, and what a format error costs at scale.",
+  "objectives": [
+    "Explain in-context learning as conditioning, and compute how examples shift a model's belief about which task it is doing",
+    "Decide how many few-shot examples to include by weighing their token cost against the errors they prevent",
+    "Choose examples by similarity, diversity and label balance, and avoid ordering and majority-label biases",
+    "Compute the probability of at least one malformed output over N calls and the effect of validate-and-retry",
+    "Apply constrained decoding by masking logits and renormalising the softmax, and explain what it does not guarantee"
+  ],
+  "prerequisites": "You should be comfortable with softmax over logits and sampling from [Next-token prediction and sampling](/learn/model-foundations/sampling), cosine similarity from [Embeddings](/learn/model-foundations/embeddings), and token costs from [Anatomy of a Prompt](/learn/prompt-and-context/prompt-anatomy).",
+  "sims": ["constrained-decoding"],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "Language Models are Few-Shot Learners", "authors": "Brown et al.", "year": 2020, "note": "Zero-, one- and few-shot prompting at scale" },
+    { "title": "An Explanation of In-context Learning as Implicit Bayesian Inference", "authors": "Xie, Raghunathan, Liang and Ma", "year": 2022, "note": "ICL as inferring a latent concept from the examples" },
+    { "title": "Rethinking the Role of Demonstrations: What Makes In-Context Learning Work?", "authors": "Min et al.", "year": 2022, "note": "Format and label space matter more than correct labels in many tasks" },
+    { "title": "Calibrate Before Use: Improving Few-Shot Performance of Language Models", "authors": "Zhao, Wallace, Feng, Klein and Singh", "year": 2021, "note": "Majority-label and recency biases from example choice and order" },
+    { "title": "What Makes Good In-Context Examples for GPT-3?", "authors": "Liu et al.", "year": 2022, "note": "Retrieving examples similar to the test input" },
+    { "title": "Efficient Guided Generation for Large Language Models", "authors": "Willard and Louf", "year": 2023, "note": "Regex and grammar constrained decoding via finite-state machines" }
+  ]
+}

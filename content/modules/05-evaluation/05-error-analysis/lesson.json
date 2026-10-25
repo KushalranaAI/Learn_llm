@@ -1,0 +1,21 @@
+{
+  "title": "Error Analysis: Finding What Goes Wrong",
+  "summary": "A score tells you how often the system fails; error analysis tells you why. This lesson covers reading failures systematically, building a failure taxonomy through open coding, ranking categories with a Pareto chart, and slicing metrics to find the groups the average hides.",
+  "objectives": [
+    "Sample and read failures systematically instead of anecdotally",
+    "Build a failure taxonomy by open coding, and check that two coders apply it consistently",
+    "Rank failure categories with a Pareto analysis and estimate the gain from fixing each",
+    "Compute slice metrics with confidence intervals and spot Simpson's-paradox style reversals",
+    "Turn findings into a prioritised list of fixes and new eval cases"
+  ],
+  "prerequisites": "Pass rates and confidence intervals from [Comparing Systems You Can Trust](/learn/evaluation/comparing-systems), and the confusion-matrix vocabulary from [Success Criteria](/learn/evaluation/success-criteria).",
+  "sims": [],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "Exploratory Data Analysis", "authors": "John W. Tukey", "year": 1977, "note": "The case for looking closely at the data before and after summarising it" },
+    { "title": "The Discovery of Grounded Theory", "authors": "Glaser and Strauss", "year": 1967, "note": "Origin of open coding: let categories emerge from the material" },
+    { "title": "Sex Bias in Graduate Admissions: Data from Berkeley", "authors": "Bickel, Hammel and O'Connell", "year": 1975, "note": "The classic real-world Simpson's paradox" },
+    { "title": "Beyond Accuracy: Behavioral Testing of NLP Models with CheckList", "authors": "Ribeiro, Wu, Guestrin and Singh", "year": 2020, "note": "Slicing and capability tests to find failures that aggregate accuracy hides" }
+  ]
+}

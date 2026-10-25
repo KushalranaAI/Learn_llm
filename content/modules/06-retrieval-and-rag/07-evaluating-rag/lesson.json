@@ -1,0 +1,22 @@
+{
+  "title": "Evaluating RAG: Retrieval, Grounding and Failures",
+  "summary": "A RAG answer can be wrong because retrieval missed the evidence, because the wrong chunk ranked first, because the model ignored the context, or because the data was stale. This lesson defines the metrics for each stage, a failure taxonomy for diagnosis, and how to build and trust an evaluation set.",
+  "objectives": [
+    "Compute context precision, context recall and average precision for a retrieved list",
+    "Compute faithfulness, answer relevance and citation precision/recall from claim-level judgements",
+    "Classify RAG failures into missed retrieval, wrong chunk, ignored context, stale data and other causes, and prioritise fixes from a failure tally",
+    "Size an evaluation set and compute a confidence interval for a measured accuracy",
+    "Describe what to monitor in production: freshness, not-found rate, citation use, latency and cost"
+  ],
+  "prerequisites": "You should know the retrieval metrics from [Hybrid Search and Reranking](/learn/retrieval-and-rag/hybrid-and-reranking), the accuracy equation from [How RAG Works](/learn/retrieval-and-rag/rag-architecture), and the idea of an LLM judge ([Using a Model as a Judge](/learn/evaluation/llm-as-judge)).",
+  "sims": ["rag-pipeline"],
+  "labs": ["fix-the-rag-bot"],
+  "sandbox": ["rag-production"],
+  "sources": [
+    { "title": "RAGAS: Automated Evaluation of Retrieval Augmented Generation", "authors": "Es, James, Espinosa-Anke and Schockaert", "year": 2023, "note": "Reference-free metrics: faithfulness, answer relevance and context relevance" },
+    { "title": "ARES: An Automated Evaluation Framework for Retrieval-Augmented Generation Systems", "authors": "Saad-Falcon et al.", "year": 2023, "note": "Trained judges for context relevance, answer faithfulness and answer relevance, with confidence intervals" },
+    { "title": "Evaluating Verifiability in Generative Search Engines", "authors": "Liu, Zhang and Liang", "year": 2023, "note": "Citation precision and recall as measures of verifiability" },
+    { "title": "Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena", "authors": "Zheng et al.", "year": 2023, "note": "Strengths and biases of model-based judging" },
+    { "title": "Introduction to Information Retrieval", "authors": "Manning, Raghavan and Schütze", "year": 2008, "note": "Chapter 8: evaluation in information retrieval, including average precision" }
+  ]
+}

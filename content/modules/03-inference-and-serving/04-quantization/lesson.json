@@ -1,0 +1,22 @@
+{
+  "title": "Precision and Quantization",
+  "summary": "Storing weights in fewer bits shrinks the model and, because decode is memory-bound, speeds it up almost proportionally. This lesson derives bytes per weight, the absmax and zero-point quantizers, the role of groups and outliers, the ideas behind GPTQ and AWQ, and how to judge the quality cost.",
+  "objectives": [
+    "Compute model memory and the decode-speed ceiling from bits per weight",
+    "Quantize and dequantize a weight vector by hand with absmax and zero-point schemes and measure the error",
+    "Explain why group-wise scales and outliers matter and compute effective bits per weight",
+    "Describe the ideas behind GPTQ and AWQ and when weight-only versus weight-and-activation quantization helps",
+    "Decide on a precision by testing quality against memory, speed and cost"
+  ],
+  "prerequisites": "You should know the decode time estimate (weight bytes divided by bandwidth) from [Where the Time Goes](/learn/inference-and-serving/memory-and-compute) and what a parameter is ([How a Network Learns](/learn/model-foundations/how-networks-learn)).",
+  "sims": ["quantization", "roofline"],
+  "labs": ["shrink-the-model"],
+  "sandbox": [],
+  "sources": [
+    { "title": "LLM.int8(): 8-bit Matrix Multiplication for Transformers at Scale", "authors": "Dettmers, Lewis, Belkada and Zettlemoyer", "year": 2022, "note": "Shows that a few outlier feature dimensions dominate quantization error in large transformers" },
+    { "title": "GPTQ: Accurate Post-Training Quantization for Generative Pre-trained Transformers", "authors": "Frantar, Ashkboos, Hoefler and Alistarh", "year": 2022, "note": "Layer-wise quantization with second-order error compensation" },
+    { "title": "AWQ: Activation-aware Weight Quantization for LLM Compression and Acceleration", "authors": "Lin et al.", "year": 2023, "note": "Protects salient weight channels by scaling them using activation statistics" },
+    { "title": "QLoRA: Efficient Finetuning of Quantized LLMs", "authors": "Dettmers, Pagnoni, Holtzman and Zettlemoyer", "year": 2023, "note": "Introduces the NF4 data type" },
+    { "title": "Quantization and Training of Neural Networks for Efficient Integer-Arithmetic-Only Inference", "authors": "Jacob et al.", "year": 2018, "note": "Affine (scale and zero-point) quantization scheme" }
+  ]
+}

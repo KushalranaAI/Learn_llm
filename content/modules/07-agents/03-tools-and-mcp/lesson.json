@@ -1,0 +1,21 @@
+{
+  "title": "Designing Tools and the Model Context Protocol (MCP)",
+  "summary": "A tool is an interface designed for a model, and the quality of that interface decides how often the agent succeeds. This lesson covers tool design, schemas, error messages, and the Model Context Protocol, an open standard for connecting models to tools and data.",
+  "objectives": [
+    "After this lesson you can design tools with clear names, narrow responsibilities and compact results, and explain how tool count affects accuracy and cost",
+    "Write a JSON Schema for tool arguments and validate model-produced arguments before running anything",
+    "Write error messages that let a model recover, and estimate their effect on retries",
+    "Name the roles in MCP (host, client, server) and the three server features (tools, resources, prompts), and read a JSON-RPC exchange",
+    "Compare the stdio and HTTP transports and list the main security risks of connecting servers"
+  ],
+  "prerequisites": "The agent loop and tool-calling messages from [/learn/agents/agent-loop](/learn/agents/agent-loop), and the idea of reliability compounding over steps from [/learn/agents/workflows-vs-agents](/learn/agents/workflows-vs-agents). Tool definitions are introduced in [/learn/prompt-and-context/tools-and-functions](/learn/prompt-and-context/tools-and-functions).",
+  "sims": [],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "JSON-RPC 2.0 Specification", "authors": "JSON-RPC Working Group", "year": 2010, "note": "Requests, responses, notifications and error objects" },
+    { "title": "JSON Schema: a vocabulary for annotating and validating JSON documents", "authors": "JSON Schema organisation", "year": 2020, "note": "The schema language used to describe tool arguments" },
+    { "title": "Model Context Protocol specification", "authors": "Anthropic and contributors", "year": 2024, "note": "Architecture, tools, resources, prompts and transports" },
+    { "title": "Toolformer: Language Models Can Teach Themselves to Use Tools", "authors": "Schick et al.", "year": 2023, "note": "Learning when and how to call external APIs" }
+  ]
+}

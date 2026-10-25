@@ -1,0 +1,21 @@
+{
+  "title": "Bounded Autonomy: Limits, Permissions and Sandboxes",
+  "summary": "The more an agent can do on its own, the more it can get wrong on its own. This lesson shows how to give agents exactly as much freedom as their reliability justifies: hard limits, permission tiers, human approval where it pays, sandboxed execution and a capped blast radius.",
+  "objectives": [
+    "After this lesson you can frame autonomy as expected loss: probability of error times impact, and use it to decide what needs approval",
+    "Set step, token, cost and time limits from the measured distribution of normal runs",
+    "Design permission tiers and a tool policy enforced in code, not in the prompt",
+    "Estimate how layered defences combine and why independence matters",
+    "Bound the worst case with rate limits, sandboxes and kill switches, and test these in the support-agent sandbox"
+  ],
+  "prerequisites": "Failure handling from [/learn/agents/failures-and-recovery](/learn/agents/failures-and-recovery), traces and evaluation from [/learn/agents/traces-and-evaluation](/learn/agents/traces-and-evaluation), and tool security issues from [/learn/agents/tools-and-mcp](/learn/agents/tools-and-mcp). Prompt injection is covered in [/learn/prompt-and-context/prompt-injection](/learn/prompt-and-context/prompt-injection).",
+  "sims": [],
+  "labs": [],
+  "sandbox": ["support-agent"],
+  "sources": [
+    { "title": "The Protection of Information in Computer Systems", "authors": "Saltzer and Schroeder", "year": 1975, "note": "Principles of least privilege, fail-safe defaults and complete mediation" },
+    { "title": "Concrete Problems in AI Safety", "authors": "Amodei et al.", "year": 2016, "note": "Safe exploration, side effects and avoiding unintended consequences" },
+    { "title": "Building Effective Agents", "authors": "Schluntz and Zhang (Anthropic)", "year": 2024, "note": "Guidance on checkpoints, stopping conditions and sandboxed testing" },
+    { "title": "Release It! Design and Deploy Production-Ready Software", "authors": "Michael T. Nygard", "year": 2018, "note": "Stability patterns: timeouts, circuit breakers, bulkheads" }
+  ]
+}

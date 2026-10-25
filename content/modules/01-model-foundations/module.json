@@ -1,0 +1,1 @@
+{ "title": "How LLMs Work", "summary": "From a single neuron to a transformer that predicts the next token: learning, tokens, embeddings, attention, sampling and the KV cache.", "icon": "network", "cover": "xor-training" }

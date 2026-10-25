@@ -1,0 +1,21 @@
+{
+  "title": "Batching and Scheduling",
+  "summary": "Decode is memory-bound, so serving many users in the same step is almost free until it is not. This lesson builds the batch-size trade-off from first principles, then covers continuous batching, PagedAttention, Little's law for concurrency, and the scheduling policies that keep latency predictable.",
+  "objectives": [
+    "Model decode step time as a function of batch size and compute server throughput and per-user speed",
+    "Explain why static batching wastes GPU time and how continuous (iteration-level) batching fixes it",
+    "Quantify KV-cache fragmentation and explain how PagedAttention removes it",
+    "Use Little's law to relate request rate, latency and concurrent sequences",
+    "Choose a batch limit and scheduling policy (chunked prefill, preemption, priorities) for a latency SLO"
+  ],
+  "prerequisites": "This lesson uses the decode step-time formula and KV bytes per token from [Where the Time Goes](/learn/inference-and-serving/memory-and-compute), and TTFT, TPOT and goodput from [Measuring Inference](/learn/inference-and-serving/measuring-inference).",
+  "sims": ["llm-batching"],
+  "labs": ["serve-a-chat-model"],
+  "sandbox": ["llm-serving-basic"],
+  "sources": [
+    { "title": "Orca: A Distributed Serving System for Transformer-Based Generative Models", "authors": "Yu et al.", "year": 2022, "note": "Introduces iteration-level scheduling, the basis of continuous batching" },
+    { "title": "Efficient Memory Management for Large Language Model Serving with PagedAttention", "authors": "Kwon et al.", "year": 2023, "note": "The vLLM paper: paged KV-cache blocks, fragmentation measurements and copy-on-write sharing" },
+    { "title": "Taming Throughput-Latency Tradeoff in LLM Inference with Sarathi-Serve", "authors": "Agrawal et al.", "year": 2024, "note": "Chunked prefill and stall-free scheduling" },
+    { "title": "A Proof for the Queuing Formula: L = λW", "authors": "John D. C. Little", "year": 1961, "note": "Little's law" }
+  ]
+}

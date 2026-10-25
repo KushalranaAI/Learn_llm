@@ -1,0 +1,22 @@
+{
+  "title": "Privacy, Security and Compliance",
+  "summary": "LLM features move user text through many systems: prompts, logs, caches, vector stores and third-party providers. This lesson treats privacy and security as engineering: data flows and classification, retention, minimisation, tenant isolation, secrets and the audit trail that compliance depends on. It states principles, not legal advice.",
+  "objectives": [
+    "Map the data flow of an LLM feature and classify what each store holds",
+    "Quantify exposure from retention periods and cut it with a retention policy",
+    "Explain why combinations of harmless fields can identify a person, and apply data minimisation",
+    "Design tenant isolation for retrieval, caches and logs, and see why filtering must happen before ranking",
+    "Handle secrets and API keys with least privilege, rotation and spend caps",
+    "Describe the engineering evidence that audits and data-subject requests rely on"
+  ],
+  "prerequisites": "You should know how a RAG pipeline stores documents in a vector index ([How RAG Works](/learn/retrieval-and-rag/rag-architecture)), what PII redaction is ([Guardrails and Safe Deployment](/learn/production-systems/guardrails)) and what a request log contains ([Observability and Incident Analysis](/learn/production-systems/observability)). This lesson gives engineering principles only. It is not legal advice: laws differ by country and industry, so involve your legal and security teams for decisions.",
+  "sims": [],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "OWASP Top 10 for Large Language Model Applications", "authors": "OWASP Foundation", "year": 2023, "note": "Sensitive information disclosure, supply-chain and excessive-agency risks for LLM applications" },
+    { "title": "Simple Demographics Often Identify People Uniquely", "authors": "Latanya Sweeney", "year": 2000, "note": "The re-identification result behind the quasi-identifier example" },
+    { "title": "Extracting Training Data from Large Language Models", "authors": "Carlini et al.", "year": 2021, "note": "Shows that models can memorise and reveal rare training strings" },
+    { "title": "Security Engineering (3rd edition)", "authors": "Ross Anderson", "year": 2020, "note": "Access control, least privilege and key management" }
+  ]
+}

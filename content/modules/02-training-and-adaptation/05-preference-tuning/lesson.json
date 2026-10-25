@@ -1,0 +1,24 @@
+{
+  "title": "Preference Tuning: RLHF and DPO",
+  "summary": "People find it easier to say which of two answers is better than to write the perfect one. Preference tuning turns those comparisons into training signal: a Bradley-Terry reward model plus reinforcement learning with a KL penalty (RLHF), or the same objective optimised directly on pairs (DPO). The lesson ends with RL on verifiable rewards and the ways all of these go wrong.",
+  "objectives": [
+    "Explain why pairwise preferences are collected and how they fit into the post-training pipeline",
+    "Write the Bradley-Terry model P(y_w ≻ y_l) = σ(r_w − r_l) and compute the reward-model loss for a pair",
+    "Write the RLHF objective with a KL penalty and evaluate PPO's clipped objective for a sample",
+    "Derive the DPO loss from the KL-regularised objective and compute it for a pair of log-probabilities",
+    "Recognise reward hacking, length bias and over-optimisation and explain how β and evaluation guard against them"
+  ],
+  "prerequisites": "You should understand SFT and loss masking ([Instruction Tuning](/learn/training-and-adaptation/instruction-tuning)) and the log-probability of a sequence ([Next-Token Prediction and Sampling](/learn/model-foundations/sampling)). The sigmoid function and KL divergence are defined where they are used.",
+  "sims": ["preference-loss"],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "Deep reinforcement learning from human preferences", "authors": "Christiano et al.", "year": 2017, "note": "Learning a reward model from pairwise human comparisons and optimising a policy against it" },
+    { "title": "Training language models to follow instructions with human feedback", "authors": "Ouyang et al.", "year": 2022, "note": "InstructGPT: SFT, reward model, PPO with a KL penalty" },
+    { "title": "Proximal Policy Optimization Algorithms", "authors": "Schulman et al.", "year": 2017, "note": "The clipped surrogate objective" },
+    { "title": "Direct Preference Optimization: Your Language Model is Secretly a Reward Model", "authors": "Rafailov et al.", "year": 2023, "note": "Derivation of the DPO loss from the KL-constrained reward-maximisation objective" },
+    { "title": "Rank Analysis of Incomplete Block Designs: I. The Method of Paired Comparisons", "authors": "Bradley and Terry", "year": 1952, "note": "The Bradley-Terry model of pairwise comparisons" },
+    { "title": "DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models", "authors": "Shao et al.", "year": 2024, "note": "Introduces GRPO, group-relative advantages without a value model" },
+    { "title": "Scaling Laws for Reward Model Overoptimization", "authors": "Gao, Schulman and Hilton", "year": 2022, "note": "True quality rises then falls as a policy optimises a proxy reward harder" }
+  ]
+}

@@ -1,0 +1,92 @@
+[
+  {
+    "term": "Back-of-the-envelope estimate",
+    "slug": "back-of-the-envelope-estimate",
+    "def": "A quick chain of stated assumptions and multiplications (users, requests, QPS, tokens, cost) that lands within a factor of two or three of the real answer, so you know what kind of system to build.",
+    "lesson": "llm-system-design/design-framework"
+  },
+  {
+    "term": "Peak factor",
+    "slug": "peak-factor",
+    "def": "The ratio of peak traffic to average traffic, used to turn average QPS into the QPS a system must survive; around 2 to 3 for consumer apps, higher for spiky or working-hours traffic.",
+    "lesson": "llm-system-design/design-framework"
+  },
+  {
+    "term": "Service level objective (SLO)",
+    "slug": "slo",
+    "def": "A measurable reliability or latency target, such as 99.9% of requests getting a first token within 1.5 s over 30 days; the gap to 100% is the error budget.",
+    "lesson": "llm-system-design/design-framework"
+  },
+  {
+    "term": "Containment rate",
+    "slug": "containment-rate",
+    "def": "The share of support conversations an assistant finishes without handing over to a human agent; only meaningful next to the false-resolution and repeat-contact rates.",
+    "lesson": "llm-system-design/design-support-assistant"
+  },
+  {
+    "term": "False-resolution rate",
+    "slug": "false-resolution-rate",
+    "def": "The share of conversations the bot closed as solved that were actually wrong or should have been escalated, usually measured by repeat contacts within a few days.",
+    "lesson": "llm-system-design/design-support-assistant"
+  },
+  {
+    "term": "ACL-aware retrieval",
+    "slug": "acl-aware-retrieval",
+    "def": "Retrieval that stores each chunk's allowed users and groups and returns only chunks the asker may open, so generated answers cannot quote restricted documents.",
+    "lesson": "llm-system-design/design-enterprise-search"
+  },
+  {
+    "term": "Fill-in-the-middle",
+    "slug": "fill-in-the-middle",
+    "def": "A prompting and training format where the model sees the code before and after the cursor and generates the missing middle, so completions fit the code that follows.",
+    "lesson": "llm-system-design/design-code-assistant"
+  },
+  {
+    "term": "pass@k",
+    "slug": "pass-at-k",
+    "def": "The probability that at least one of k sampled solutions passes the tests, estimated without bias from n samples as 1 minus C(n-c, k) / C(n, k) where c of the n samples pass.",
+    "lesson": "llm-system-design/design-code-assistant"
+  },
+  {
+    "term": "Human review rate",
+    "slug": "human-review-rate",
+    "def": "The fraction of documents routed to a person because confidence is low or a validator failed; it drives most of the cost of an extraction pipeline.",
+    "lesson": "llm-system-design/design-document-extraction"
+  },
+  {
+    "term": "Mouth-to-ear latency",
+    "slug": "mouth-to-ear-latency",
+    "def": "The time from when a caller stops speaking to when they hear the first sound of the agent's reply; voice agents budget about 800 ms for it.",
+    "lesson": "llm-system-design/design-voice-agent"
+  },
+  {
+    "term": "Endpointing",
+    "slug": "endpointing",
+    "def": "Deciding that the speaker has finished their turn, using silence thresholds and often a model that judges whether the sentence is complete.",
+    "lesson": "llm-system-design/design-voice-agent"
+  },
+  {
+    "term": "Barge-in",
+    "slug": "barge-in",
+    "def": "The caller interrupting while the agent is speaking; the system must stop audio, cancel generation and truncate its memory to what was actually heard.",
+    "lesson": "llm-system-design/design-voice-agent"
+  },
+  {
+    "term": "Base rate",
+    "slug": "base-rate",
+    "def": "The share of items that truly belong to the positive class, such as violating posts; when it is tiny, even a small false-positive rate makes precision low.",
+    "lesson": "llm-system-design/design-moderation"
+  },
+  {
+    "term": "LLM gateway",
+    "slug": "llm-gateway",
+    "def": "A shared service through which every internal model call passes, handling authentication, routing, quotas, caching, logging and cost attribution.",
+    "lesson": "llm-system-design/design-llm-platform"
+  },
+  {
+    "term": "Chargeback",
+    "slug": "chargeback",
+    "def": "Billing each team for the model usage it caused, based on tagged requests and an allocation of shared costs; showback only reports the numbers without billing.",
+    "lesson": "llm-system-design/design-llm-platform"
+  }
+]

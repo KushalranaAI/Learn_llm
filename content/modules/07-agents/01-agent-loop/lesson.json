@@ -1,0 +1,20 @@
+{
+  "title": "Agents, Tools and the Loop",
+  "summary": "An agent is a language model placed inside a loop: it reads the situation, decides on an action, calls a tool, reads the result and goes round again until it decides it is done. This lesson builds that loop from messages up and puts numbers on how many steps and tokens a run costs.",
+  "objectives": [
+    "After this lesson you can describe an agent as a policy inside an observe, think, act loop and draw it as a state machine",
+    "Write out the exact message sequence of a tool call and its result",
+    "Compute the expected number of steps of a run from a per-step finish probability and a step cap",
+    "Estimate the token cost of a multi-step run and explain why it grows faster than linearly",
+    "Implement a minimal agent loop with a step limit and tool dispatch"
+  ],
+  "prerequisites": "You should know what a prompt and a completion are and how tokens are priced ([/learn/model-foundations/tokenization](/learn/model-foundations/tokenization)). Tool definitions are introduced in [/learn/prompt-and-context/tools-and-functions](/learn/prompt-and-context/tools-and-functions); this lesson recaps what it needs.",
+  "sims": ["agent-loop"],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "ReAct: Synergizing Reasoning and Acting in Language Models", "authors": "Yao et al.", "year": 2023, "note": "Interleaving reasoning traces with actions and observations" },
+    { "title": "Toolformer: Language Models Can Teach Themselves to Use Tools", "authors": "Schick et al.", "year": 2023, "note": "Models deciding when to call an API and how to use the result" },
+    { "title": "Artificial Intelligence: A Modern Approach", "authors": "Russell and Norvig", "year": 2020, "note": "Chapter 2: agents as perceive and act loops (4th edition)" }
+  ]
+}

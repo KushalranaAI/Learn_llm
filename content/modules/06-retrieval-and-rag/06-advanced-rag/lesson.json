@@ -1,0 +1,22 @@
+{
+  "title": "Query Rewriting, Multi-Hop and Graph RAG",
+  "summary": "Basic RAG embeds the user's words and fetches the nearest chunks. That fails for follow-up questions, vague phrasing, questions needing several facts, and questions about a whole corpus. This lesson covers the main extensions, their maths and their costs.",
+  "objectives": [
+    "Rewrite conversational and ambiguous queries, and fuse results from multiple rewrites",
+    "Explain HyDE and show with cosine similarity why a hypothetical answer can retrieve better than the question",
+    "Compute how per-hop failure compounds in multi-hop questions and decompose a question into sub-queries",
+    "Describe graph RAG, estimate its indexing cost and say when it beats vector search",
+    "Choose a technique from the observed failure, and count the latency and cost it adds"
+  ],
+  "prerequisites": "You should know the basic RAG pipeline ([How RAG Works](/learn/retrieval-and-rag/rag-architecture)), hybrid search and RRF ([Hybrid Search and Reranking](/learn/retrieval-and-rag/hybrid-and-reranking)) and the cost of chunk-based prompts. Basic probability (independent events multiply) is used.",
+  "sims": ["rag-pipeline"],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "Precise Zero-Shot Dense Retrieval without Relevance Labels", "authors": "Gao, Ma, Lin and Callan", "year": 2022, "note": "HyDE: retrieve with the embedding of a hypothetical generated answer" },
+    { "title": "From Local to Global: A Graph RAG Approach to Query-Focused Summarization", "authors": "Edge et al.", "year": 2024, "note": "Entity graphs, communities and community summaries for global questions" },
+    { "title": "Self-RAG: Learning to Retrieve, Generate, and Critique through Self-Reflection", "authors": "Asai et al.", "year": 2023, "note": "Adaptive retrieval and self-critique of retrieved passages" },
+    { "title": "HotpotQA: A Dataset for Diverse, Explainable Multi-hop Question Answering", "authors": "Yang et al.", "year": 2018, "note": "A benchmark for questions that need several documents" },
+    { "title": "Interleaving Retrieval with Chain-of-Thought Reasoning for Knowledge-Intensive Multi-Step Questions", "authors": "Trivedi et al.", "year": 2022, "note": "IRCoT: alternating retrieval and reasoning steps" }
+  ]
+}

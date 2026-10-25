@@ -1,0 +1,20 @@
+{
+  "title": "Success Criteria: Deciding What Good Means",
+  "summary": "Before you can improve an LLM feature you have to say, in numbers, what success looks like. This lesson turns fuzzy goals into criteria, metrics and thresholds you can test against.",
+  "objectives": [
+    "Turn a vague product goal into specific, measurable criteria with pass thresholds",
+    "Compute precision, recall, F1 and F-beta from a confusion matrix and explain when accuracy misleads",
+    "Choose an operating threshold by weighing the cost of false positives against false negatives",
+    "Size an evaluation set from the margin of error you can tolerate",
+    "Recognise when a metric has stopped tracking what users care about (Goodhart's law)"
+  ],
+  "prerequisites": "Comfort with fractions, percentages and averages. It helps to have built or used an LLM feature, for example from [Anatomy of a Prompt](/learn/prompt-and-context/prompt-anatomy), but no statistics background is assumed.",
+  "sims": [],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "Introduction to Information Retrieval", "authors": "Manning, Raghavan and Schütze", "year": 2008, "note": "Chapter 8: evaluation in information retrieval, precision, recall and F-measure" },
+    { "title": "Information Retrieval", "authors": "C. J. van Rijsbergen", "year": 1979, "note": "Origin of the effectiveness measure behind F-beta" },
+    { "title": "Trustworthy Online Controlled Experiments", "authors": "Kohavi, Tang and Xu", "year": 2020, "note": "Chapter 7 on choosing metrics and the overall evaluation criterion" }
+  ]
+}

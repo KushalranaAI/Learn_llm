@@ -1,0 +1,386 @@
+{
+  "module": "training-and-adaptation",
+  "sections": [
+    {
+      "slug": "pretraining-data",
+      "title": "Pretraining Data: What Models Learn From",
+      "lesson": "pretraining-data",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What is the pretraining objective of a language model, and why does it need no human labels?",
+          "a": "The model is trained to predict every next token of a document given the tokens before it. The loss is the average negative log-probability of the true tokens: $\\mathcal{L} = -\\frac{1}{T}\\sum_t \\log p_\\theta(x_t \\mid x_{<t})$. Because the answer for each position is simply the token that actually comes next in the text, the data supervises itself, which is called self-supervised learning.\n\nWith a causal mask, one forward pass over a 4,096-token sequence yields 4,096 training signals at once. Minimising this loss is the same as maximising the probability the model assigns to the corpus, so a lower loss means the model has found more structure in the text. Because there are no labels, scale is limited by compute and by the amount of good text, not by annotation budget."
+        },
+        {
+          "level": "junior",
+          "q": "Why do teams deduplicate pretraining data?",
+          "a": "The web repeats itself: syndicated articles, licence text, boilerplate and scraped copies of forums. Training on duplicates has three costs. It wastes compute on text the model already saw. It increases **memorisation**, so the model can regurgitate passages verbatim, which is a privacy and copyright risk. And it gives repeated passages outsized influence on what the model learns.\n\nExact deduplication hashes documents or paragraphs and keeps one per hash. Near-duplicate removal uses a similarity measure such as Jaccard similarity on shingles, usually approximated with MinHash. Published work (for example Lee et al., 2022) reports that deduplicated training data reduces verbatim memorisation substantially while keeping or improving model quality, so it is one of the cheapest quality wins in a data pipeline."
+        },
+        {
+          "level": "mid",
+          "q": "Documents A and B have 2-shingle sets of sizes 5 and 5 that share 3 shingles. What is their Jaccard similarity, and how does MinHash estimate it?",
+          "a": "Jaccard similarity is $J = |A \\cap B| / |A \\cup B|$. The union has $5 + 5 - 3 = 7$ shingles, so $J = 3/7 \\approx 0.43$.\n\nMinHash estimates this without comparing sets. For a random hash function $h$, the probability that the minimum hash over $A$ equals the minimum hash over $B$ is exactly $J$, because the smallest hash in $A \\cup B$ is equally likely to belong to any element, and the minima agree only when that element is in both sets. Using $k$ independent hash functions, the fraction of agreeing minima estimates $J$ with standard error about $\\sqrt{J(1-J)/k}$; for $J = 0.43$ and $k = 128$ that is about 0.044. Each document is thus reduced to a signature of $k$ numbers."
+        },
+        {
+          "level": "mid",
+          "q": "Explain banding in MinHash LSH. With 20 bands of 5 rows, what is the probability that a pair with Jaccard 0.8 becomes a candidate?",
+          "a": "Banding splits each $k$-number signature into $b$ bands of $r$ rows and hashes each band into a bucket. Two documents become candidates if they collide in at least one band. A pair with Jaccard $s$ matches a given band with probability $s^r$ (all $r$ rows must agree), so the candidate probability is $1 - (1 - s^r)^b$.\n\nFor $s = 0.8$, $r = 5$, $b = 20$: $s^5 = 0.328$, $(1 - 0.328)^{20} = 0.672^{20} \\approx 0.00036$, so the probability is about $0.9996$. For $s = 0.3$ it is only 0.047. The curve is S-shaped with its threshold near $(1/b)^{1/r} \\approx 0.55$, so near-duplicates are almost always found and unrelated pairs almost never are, without comparing all $\\binom{n}{2}$ pairs. Candidates are then verified with the true Jaccard."
+        },
+        {
+          "level": "mid",
+          "q": "Given a 1T-token budget and sources of 800B (web), 100B (code) and 20B (books) unique tokens, design weights and report the epochs per source.",
+          "a": "The epochs of source $i$ are $w_i D / S_i$. A reasonable starting point is web 0.75, code 0.15, books 0.10 for $D = 1\\text{T}$: web gets 750B tokens from 800B, so 0.94 epochs; code gets 150B from 100B, so 1.5 epochs; books get 100B from 20B, so 5 epochs.\n\nFive epochs of books is aggressive. Experiments on data-constrained training suggest a few epochs of repeated data are worth nearly as much as fresh tokens, but returns collapse after roughly 4 or more. I would cut books to 0.05 (2.5 epochs) and give the freed 0.05 to web (0.80, exactly one epoch). In practice the weights are chosen by training small proxy models on candidate mixtures and comparing evaluations, and often the mixture is shifted toward high-quality sources late in training."
+        },
+        {
+          "level": "mid",
+          "q": "A pipeline has filters with keep-rates 0.9 (URL), 0.5 (language), 0.6 (heuristics), 0.4 (quality) and 0.5 (dedup). What fraction survives, and how should the filters be ordered?",
+          "a": "Keep-rates multiply: $0.9 \\times 0.5 \\times 0.6 \\times 0.4 \\times 0.5 = 0.054$, so about 5.4% of the extracted text survives; from 100 TB that is 5.4 TB.\n\nOrder matters for cost, not for the final fraction in this idealised model. Run cheap filters first (URL block lists, language ID, simple heuristics) because they discard the most data per unit of compute, and run expensive ones last on the smallest volume: model-based quality scoring and near-duplicate detection. One caveat is that filters are not independent in practice: deduplicating before quality filtering can change which copy is kept. Judge each filter by the downstream results of a proxy model trained on a fixed token budget, not by how clean samples look."
+        },
+        {
+          "level": "senior",
+          "q": "Your new model scores 92% on a public benchmark but 74% on a fresh, private set of similar questions. How do you investigate contamination and what do you do about it?",
+          "a": "The 18-point gap is a strong hint of contamination or overfitting to the benchmark's format. First, run an n-gram overlap audit: break each benchmark item into 13-grams and look them up in an index of the training corpus; flag items with any long match or an overlap fraction above a threshold. Then compare accuracy on flagged and clean subsets. If $f = 20\\%$ of items are contaminated at 95% accuracy and the clean 80% score 60%, reported accuracy is $0.2 \\times 0.95 + 0.8 \\times 0.60 = 67\\%$, and 60% is the honest estimate.\n\nN-gram checks miss paraphrases, so also run embedding-similarity search between benchmark items and training data. Remediation: decontaminate the training set against all evaluations you care about, retrain or at least report clean-subset scores, keep private held-out sets, and refresh benchmarks with post-cutoff questions. Do not use the public number in decisions."
+        },
+        {
+          "level": "senior",
+          "q": "A team wants to train a 13B model with 150 tokens per parameter but has only 1.35T tokens of filtered text. What are your options?",
+          "a": "The target is $150 \\times 13\\text{B} = 1.95\\text{T}$ tokens, so the corpus covers $1.35/1.95 \\approx 69\\%$ of the plan, which means 1.44 epochs if we simply repeat. Options:\n\n1. **Repeat**: 1.44 epochs is acceptable; data-constrained scaling results show a few epochs lose little value. Risk is low here.\n2. **Widen the corpus**: loosen the quality threshold, add languages, code, transcribed audio, or documents dropped earlier. This adds tokens of lower average quality; test with a proxy model.\n3. **Synthetic data**: rewrite or generate text with a strong model, filter and verify (code execution, answer checking). Useful for maths, code and reasoning; unverified synthetic text can amplify errors.\n4. **Change the plan**: train fewer tokens per parameter, accepting a small loss penalty.\n\nI would start with option 1, validate with a proxy run that 1.44 epochs does not hurt, and top up with filtered synthetic data in the weakest domains."
+        }
+      ]
+    },
+    {
+      "slug": "scaling-laws",
+      "title": "Scaling Laws and Compute Budgets",
+      "lesson": "scaling-laws",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What does it mean that loss follows a power law in model size?",
+          "a": "It means the reducible part of the loss falls as a fixed power of the number of parameters: $L(N) = E + A/N^{\\alpha}$. $E$ is the irreducible loss (the entropy of the text itself), $A$ sets the scale and $\\alpha$ is the exponent. Multiplying $N$ by a factor $k$ multiplies the reducible loss by $k^{-\\alpha}$. With $\\alpha = 0.34$, doubling the model cuts the reducible part by a factor of $2^{-0.34} \\approx 0.79$ and a tenfold increase multiplies it by about 0.46.\n\nOn a log-log plot of $L - E$ against $N$ this is a straight line with slope $-\\alpha$. Each doubling helps by the same ratio, so absolute gains shrink, and loss can never fall below $E$. This regularity lets teams fit small runs and predict larger ones."
+        },
+        {
+          "level": "junior",
+          "q": "Where does $C \\approx 6ND$ come from?",
+          "a": "$C$ is training compute in FLOPs, $N$ the parameter count and $D$ the number of training tokens. Each parameter takes part in one multiply and one add per token on the forward pass, which is 2 FLOPs. The backward pass needs two matrix products per layer: one for the gradient with respect to activations ($2N$) and one for the gradient with respect to weights ($2N$). So the total is $2N + 2N + 2N = 6N$ FLOPs per token, and $6ND$ for $D$ tokens.\n\nIt ignores the attention score computation and small operations, which add a modest percentage at typical context lengths. For inference there is only the forward pass, so about $2N$ FLOPs per token. Example: Chinchilla, $6 \\times 7\\times10^{10} \\times 1.4\\times10^{12} = 5.88\\times10^{23}$ FLOPs."
+        },
+        {
+          "level": "mid",
+          "q": "Write the Chinchilla loss formula, interpret its three terms and say what you do if the data term dominates.",
+          "a": "$L(N, D) = E + A/N^{\\alpha} + B/D^{\\beta}$. $E$ is the irreducible loss. $A/N^{\\alpha}$ is the **capacity term**: loss due to the model being finite. $B/D^{\\beta}$ is the **data term**: loss due to the training run being finite. Constants depend on the dataset and recipe; one refit uses $E = 1.82$, $A = 482$, $B = 2085$, $\\alpha = 0.348$, $\\beta = 0.366$.\n\nFor Chinchilla ($N = 70$B, $D = 1.4$T) the terms are about $0.082$ and $0.075$: nearly balanced. For GPT-3 ($175$B, $300$B tokens) they are $0.059$ and $0.132$: data-limited. If the data term dominates, a fixed budget is better spent on more tokens and a smaller model, because the capacity term is already small. If capacity dominates, make the model bigger. The terms are independent, which is what makes the formula a planning tool."
+        },
+        {
+          "level": "mid",
+          "q": "For a budget of $10^{23}$ FLOPs, what model size and token count do you pick under the 20-tokens-per-parameter rule?",
+          "a": "With $D = 20N$, $C = 6ND = 120 N^2$, so $N = \\sqrt{C/120} = \\sqrt{8.33\\times10^{20}} \\approx 2.9\\times10^{10}$, about 29B parameters, and $D = 20N \\approx 5.8\\times10^{11}$, about 577B tokens. Check: $6 \\times 2.89\\times10^{10} \\times 5.77\\times10^{11} \\approx 10^{23}$.\n\nUsing the full formula with refit constants gives about 29.5B parameters and 566B tokens (19 tokens per parameter) and a predicted loss near 2.03, so the rule of thumb is accurate to a few percent. Because the loss near the optimum is a shallow valley, being off by a factor of 1.5 in either direction costs little. I would then convert the budget to GPU time: at 40% MFU on H100s that is $10^{23}/(989\\times10^{12} \\times 0.4) \\approx 2.5\\times10^{8}$ GPU-seconds, about 70,000 GPU-hours."
+        },
+        {
+          "level": "mid",
+          "q": "How long would a $5.88\\times10^{23}$ FLOP run take on 1,024 H100s at 40% MFU?",
+          "a": "Cluster throughput is $1024 \\times 989\\times10^{12} \\times 0.4 \\approx 4.05\\times10^{17}$ FLOP/s, using the dense BF16 peak of an H100 SXM. Time is $5.88\\times10^{23}/4.05\\times10^{17} \\approx 1.45\\times10^{6}$ seconds, or about 16.8 days. In GPU-hours that is about 413,000.\n\nThe key factor is MFU, model FLOPs utilisation: the fraction of peak the training actually achieves after communication, memory-bound operations and idle time. Using peak with no MFU would predict about 6.7 days, off by a factor of 2.5. Real plans add margin for restarts after hardware failures, evaluation, and checkpointing, and the total programme cost usually includes experiments and failed runs that can equal the main run. At an assumed price per GPU-hour you can convert directly to dollars."
+        },
+        {
+          "level": "mid",
+          "q": "What does a log-log slope of $-0.155$ for reducible loss versus parameters imply for a 10x larger model?",
+          "a": "The slope of $\\log_{10}(L - E)$ against $\\log_{10} N$ is $-\\alpha$, so $\\alpha \\approx 0.155$. A tenfold increase in $N$ multiplies the reducible loss by $10^{-0.155} \\approx 0.70$, a 30% reduction. For example, if reducible loss at $10^9$ parameters is 0.35, at $10^{10}$ it would be about $0.245$, and at $10^{11}$ about $0.17$.\n\nThe caveats matter: the estimate assumes $E$ is known (errors in $E$ change the slope, increasingly so far from the data), that the recipe is fixed, and that extrapolation stays inside the regime where the power law holds. Two points cannot tell you whether the line continues; real fits use many runs across several orders of magnitude. And a 30% cut of reducible loss is a small absolute change in total loss if $E$ is large."
+        },
+        {
+          "level": "senior",
+          "q": "Your product serves 10T tokens over a model's life. Compare a compute-optimal 70B with a 30B trained to the same loss, using lifetime compute.",
+          "a": "Lifetime compute is $6ND + 2ND_{\\text{inf}}$. Chinchilla-style 70B on 1.4T tokens costs $5.88\\times10^{23}$ to train. Reaching the same loss with a 30B model needs about 5.0T tokens (166 per parameter, from solving the loss formula for $D$), costing $6 \\times 3\\times10^{10} \\times 5\\times10^{12} \\approx 9\\times10^{23}$.\n\nInference at 10T tokens: the 70B costs $2 \\times 7\\times10^{10} \\times 10^{13} = 1.4\\times10^{24}$; the 30B costs $6\\times10^{23}$. Lifetime totals: about $2.0\\times10^{24}$ versus $1.5\\times10^{24}$, so the 30B is roughly 25% cheaper overall, and also faster per request. Break-even is about $3.9\\times10^{12}$ served tokens. If expected traffic were only 1T tokens, the 70B would win on total compute. The decision therefore depends on traffic forecasts, on data availability (5T good tokens is a lot), and on whether the smaller model is harder to fine-tune or quantise."
+        },
+        {
+          "level": "senior",
+          "q": "A colleague proposes extrapolating a scaling law from three runs at $10^{19}$ to $10^{20}$ FLOPs to promise a benchmark score for a $10^{24}$ run. What do you say?",
+          "a": "I would push back on three grounds. First, the range: extrapolating over four orders of magnitude from one decade of data makes the fitted exponent and especially the floor $E$ very uncertain; with three points the fit has almost no degrees of freedom. I would add runs across at least two or three decades and report confidence intervals.\n\nSecond, the target: scaling laws predict pretraining loss, not benchmark accuracy. Downstream metrics are noisy and sometimes change abruptly, partly because discontinuous metrics like exact match give no credit until every token is right. Continuous proxies (log-probability of the correct answer) are more forecastable.\n\nThird, recipe changes at scale (data running out, instabilities, precision changes) can break the curve. What the law is good for is choosing $N$ and $D$ and monitoring the big run against the forecast, where a loss above the curve signals a bug. I would promise a loss range, not a score."
+        }
+      ]
+    },
+    {
+      "slug": "training-at-scale",
+      "title": "Training at Scale: Memory, Precision and Parallelism",
+      "lesson": "training-at-scale",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "Why does training a 7B model need far more GPU memory than running it?",
+          "a": "Inference needs the weights only: $2 \\times 7\\times10^9 = 14$ GB in BF16, plus a KV cache. Training also stores gradients (another 2 bytes per parameter), and the optimizer's state. Mixed-precision AdamW keeps an FP32 master copy of the weights (4 bytes), plus Adam's first and second moments (4 bytes each), so the total is $2 + 2 + 4 + 4 + 4 = 16$ bytes per parameter.\n\nFor 6.74B parameters that is $16 \\times 6.74\\times10^9 \\approx 108$ GB for model states alone, more than one 80 GB GPU, before activations. Activations (saved intermediate results for backpropagation) add more, scaling with batch size and sequence length. This is why full fine-tuning of even 7B models usually needs several GPUs with sharding, and why parameter-efficient methods exist."
+        },
+        {
+          "level": "junior",
+          "q": "What is the difference between BF16 and FP16, and why is BF16 preferred for LLM training?",
+          "a": "Both use 16 bits. FP16 has 5 exponent bits and 10 fraction bits; BF16 has 8 exponent bits and 7 fraction bits. BF16 therefore has the same dynamic range as FP32 (largest value about $3.4\\times10^{38}$) but less precision, while FP16 has more precision but overflows above 65,504 and underflows small gradients.\n\nFP16 training needs **loss scaling**: multiply the loss by a large factor so small gradients stay representable, and divide before the update. BF16 usually needs none, which makes training simpler and more stable. Both lose small updates (the spacing near 1.0 is about 0.008 in BF16), so the optimizer keeps FP32 master weights where tiny updates accumulate correctly."
+        },
+        {
+          "level": "mid",
+          "q": "Compute per-GPU model-state memory for a 7.5B model on 64 GPUs under plain data parallelism and ZeRO stages 1, 2 and 3.",
+          "a": "Use 2 bytes weights, 2 bytes gradients, 12 bytes optimizer states per parameter. Plain data parallelism: $16 \\times 7.5 = 120$ GB per GPU. ZeRO-1 shards optimizer states: $(2 + 2) \\times 7.5 = 30$ GB plus $12 \\times 7.5/64 = 1.41$ GB gives 31.4 GB. ZeRO-2 also shards gradients: $2 \\times 7.5 = 15$ GB plus $14 \\times 7.5/64 = 1.64$ GB gives 16.6 GB. ZeRO-3 shards everything: $120/64 \\approx 1.9$ GB.\n\nZeRO-1 and 2 add almost no communication over data parallelism. ZeRO-3 (FSDP) all-gathers each layer's parameters just before use and reduce-scatters gradients, adding roughly 50% communication volume. Activations are not sharded by ZeRO, so they remain per-GPU."
+        },
+        {
+          "level": "mid",
+          "q": "Estimate activation memory for a 32-layer, $h = 4096$ model at sequence 4096, batch 1, with and without checkpointing.",
+          "a": "With FlashAttention, per-layer activations are about $34\\,sbh$ bytes in 16-bit: $34 \\times 4096 \\times 1 \\times 4096 \\approx 570$ MB, so 32 layers need about 18.3 GB. Without memory-efficient attention, the score matrices add a term $5as/h$ in the bracket: $5 \\times 32 \\times 4096/4096 = 160$, so per layer $194\\,sbh \\approx 3.25$ GB and the whole model about 104 GB, more than an 80 GB GPU.\n\nWith full checkpointing you store only each layer's input ($2sbh = 33.5$ MB per layer, about 1.07 GB total) plus one layer's full activations during recomputation (0.57 GB), so about 1.6 GB: an 11x saving. The cost is an extra forward pass: compute per token goes from $6N$ to $8N$, about 33% more, usually 20% to 30% slower steps. Selective checkpointing recomputes only the memory-heavy, cheap operations and recovers most of the saving for a few percent of compute."
+        },
+        {
+          "level": "mid",
+          "q": "Compute the pipeline bubble for 4 stages with 4, 16 and 64 micro-batches, and say how you would choose.",
+          "a": "The bubble fraction is $(p - 1)/(m + p - 1)$. With $p = 4$: $m = 4$ gives $3/7 = 43\\%$; $m = 16$ gives $3/19 = 16\\%$; $m = 64$ gives $3/67 = 4.5\\%$.\n\nIncreasing $m$ shrinks the bubble but has costs: more micro-batches in flight means more stored activations (interleaved or one-forward-one-backward schedules bound this), $m$ is limited by the global batch size and per-micro-batch efficiency (very small micro-batches under-use the GPU), and gradient accumulation across them delays the update. I would choose $m$ as a multiple of $4p$ or so, giving a bubble under about 10% when the global batch allows it, and use fewer pipeline stages if it does not. Pipeline stages only exchange boundary activations, so they can span nodes; tensor parallelism should stay within a node."
+        },
+        {
+          "level": "mid",
+          "q": "Evaluate a warmup-plus-cosine schedule at step 26,000 with peak $3\\times10^{-4}$, floor $3\\times10^{-5}$, 2,000 warmup steps, 50,000 total.",
+          "a": "After warmup, $\\eta_t = \\eta_{\\min} + \\frac{1}{2}(\\eta_{\\max} - \\eta_{\\min})\\left(1 + \\cos\\left(\\pi \\frac{t - T_w}{T - T_w}\\right)\\right)$. Here $(t - T_w)/(T - T_w) = 24{,}000/48{,}000 = 0.5$, $\\cos(\\pi/2) = 0$, so $\\eta = 3\\times10^{-5} + 0.5 \\times 2.7\\times10^{-4} = 1.65\\times10^{-4}$, the midpoint between peak and floor.\n\nAt step 1,000, mid-warmup, it is $3\\times10^{-4} \\times 1000/2000 = 1.5\\times10^{-4}$; at 38,000 it is about $6.95\\times10^{-5}$; at 50,000 it is $3\\times10^{-5}$. Warmup protects the early phase, when gradients are erratic and Adam's moment estimates are immature. A cosine schedule bakes in the total step count, so extending training mid-run leaves a schedule that decayed too early; warmup-stable-decay schedules avoid this by holding the peak and decaying only at the end."
+        },
+        {
+          "level": "senior",
+          "q": "A 70B model must be trained on 1,024 GPUs with 80 GB each. Propose a parallelism layout and justify it with memory arithmetic.",
+          "a": "Model states are $16 \\times 70\\times10^9 = 1.12$ TB. Pick tensor parallelism $t = 8$ within each node (NVLink), pipeline parallelism $p = 4$ across nodes, and data parallelism $d = 1024/(8 \\times 4) = 32$. Each model replica spans $t \\times p = 32$ GPUs, so unsharded states per GPU are $1.12\\text{ TB}/32 = 35$ GB; adding ZeRO-1 across the 32 data-parallel replicas shards the 12 bytes of optimizer state further, reducing states to roughly $4\\Psi/32 + 12\\Psi/(32 \\times 32) \\approx 8.8 + 0.8 \\approx 9.6$ GB.\n\nThat leaves around 70 GB for activations, which allows modest micro-batches with selective checkpointing. Choose micro-batches per pipeline so the bubble $3/(m + 3)$ is under 10%, so $m \\ge 28$; set the global batch accordingly (for example micro-batch 1, $m = 32$, $d = 32$ gives 1,024 sequences, about 4M tokens at 4K context). Risks: stage imbalance (embeddings and the LM head make the first and last stages heavier), and failures at this scale, which need frequent checkpoints."
+        },
+        {
+          "level": "senior",
+          "q": "Loss spikes and then diverges to NaN 5,000 steps into a large BF16 run. How do you debug it?",
+          "a": "First separate cause categories. **Optimisation**: check whether the peak learning rate and warmup are too aggressive for this scale; spikes that recur at similar loss levels often shrink with a lower peak, longer warmup, a gradient-norm clip (commonly 1.0), or a larger Adam $\\epsilon$ and $\\beta_2 = 0.95$. **Data**: find the batch at the spike; a corrupted shard, an extremely repetitive document or a bad tokenisation can cause it; check by replaying that batch on an earlier checkpoint. **Numerics**: log activation and gradient norms per layer; attention logits or the final logits growing without bound point to the need for QK-normalisation or a z-loss on the output logits; check that normalisation statistics and softmax run in FP32.\n\n**System**: a silent hardware error on one GPU can corrupt values; compare against a rerun, check ECC logs, and verify data-parallel replicas agree. Practical mitigation is to roll back to the last good checkpoint, skip the offending batches, and resume with a lower learning rate. Keep frequent checkpoints, since each rollback costs the steps since the last one."
+        }
+      ]
+    },
+    {
+      "slug": "instruction-tuning",
+      "title": "Instruction Tuning (SFT)",
+      "lesson": "instruction-tuning",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What is supervised fine-tuning, and how does it change a base model's behaviour?",
+          "a": "Supervised fine-tuning (SFT), or instruction tuning, trains a pretrained model on prompt-response pairs with the same next-token cross-entropy loss, applied to the response tokens. A base model continues text in whatever style is likely: asked a question, it may produce more questions. After SFT it treats the prompt as a request and writes an answer, in a chat format, and stops.\n\nThe knowledge was already in the model from pretraining; SFT mostly teaches a format and a behaviour. This is why a small dataset, from thousands to a few hundred thousand examples, can be enough, and why SFT costs a tiny fraction of pretraining: 50,000 examples of 600 tokens for 3 epochs on a 7B model is about $3.8\\times10^{18}$ FLOPs, roughly 0.005% of a 2T-token pretraining run."
+        },
+        {
+          "level": "junior",
+          "q": "Why is the loss masked on prompt tokens during SFT?",
+          "a": "We want the model to get good at writing answers, not at predicting what users will type. If prompt tokens contributed to the loss, most of the gradient could come from guessing user text, which is hard to predict and not a behaviour we want to imitate. In a worked example with 6 prompt tokens and 4 response tokens, unmasked loss is 1.30 nats, of which about 87% comes from the prompt, versus 0.417 on the response alone.\n\nThe mask only affects the loss: the model still reads the whole sequence, so response predictions are conditioned on the prompt. Implementation: set the label of masked positions to an ignore value (such as -100 in PyTorch). The end-of-turn token must stay unmasked, otherwise the model never learns to stop."
+        },
+        {
+          "level": "mid",
+          "q": "What is a chat template, and what goes wrong if training and inference templates differ?",
+          "a": "A chat template is the rule that serialises role-tagged messages (system, user, assistant, tool) into one token sequence with special tokens marking message boundaries, for example start and end markers with a role name. The model sees only the flat sequence; the template is how it learns who is speaking and where its turn ends.\n\nIf inference uses a different template from training, quality degrades in ways that are easy to miss: the model may ignore the system prompt, produce odd formatting, fail to stop (never emitting the trained end-of-turn token) or continue by writing the next user message. The overhead is also real: 20 messages at 5 template tokens each add 100 tokens to a 500-token conversation, about 17%. Use the tokenizer's own template function for both training and serving, and decode one training example to text to check it before every run."
+        },
+        {
+          "level": "mid",
+          "q": "Compare per-token and per-sequence loss averaging in SFT batches.",
+          "a": "Per-token averaging pools all unmasked tokens in the batch and divides once; per-sequence averaging computes each example's mean first, then averages examples. Take a 10-token answer with mean loss 1.0 and a 100-token answer with mean loss 0.5. Per-token: $(10 \\times 1.0 + 100 \\times 0.5)/110 = 0.545$; per-sequence: $0.75$. Per-token gives the long answer 91% of the weight and favours learning long outputs; per-sequence weights short answers equally.\n\nNeither is wrong, but the choice shapes behaviour, for example length tendencies. A frequent bug is gradient accumulation: normalising each micro-batch separately gives a different weighting from normalising over the whole accumulated batch. Normalise by the total number of unmasked tokens across all micro-batches (or by the number of sequences, consistently) so that the effective loss is identical regardless of how the batch is split."
+        },
+        {
+          "level": "mid",
+          "q": "A batch of 8 sequences padded to 1,024 tokens holds 4,096 real tokens. Quantify the waste and describe packing done correctly.",
+          "a": "Padding efficiency is real tokens divided by slots: $4096/(8 \\times 1024) = 50\\%$, so half the compute is wasted. Packing concatenates several examples into each fixed-length row, bringing efficiency close to 100%, about a 2x throughput gain here.\n\nDone correctly, packing needs a block-diagonal causal attention mask so tokens attend only to earlier tokens of their own example, and position indices that reset at each example's start. With an ordinary causal mask, later examples can attend to earlier unrelated ones, teaching spurious dependencies. Modern attention kernels accept sequence boundaries directly. Loss masking still applies per example, and the end-of-turn token of each example must be unmasked. Sorting or bucketing by length is a simpler middle ground that reduces padding without changing attention."
+        },
+        {
+          "level": "mid",
+          "q": "A fine-tuned model opens most answers with 'Certainly! Here is'. Diagnose and fix.",
+          "a": "SFT imitates the style of its targets, so a habit shared by many responses becomes the model's default. First check the training data: count how many responses begin with the phrase. If synthetic data was generated by a model with that habit, 30% to 70% of examples may carry it. The fix is in the data: filter or rewrite those openings, and diversify generation prompts.\n\nHyperparameters only change how fast the habit is learned. Other contributing factors: very small data with several epochs (memorisation of the common prefix), and no preference stage to penalise it. After cleaning, measure the rate of the phrase on held-out prompts before and after to confirm the effect. In general, any recurring quirk of a fine-tuned model should send you to the dataset first, since SFT is a mirror of its data."
+        },
+        {
+          "level": "senior",
+          "q": "A team wants to teach an instruct model the quarter's new product facts using SFT on 500 Q&A pairs. What do you advise?",
+          "a": "I would advise against relying on SFT for facts. New facts appear in a handful of examples, so the model learns to reproduce those answers to near-identical questions and generalises poorly. Worse, research on fine-tuning with unfamiliar knowledge (Gekhman et al., 2024) found such examples are learned slowly and, once learned, increase hallucination on other questions, because the model is trained to answer confidently without grounding.\n\nA better design is retrieval: put the current product documentation in the context, with citations, and use SFT only for behaviour (answer format, tone, refusing when the context lacks the answer). If fine-tuning on the facts is required, make examples grounded (include the source passage in the prompt), add examples where the right answer is 'not in the documentation', mix in 20% general replay data to limit forgetting, and evaluate hallucination on held-out questions alongside task accuracy. Measure general ability before and after."
+        },
+        {
+          "level": "senior",
+          "q": "Design an SFT data pipeline and evaluation for a customer-support classifier-plus-reply model with 3,000 labelled tickets.",
+          "a": "Start with guidelines defining a good reply and the label taxonomy, and have two reviewers label a 200-ticket overlap set to measure agreement; low agreement means the guidelines, not the model, need work. Split by time (train on older tickets, test on the most recent month) to mimic deployment and avoid leakage; check n-gram overlap between train and test, since tickets are often duplicated.\n\nExpand the 3,000 labels using a strong model to draft replies, filtered by rules (format, policy), judged against a rubric, and spot-checked by humans; deduplicate with MinHash. Train an instruct model with LoRA, response-only loss, 2 to 3 epochs, using the base model's chat template exactly. Evaluate on the held-out set for label accuracy and reply quality (rubric plus human review of a sample), run a general benchmark to detect forgetting, and probe known failure modes: invented policy details, wrong tone for angry customers. Keep the large model as a fallback for low-confidence cases."
+        }
+      ]
+    },
+    {
+      "slug": "preference-tuning",
+      "title": "Preference Tuning: RLHF and DPO",
+      "lesson": "preference-tuning",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "Why collect preferences between two answers instead of asking people to write ideal answers?",
+          "a": "Judging is easier and more reliable than producing. A reviewer who could not write the perfect answer to a hard question can usually tell which of two drafts is clearer, more accurate or less evasive. Comparisons are also faster, so you get more labels per hour, and a ranking of $k$ responses gives $\\binom{k}{2}$ pairs: 6 pairs from 4 responses, 10 from 5.\n\nPreferences also carry a contrast that demonstrations lack: not only what to move toward but what to move away from. That helps with qualities that are hard to demonstrate, such as honesty about uncertainty, appropriate length and refusing harmful requests without refusing harmless ones. The limits are noise (labellers often disagree on close pairs) and bias, such as a preference for longer or more flattering answers, which models can exploit."
+        },
+        {
+          "level": "junior",
+          "q": "State the Bradley-Terry model and what a reward gap of 2 means.",
+          "a": "Bradley-Terry models the probability that response $y_w$ beats $y_l$ for the same prompt as $P(y_w \\succ y_l) = \\sigma(r_w - r_l)$, where $r$ are scalar rewards and $\\sigma(z) = 1/(1 + e^{-z})$. Only the difference matters, so adding a constant to all rewards changes nothing.\n\nA gap of 2 gives $\\sigma(2) = 0.881$: the model says the first response is preferred 88% of the time. A gap of 0 gives 0.5, a gap of 1 gives 0.731 and a gap of $-1$ gives 0.269. The reward model is trained by minimising $-\\log\\sigma(r_w - r_l)$ on labelled pairs. The loss at gap 0 is $\\ln 2 = 0.693$ and at gap 2 is 0.127; the gradient weight is $\\sigma(-\\Delta)$, so pairs the model ranks wrongly are corrected hardest."
+        },
+        {
+          "level": "mid",
+          "q": "Write the RLHF objective and explain the role of the KL term and $\\beta$.",
+          "a": "The policy maximises $\\mathbb{E}_{y \\sim \\pi_\\theta}[r_\\phi(x, y)] - \\beta\\,\\mathbb{D}_{\\text{KL}}[\\pi_\\theta(\\cdot|x)\\,\\|\\,\\pi_{\\text{ref}}(\\cdot|x)]$, where $r_\\phi$ is the reward model and $\\pi_{\\text{ref}}$ the SFT model the policy started from.\n\nThe reward model is a proxy trained on limited data and is only reliable near the responses it saw. Without a leash, the policy drifts to regions where the score is high for wrong reasons (reward hacking). The KL term penalises drift: for a sampled answer, the penalty is $\\beta$ times the sum of per-token log-ratios. Example: reward 1.2, sequence log-ratio 2.0 nats, $\\beta = 0.1$ gives shaped reward $1.2 - 0.2 = 1.0$; a log-ratio of 12 would cancel the reward entirely. Larger $\\beta$ keeps the policy closer to the reference, giving safer but smaller gains. Some implementations adapt $\\beta$ to hold KL near a target."
+        },
+        {
+          "level": "mid",
+          "q": "Explain PPO's clipped objective with an example where clipping is active.",
+          "a": "PPO maximises $\\mathbb{E}[\\min(\\rho\\hat A, \\text{clip}(\\rho, 1-\\epsilon, 1+\\epsilon)\\hat A)]$, where $\\rho = \\pi_\\theta/\\pi_{\\theta_{\\text{old}}}$ is the probability ratio for a token and $\\hat A$ its advantage (how much better than expected the outcome was, estimated with a value model).\n\nTake $\\epsilon = 0.2$. A good token ($\\hat A = +1$) whose probability rose by 30% ($\\rho = 1.3$): the unclipped term is 1.3, the clipped term is $1.2$, and the minimum is 1.2, so the gain is capped and the gradient is zero. A bad token ($\\hat A = -1$) pushed down to $\\rho = 0.7$: unclipped $-0.7$, clipped $-0.8$, minimum $-0.8$, also zero gradient. The clip removes the incentive to move any token's probability by more than about 20% per update, which keeps learning stable and keeps the new policy close to the one that generated the samples."
+        },
+        {
+          "level": "mid",
+          "q": "Derive the DPO loss from the KL-regularised objective.",
+          "a": "The optimum of $\\max_\\pi \\mathbb{E}[r] - \\beta\\,\\mathbb{D}_{\\text{KL}}[\\pi\\|\\pi_{\\text{ref}}]$ is $\\pi^*(y|x) = \\frac{1}{Z(x)}\\pi_{\\text{ref}}(y|x)e^{r(x,y)/\\beta}$. Taking logs and rearranging: $r(x,y) = \\beta\\log\\frac{\\pi^*(y|x)}{\\pi_{\\text{ref}}(y|x)} + \\beta\\log Z(x)$.\n\nSubstitute into Bradley-Terry, $P(y_w \\succ y_l) = \\sigma(r_w - r_l)$. The $\\beta\\log Z(x)$ term is the same for both responses (same prompt) and cancels, leaving $\\sigma\\!\\big(\\beta[\\log\\frac{\\pi^*(y_w)}{\\pi_{\\text{ref}}(y_w)} - \\log\\frac{\\pi^*(y_l)}{\\pi_{\\text{ref}}(y_l)}]\\big)$. Replace $\\pi^*$ with the trainable $\\pi_\\theta$ and minimise the negative log-likelihood: $\\mathcal{L}_{\\text{DPO}} = -\\mathbb{E}\\log\\sigma(\\beta[\\Delta_w - \\Delta_l])$ with $\\Delta = \\log\\pi_\\theta - \\log\\pi_{\\text{ref}}$. The intractable partition function disappears, so no reward model or RL loop is needed."
+        },
+        {
+          "level": "mid",
+          "q": "Compute the DPO loss for $\\beta = 0.1$, $\\Delta_w = 2$, $\\Delta_l = -1$, and its gradient weight.",
+          "a": "Margin $= \\beta(\\Delta_w - \\Delta_l) = 0.1 \\times 3 = 0.3$. $\\sigma(0.3) = 1/(1 + e^{-0.3}) = 0.574$, so the loss is $-\\ln 0.574 = 0.554$. At initialisation, with $\\pi_\\theta = \\pi_{\\text{ref}}$, both $\\Delta$ are 0, the margin is 0 and the loss is $\\ln 2 = 0.693$.\n\nThe gradient with respect to the log-probabilities is scaled by $\\beta\\sigma(-\\text{margin}) = 0.1 \\times 0.426 = 0.043$: it raises $\\log\\pi_\\theta(y_w)$ and lowers $\\log\\pi_\\theta(y_l)$, with larger weight on pairs the implicit reward ranks wrongly. Raising $\\beta$ to 0.5 with the same log-ratios makes the margin 1.5 and the loss 0.201: the same movement counts for more, so a high $\\beta$ saturates quickly and holds the policy near the reference."
+        },
+        {
+          "level": "mid",
+          "q": "What is GRPO and what do the advantages look like for rewards (1, 0, 0, 0) in a group of four?",
+          "a": "Group Relative Policy Optimization removes PPO's value model. For each prompt, sample a group of $G$ responses, score them (often with a verifiable checker), and set each advantage to its reward's z-score within the group: $\\hat A_i = (r_i - \\mu)/\\sigma$. The update then uses the clipped ratio and a KL penalty as in PPO.\n\nFor rewards $(1, 0, 0, 0)$: $\\mu = 0.25$, $\\sigma = \\sqrt{0.1875} = 0.433$. The correct answer gets $0.75/0.433 = +1.73$ and each wrong one $-0.25/0.433 = -0.58$, so a rare success is boosted strongly. If all four are right or all wrong, $\\sigma = 0$ and every advantage is 0: that prompt teaches nothing, so training sets favour prompts of intermediate difficulty. Advantages here are shared by every token of a response, and the baseline is the group mean, which costs only extra samples, not another network."
+        },
+        {
+          "level": "senior",
+          "q": "Reward keeps rising during RLHF but human evaluations fall. Diagnose and respond.",
+          "a": "This is reward over-optimisation: the policy has moved into regions where the proxy reward model is inaccurate. Gao et al. showed that true quality typically rises, peaks and then falls as KL from the reference grows, while the proxy keeps rising; for a fixed reward model the peak is a limit, not a target.\n\nDiagnose with samples: look for length growth, flattery and sycophancy, stock phrases, fabricated but confident detail, and formatting excess; plot reward against response length. Respond by rolling back to the checkpoint near the peak of an independent evaluation (held-out prompts, human review, a different judge), raising $\\beta$ or lowering the learning rate, adding length control or a length-normalised reward, improving the reward model (more data, a larger model, an ensemble taking a conservative estimate), and refreshing preference data on the current policy's samples. Where possible, add verifiable rewards, which are much harder to game. Make the independent evaluation, not the training reward, the stopping criterion."
+        },
+        {
+          "level": "senior",
+          "q": "Compare RLHF with PPO and DPO for a product team with 5,000 preference pairs. Which would you choose and why?",
+          "a": "With 5,000 pairs and a small team, DPO. It trains like SFT: two models in memory (policy and a frozen reference, whose log-probabilities can be precomputed), no sampling loop, stable losses and few hyperparameters ($\\beta$ around 0.1, a low learning rate near $5\\times10^{-7}$ to $5\\times10^{-6}$ for full fine-tuning, 1 to 3 epochs). PPO needs four models (policy, reference, reward, value), slow generation, and a reward model that 5,000 pairs cannot train well.\n\nDPO's weaknesses are that it is offline (it never sees its own samples, so it cannot discover and fix new failure modes) and that it only constrains the margin, so the likelihood of both chosen and rejected answers can fall. Mitigations: monitor the chosen log-probability, add a small SFT term on the chosen answer, run iterative rounds (sample from the current model, label, retrain), and keep an independent evaluation covering length, refusals and sycophancy. If the task has a verifier, consider GRPO-style RL instead."
+        }
+      ]
+    },
+    {
+      "slug": "peft-lora",
+      "title": "Parameter-Efficient Fine-Tuning: LoRA and QLoRA",
+      "lesson": "peft-lora",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What is LoRA, and why is it cheaper than full fine-tuning?",
+          "a": "LoRA freezes the pretrained weight matrix $W_0$ and learns a low-rank update: $W = W_0 + \\frac{\\alpha}{r}BA$, with $B \\in \\mathbb{R}^{d_{\\text{out}}\\times r}$, $A \\in \\mathbb{R}^{r\\times d_{\\text{in}}}$ and a small rank $r$. Only $A$ and $B$ are trained.\n\nIt is cheaper because only a tiny fraction of parameters need gradients and optimizer states. Full fine-tuning of 6.74B parameters needs $16 \\times 6.74\\times10^9 \\approx 108$ GB of model states; LoRA at rank 16 on all linear layers trains about 40M parameters (0.6%), needing $16 \\times 40\\times10^6 \\approx 0.64$ GB of states plus the 13.5 GB frozen BF16 base. The adapter file is tens of megabytes instead of a full model copy, and merged into the weights it adds no inference latency."
+        },
+        {
+          "level": "junior",
+          "q": "How many trainable parameters does a rank-8 LoRA add to a $4096 \\times 4096$ matrix?",
+          "a": "LoRA adds $B$ ($4096 \\times 8$) and $A$ ($8 \\times 4096$): $r(d_{\\text{in}} + d_{\\text{out}}) = 8 \\times 8192 = 65{,}536$ parameters. The full matrix has $4096^2 = 16{,}777{,}216$, so LoRA trains $65{,}536/16{,}777{,}216 = 0.39\\%$ of it, which equals $2r/d = 16/4096$.\n\nCost is linear in rank: rank 16 gives 131,072. For a 32-layer model adapting only the query and value matrices at rank 8, the total is $2 \\times 65{,}536 \\times 32 = 4.19$M parameters. Adapting all attention and MLP matrices raises the count several times, because the MLP matrices are larger. Always compare the trainable count printed by your training library against this formula to catch layers adapted by accident or missed."
+        },
+        {
+          "level": "mid",
+          "q": "Why is $B$ initialised to zero, and what is the role of $\\alpha/r$?",
+          "a": "With $B = 0$, the product $BA = 0$, so $W = W_0$ exactly at initialisation: training starts from the pretrained model's behaviour instead of adding noise to every layer. $A$ is initialised randomly (otherwise the gradient with respect to $B$, which depends on $Ax$, would be zero). The first updates move $B$ away from zero.\n\nThe scale $\\alpha/r$ keeps the update's magnitude roughly stable as the rank changes: a larger $r$ makes $BA$ larger, and without the division the best learning rate would shift with $r$. Common settings are $\\alpha = r$ (scale 1) or $\\alpha = 2r$. A larger $\\alpha/r$ acts like a larger learning rate on the adapter. At high ranks some work argues for $\\alpha/\\sqrt{r}$, so it is a design choice, not a law. Practically, fix $\\alpha$ and tune the learning rate, or fix the ratio and tune the learning rate within the typical $10^{-4}$ to $3\\times10^{-4}$ range."
+        },
+        {
+          "level": "mid",
+          "q": "Compute LoRA trainable parameters for Llama-2-7B at rank 16 on $W_Q, W_V$ versus all linear layers.",
+          "a": "Llama-2-7B has $d = 4096$, MLP width 11,008, 32 layers and full multi-head attention. Each attention matrix is $4096 \\times 4096$, costing $16 \\times 8192 = 131{,}072$ at rank 16. For $W_Q, W_V$: $2 \\times 131{,}072 \\times 32 = 8.39$M, which is 0.12% of 6.74B. For all linear layers, add $W_K, W_O$ (another $2 \\times 131{,}072$ per layer) and the three MLP matrices at $16 \\times (4096 + 11008) = 241{,}664$ each, $724{,}992$ for the three. Per layer: $524{,}288 + 724{,}992 = 1{,}249{,}280$; times 32 gives $39.98$M, 0.59%.\n\nAdapting all linear layers costs about 4.8 times more parameters but is generally better at the same rank (the QLoRA paper found that adapting all layers matched full fine-tuning where $Q,V$ only did not). If quality is short, adding target matrices usually helps more than raising the rank."
+        },
+        {
+          "level": "mid",
+          "q": "Estimate memory for fine-tuning a 7B model with full fine-tuning, LoRA and QLoRA.",
+          "a": "Full fine-tuning with mixed-precision AdamW: $16 \\times 6.74\\times10^9 = 108$ GB of model states, plus activations. LoRA (rank 16, all linear layers, 40M trainable): the frozen BF16 base is 13.5 GB and the adapter's states are $16 \\times 40\\times10^6 = 0.64$ GB, about 14.1 GB plus activations. QLoRA: the base at about 4.127 bits per weight is $6.74\\times10^9 \\times 4.127/8 = 3.48$ GB (a few tensors kept in BF16 add a little), plus 0.64 GB for the adapter, about 4.1 GB plus activations.\n\nActivations depend on sequence length, micro-batch and checkpointing, and are typically several GB; with checkpointing at 2K context they are around 2 to 4 GB. So QLoRA fits on a 16 GB GPU, LoRA on 24 GB, while full fine-tuning needs sharding across several 80 GB GPUs. QLoRA trades about 20% to 40% slower training (dequantisation) and slight base-model noise for the memory saving."
+        },
+        {
+          "level": "mid",
+          "q": "What are NF4 and double quantisation, and what do they cost in bits per weight?",
+          "a": "Block-wise 4-bit quantisation divides weights into blocks (64 in QLoRA), scales each block by its absolute maximum and maps each weight to one of 16 levels. NF4 (NormalFloat4) places those levels at quantiles of a standard normal distribution instead of on a uniform grid, because trained weights are roughly normally distributed: levels are denser near zero, where most weights are, so error is lower for the same 4 bits.\n\nEach block needs a scale: an FP32 scale per 64 weights adds $32/64 = 0.5$ bits per weight. Double quantisation quantises the scales too, storing them in 8 bits in groups of 256 with one FP32 constant per group: $8/64 + 32/(64 \\times 256) = 0.125 + 0.002$. Total $4 + 0.127 = 4.127$ bits per weight rather than 4.5, saving about 3 GB on a 65B model, whose 4-bit base occupies roughly 33.5 GB."
+        },
+        {
+          "level": "senior",
+          "q": "You serve 200 customer-specific fine-tunes of a 7B model. Compare merged models with a shared base plus adapters.",
+          "a": "Merged: 200 full copies at 13.5 GB is 2.7 TB of weights; each copy needs its own GPU memory when loaded, so you must route traffic per tenant and many GPUs sit mostly idle for low-traffic tenants. Adapters: one 13.5 GB base plus 200 adapters of about 80 MB each (rank 16, all linear layers, 40M parameters in BF16) is roughly 16 GB total, small enough to keep all adapters resident on one GPU.\n\nThe unmerged path computes $W_0x + \\frac{\\alpha}{r}B(Ax)$ per request. Serving engines batch requests with different adapters together: the shared $W_0x$ runs once for the batch and the small low-rank multiplications run per adapter, so overhead is modest but real, and scheduling is more complex. My design: keep the base plus adapters for the long tail; merge and dedicate capacity only to tenants with high sustained traffic, where the zero-overhead merged model saves latency. Pin base, tokenizer and chat template versions with each adapter, since an adapter is only valid for its exact base."
+        },
+        {
+          "level": "senior",
+          "q": "LoRA fine-tuning matches full fine-tuning on a format-following task but lags on a hard maths task. Why, and what do you try?",
+          "a": "A low-rank update is a constrained change. Format and style changes are close to low-rank, so rank 8 to 16 suffices. A hard maths task needs larger changes and new capabilities; research comparing the two (Biderman et al., 2024) found LoRA learns less than full fine-tuning on demanding code and maths, while forgetting less of the base model's abilities.\n\nThings to try in order of cost: raise the rank (64 to 256) and adapt all linear layers; raise the learning rate for the adapters and train more steps, since LoRA often needs more data or steps to match; improve data quality and quantity (more worked solutions, verified); use rank-stabilised scaling $\\alpha/\\sqrt{r}$ at high ranks; check that the base model is strong at maths to begin with. If gaps persist, full fine-tuning with ZeRO-3 on enough GPUs, or continued pretraining on maths data, may be required. Decide with a fixed evaluation set and compute cost per quality point, not intuition."
+        }
+      ]
+    },
+    {
+      "slug": "distillation",
+      "title": "Distillation and Small Models",
+      "lesson": "distillation",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What is knowledge distillation and why do soft targets help?",
+          "a": "Distillation trains a small **student** model to reproduce a large **teacher**'s output distribution rather than just the correct labels. A hard label (\"the next word is *mailman*\") carries one bit of supervision. The teacher's probabilities, say 0.87 for *mailman*, 0.12 for *cat* and 0.016 for *spoon*, also say that cats are plausible and spoons are not. This structure, sometimes called dark knowledge, is information a label throws away.\n\nTraining on whole distributions gives more supervision per token, so students learn faster and generalise better than same-size models trained on hard labels alone. The student is usually capped by its teacher, though. Variants differ in what the student sees: the teacher's logits, or just text the teacher generated (sequence-level distillation), which works through any API."
+        },
+        {
+          "level": "junior",
+          "q": "What does temperature do in distillation?",
+          "a": "A confident teacher puts nearly all probability on one token, and the small probabilities that hold dark knowledge barely register in the loss. Dividing logits by a temperature $T > 1$ before the softmax flattens the distribution: $p_i^{(T)} = e^{z_i/T}/\\sum_j e^{z_j/T}$. For teacher logits $(4, 2, 0)$, $T = 1$ gives $(0.867, 0.117, 0.016)$ while $T = 2$ gives $(0.665, 0.245, 0.090)$: the tail now has real mass and the student must model it.\n\nThe same $T$ is applied to the student's logits during the distillation term. At inference the student runs with $T = 1$. The soft loss is multiplied by $T^2$ to compensate for gradients shrinking roughly as $1/T^2$. Typical values are 1 to 4 for classifiers; LLM distillation often works at $T = 1$."
+        },
+        {
+          "level": "mid",
+          "q": "Write the distillation loss and evaluate it for teacher logits (4, 2, 0), student logits (3, 2, 1) and $T = 2$.",
+          "a": "$\\mathcal{L}_{\\text{KD}} = T^2\\,\\mathbb{D}_{\\text{KL}}(p^{(T)}_{\\text{teacher}}\\,\\|\\,p^{(T)}_{\\text{student}})$, often combined as $\\lambda\\mathcal{L}_{\\text{KD}} + (1-\\lambda)\\mathcal{L}_{\\text{CE}}$ with hard-label cross-entropy at $T = 1$.\n\nAt $T = 2$: teacher $(0.665, 0.245, 0.090)$, student logits $(1.5, 1, 0.5)$ give $(0.506, 0.307, 0.186)$. $\\mathbb{D}_{\\text{KL}} = 0.665\\ln\\frac{0.665}{0.506} + 0.245\\ln\\frac{0.245}{0.307} + 0.090\\ln\\frac{0.090}{0.186} \\approx 0.182 - 0.055 - 0.065 \\approx 0.060$ nats. Scaled: $4 \\times 0.0603 = 0.241$ (using unrounded values). At $T = 1$ the raw KL is 0.116. With a true token of class 1, $\\mathcal{L}_{\\text{CE}} = -\\ln 0.665 = 0.408$, so $\\lambda = 0.5$ gives $0.5 \\times 0.241 + 0.5 \\times 0.408 = 0.324$. KL is zero only when the student matches the teacher exactly."
+        },
+        {
+          "level": "mid",
+          "q": "What does it cost to distil a 70B teacher into an 8B student on 1B tokens by online logit distillation?",
+          "a": "Student training: $6 \\times 8\\times10^9 \\times 10^9 = 4.8\\times10^{19}$ FLOPs. Teacher forward passes: $2 \\times 70\\times10^9 \\times 10^9 = 1.4\\times10^{20}$ FLOPs. Total $1.9\\times10^{20}$, about 4 times the student's own training cost: the teacher dominates.\n\nFor context, pretraining the 8B model on 1.3T tokens would cost about $6.2\\times10^{22}$ FLOPs, so this run is about 0.3% of that. Reducing the teacher cost: cache the teacher's top-$k$ probabilities once ($k = 64$ stores about 384 GB for 1B tokens, versus 256 TB for the full 128K vocabulary in BF16) and reuse them across epochs and experiments; or use sequence-level distillation, where the teacher generates text once. The caching approximation drops the tail mass, which matters little because it is small."
+        },
+        {
+          "level": "mid",
+          "q": "Contrast forward and reverse KL for distillation.",
+          "a": "Forward KL, $\\mathbb{D}_{\\text{KL}}(p_T\\,\\|\\,q_S)$, is large wherever the teacher has probability and the student has little, so the student is pushed to **cover** all of the teacher's modes. A small student that cannot represent everything may then place mass on poor in-between outputs, which shows up as incoherent samples.\n\nReverse KL, $\\mathbb{D}_{\\text{KL}}(q_S\\,\\|\\,p_T)$, penalises the student for putting mass where the teacher has none, so the student is **mode-seeking**: it concentrates on the teacher's high-probability behaviour and ignores some diversity. Several LLM distillation methods use reverse or blended divergences, especially on-policy, where the student samples its own responses and the teacher scores them. The choice trades fidelity of coverage against sample quality; evaluate on held-out tasks and read samples, because average KL hides these differences."
+        },
+        {
+          "level": "mid",
+          "q": "A teacher with 90% accuracy costs 8 units and a student with 80% costs 1. Compare cost per success and say when the comparison changes.",
+          "a": "Cost per success is cost divided by success rate: teacher $8/0.9 = 8.9$, student $1/0.8 = 1.25$. The student is about 7 times cheaper per success.\n\nThe comparison changes if failures are expensive: if each failure costs a human review of 5 units, cost per request is teacher $8 + 0.1 \\times 5 = 8.5$ and student $1 + 0.2 \\times 5 = 2.0$; still better, but the margin narrows. It reverses when the failure cost is very large (above about 70 units here, where $8 + 0.1c = 1 + 0.2c$). Also account for retries when the student fails, build and evaluation costs, and latency. A router that sends confident cases to the student and the rest to the teacher usually beats either alone, which is the logic behind model cascades."
+        },
+        {
+          "level": "senior",
+          "q": "Design a pipeline to distil a reasoning-capable large model into a 7B model for your domain, including evaluation and legal checks.",
+          "a": "Start with licensing: confirm the teacher's terms permit training other models on its outputs, or use a teacher you own or an openly licensed one. Build a prompt set from real traffic and domain sources, covering the distribution and the hard tail, and hold out an evaluation set that the teacher's data generation never touches; check overlap.\n\nGenerate multiple teacher solutions per prompt, keep only those a verifier accepts (unit tests, answer matching, schema validation) or a judge scores highly, and deduplicate. Fine-tune the student with SFT on the traces (LoRA first, full fine-tuning if it plateaus), response-only loss; optionally follow with on-policy distillation or RL against the verifier. Evaluate student vs teacher on held-out tasks (quality retained = $s_S/s_T$), rare categories, and general abilities for forgetting; read samples for inherited errors and over-confidence. Compute break-even: build cost divided by per-token saving $2(N_T - N_S)$. Keep the teacher as a fallback behind a confidence router."
+        },
+        {
+          "level": "senior",
+          "q": "A student matches the teacher's average score but fails badly on a rare, high-stakes input class. What happened and how do you fix it?",
+          "a": "Averages hide tails. Distillation data follows the distribution the teacher was prompted on, so a rare class is under-represented, and a small student has limited capacity, so it spends it on the common cases. The student may also inherit the teacher's confident errors and lacks the teacher's calibration, so it fails without signalling uncertainty.\n\nFix: first measure, by building a stratified evaluation set where the rare class has enough examples to see a difference (for a 2% failure gap you need hundreds). Then upsample or synthesise teacher data for that class, add hard negatives, and verify the teacher's own answers there. Consider a larger student or more capacity (higher LoRA rank), on-policy distillation so the student is trained on its own mistakes, and a router: detect the rare class (a classifier or the student's confidence) and send those requests to the teacher. Finally, track per-class metrics in production so the gap is visible rather than averaged away."
+        }
+      ]
+    },
+    {
+      "slug": "multimodal",
+      "title": "Multimodal Models: Images, Audio and Text",
+      "lesson": "multimodal",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "How does a Vision Transformer turn an image into tokens, and how many does a 224 x 224 image give with 16 x 16 patches?",
+          "a": "The image is cut into non-overlapping square patches; each patch is flattened to a vector of $P^2C$ pixel values, linearly projected to the model width $d$, and given a position embedding. The number of tokens is $n = HW/P^2$. For $224 \\times 224$ and $P = 16$: $14 \\times 14 = 196$ patches (197 positions with the classification token).\n\nEach patch holds $16 \\times 16 \\times 3 = 768$ numbers; for ViT-Base ($d = 768$) the projection has $768 \\times 768 + 768 = 590{,}592$ parameters. It is implemented as one convolution with kernel and stride 16. Attention cost grows as $n^2$, so higher resolution is expensive: $336 \\times 336$ with $P = 14$ gives 576 tokens, 2.9 times more, and 8.6 times more attention work."
+        },
+        {
+          "level": "junior",
+          "q": "Roughly how many tokens per second is audio compared with text?",
+          "a": "It depends on the representation. Speech recognition encoders like Whisper's turn 16 kHz audio into log-mel frames every 10 ms (100 per second) and then halve them: 50 positions per second, 1,500 per 30-second window. Pooled audio embeddings for language models run roughly 12 to 25 per second. Neural codec tokens are far denser: a 75 Hz codec with 8 codebooks gives $75 \\times 8 = 600$ tokens per second (6 kbps with 1,024-entry codebooks).\n\nText from the same speech is only about 3 to 4 tokens per second (about 150 words per minute is roughly 200 tokens). So a minute of codec audio is 36,000 tokens, about 180 times the transcript, and 3,000 encoder positions, 15 times the transcript. That is why cascaded voice systems keep the LLM on text, and why audio cost estimates start with tokens per second."
+        },
+        {
+          "level": "mid",
+          "q": "Write the CLIP loss and compute it for a 3 x 3 similarity matrix.",
+          "a": "For unit-norm image embeddings $u_i$ and text embeddings $v_j$, $S_{ij} = u_i\\cdot v_j$ and the loss is $\\mathcal{L} = \\frac{1}{2N}\\sum_i[-\\log\\frac{e^{S_{ii}/\\tau}}{\\sum_k e^{S_{ik}/\\tau}} - \\log\\frac{e^{S_{ii}/\\tau}}{\\sum_k e^{S_{ki}/\\tau}}]$: cross-entropy over rows (image to caption) and columns (caption to image).\n\nTake $S = \\begin{pmatrix}0.8&0.1&0.2\\\\0.3&0.7&0.1\\\\0.0&0.2&0.9\\end{pmatrix}$, $\\tau = 0.5$. Row 1 logits $(1.6, 0.2, 0.4)$ give probabilities $(0.646, 0.159, 0.195)$, so loss $-\\ln 0.646 = 0.437$. Rows give $0.437, 0.560, 0.345$ (mean 0.447); columns give $0.451, 0.512, 0.371$ (mean 0.445); the symmetric loss is 0.446, against $\\ln 3 = 1.099$ for random guessing. At $\\tau = 1$ it is 0.718; at $\\tau = 0.1$ it is 0.007. CLIP learns $\\tau$ (initialised at 0.07) and relies on very large batches for hard negatives."
+        },
+        {
+          "level": "mid",
+          "q": "How is a vision encoder connected to an LLM, and how is the combined model trained?",
+          "a": "A common design (LLaVA-style): a frozen CLIP ViT produces patch vectors (576 vectors of width 1,024 for a 336-pixel image with 14-pixel patches), a projector (a linear layer or two-layer MLP, about 21M parameters for $1024 \\to 4096 \\to 4096$) maps them into the LLM's embedding width, and the resulting image tokens are placed in the sequence before the text tokens.\n\nTraining happens in stages. Stage 1 freezes the encoder and LLM and trains only the projector on image-caption pairs with the next-token loss on the caption, aligning the two spaces. Stage 2 unfreezes the LLM (or adds LoRA) and trains on image-instruction-answer data, with loss masked to the answer tokens. Alternatives: a resampler that compresses features to a fixed number of tokens, cross-attention layers that keep images out of the context, or natively multimodal training from the start. The image occupies 576 context tokens, so cost scales with resolution."
+        },
+        {
+          "level": "mid",
+          "q": "How many tokens is a one-minute video at 1 frame per second, 256 tokens per frame, and what are the options to reduce it?",
+          "a": "$f \\cdot T \\cdot n = 1 \\times 60 \\times 256 = 15{,}360$ tokens; at 576 tokens per frame, 34,560. A two-hour film at the same setting is $7{,}200 \\times 256 = 1.84$M tokens, beyond most contexts.\n\nOptions: sample fewer frames (0.5 fps, or adaptively around scene changes), pool patch grids (2 x 2 pooling cuts tokens 4x), use a resampler with a small fixed number of tokens per frame, merge near-identical consecutive frames, and retrieve relevant segments from captions or embeddings instead of sending everything. When the information is spoken, transcribing audio first reduces cost by roughly two orders of magnitude. Prefill compute is about $2N_{\\text{LLM}}$ per token, and image tokens also occupy the KV cache, reducing the number of concurrent requests per GPU."
+        },
+        {
+          "level": "mid",
+          "q": "How do codec tokens relate to bitrate?",
+          "a": "A neural codec encodes each frame, at frame rate $f$ Hz, with $K$ residual-vector-quantisation codebooks, each of size $M$. Each frame yields $K$ tokens, so tokens per second is $f K$ and the bitrate is $f K \\log_2 M$ bits per second. Example: $f = 75$, $K = 8$, $M = 1024$ gives 600 tokens per second and $75 \\times 8 \\times 10 = 6{,}000$ bits per second.\n\nUsing fewer codebooks lowers bitrate, token count and fidelity: $K = 2$ gives 150 tokens per second and 1.5 kbps. Each codebook refines the error left by the previous ones, so the first codebooks carry the coarse content. A generative model must produce $K$ tokens per frame, so systems generate the codebooks of a frame in parallel or hierarchically rather than as $K$ separate autoregressive steps. One minute of 600 tokens per second audio is 36,000 tokens, which is why long audio contexts are expensive."
+        },
+        {
+          "level": "senior",
+          "q": "Design the input pipeline for a support assistant that accepts screenshots, voice notes and text. How do you control cost and quality?",
+          "a": "Convert to text when information allows it: transcribe voice notes with a speech model and send the transcript (a 20-second note is about 70 text tokens versus 1,000 encoder positions), and OCR clean documents. Send pixels only when layout or visuals carry meaning, such as error dialogs and diagrams.\n\nFor screenshots: resize and crop to the relevant region before upload, choose a resolution that keeps small text legible (check on real samples), and use pooling or the provider's low-detail mode when detail is not needed. A 1,008 x 1,008 screenshot at 14-pixel patches is $72 \\times 72 = 5{,}184$ tokens, or 1,296 with 2 x 2 pooling: a 4x cost difference. Budget the context: 300 text + 1,296 image + 500 audio = about 2,100 tokens, with the image 62% of the cost.\n\nQuality: build an evaluation set from real tickets, measure answer accuracy and grounding, test failure modes (small text, counting, hallucinated UI elements), track WER for transcription, log tokens per request by modality, and set alerts on image-resolution drift. Redact personal data in images and audio before storage."
+        },
+        {
+          "level": "senior",
+          "q": "Compare a cascaded (speech recognition, text LLM, speech synthesis) voice assistant with a native speech-to-speech model.",
+          "a": "Cascaded: the LLM works on cheap text tokens (about 3 to 4 per second of speech), each stage can be swapped, tuned and evaluated independently (word error rate for recognition), and tooling is mature. Costs: latency adds up across three stages (streaming recognition and synthesis help but the LLM must usually wait for a segment of text), prosody, emotion and non-speech sounds are lost at the transcription step, and recognition errors propagate.\n\nNative speech-to-speech: the model reads and emits audio tokens directly (codec tokens at hundreds per second), which cuts latency, preserves tone and allows interruption handling and paralinguistic responses. Costs: many times more tokens per second than text (up to about 180 times for codec tokens), so context and cost grow quickly, with less mature evaluation, safety tooling and tool-calling reliability. I would choose cascaded for accuracy-critical, tool-heavy flows (support, banking) and native for natural, low-latency conversation, perhaps with a hybrid: native audio front end with a text channel for tool calls and logging. Decide with measured end-to-end latency, error rates and cost per minute."
+        }
+      ]
+    }
+  ]
+}

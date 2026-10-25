@@ -1,0 +1,20 @@
+{
+  "title": "When Steps Fail: Retries, Timeouts, Idempotency",
+  "summary": "Long agent runs meet failures that short ones never see: slow services, flaky networks, duplicate side effects and models that go in circles. This lesson covers the engineering that turns those failures into recoverable events, with the arithmetic of retries, backoff and checkpoints.",
+  "objectives": [
+    "After this lesson you can classify failures as transient, permanent, semantic or silent and choose the right response to each",
+    "Set timeouts and deadlines so that worst-case retry time fits a latency budget",
+    "Compute exponential backoff delays with a cap and jitter, and explain why jitter prevents retry storms",
+    "Calculate how retries and verification change per-step and end-to-end reliability, and their cost in extra calls",
+    "Use idempotency keys, checkpoints and loop detection so a failed run can resume safely"
+  ],
+  "prerequisites": "Compounding reliability and the effect of gates and retries from [/learn/agents/workflows-vs-agents](/learn/agents/workflows-vs-agents), and the step-as-state-machine view from [/learn/agents/agent-loop](/learn/agents/agent-loop). Basic probability (independence, geometric sums).",
+  "sims": ["retry-backoff", "agent-reliability"],
+  "labs": ["make-the-agent-reliable"],
+  "sandbox": [],
+  "sources": [
+    { "title": "Exponential Backoff And Jitter", "authors": "Marc Brooker (AWS Architecture Blog)", "year": 2015, "note": "Comparison of full, equal and decorrelated jitter under contention" },
+    { "title": "Designing Data-Intensive Applications", "authors": "Martin Kleppmann", "year": 2017, "note": "Chapter 8: unreliable networks, timeouts; Chapter 11 on idempotent processing" },
+    { "title": "Site Reliability Engineering", "authors": "Beyer, Jones, Petoff and Murphy (eds.)", "year": 2016, "note": "Chapter 22: addressing cascading failures, including retry amplification" }
+  ]
+}

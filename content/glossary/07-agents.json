@@ -1,0 +1,122 @@
+[
+  {
+    "term": "Agent",
+    "slug": "agent",
+    "def": "A language model placed in a loop that it controls: it reads its context, chooses a tool call or a final answer, observes the result and repeats until done or stopped.",
+    "lesson": "agents/agent-loop"
+  },
+  {
+    "term": "Agent loop",
+    "slug": "agent-loop",
+    "def": "The cycle of observe, think and act that an agent repeats, modelled as a state machine with terminal states Done and Stopped.",
+    "lesson": "agents/agent-loop"
+  },
+  {
+    "term": "Tool call",
+    "slug": "tool-call",
+    "def": "A structured request, with an id, tool name and arguments, that the model emits and your code executes before returning the result as an observation.",
+    "lesson": "agents/agent-loop"
+  },
+  {
+    "term": "Workflow",
+    "slug": "workflow",
+    "def": "A system where your code fixes the sequence of steps and models only fill in individual steps, so every path can be enumerated and tested.",
+    "lesson": "agents/workflows-vs-agents"
+  },
+  {
+    "term": "Compounding reliability",
+    "slug": "compounding-reliability",
+    "def": "The fact that a task needing n steps succeeds with probability roughly p to the power n, so small per-step failure rates produce large end-to-end failure rates.",
+    "lesson": "agents/workflows-vs-agents"
+  },
+  {
+    "term": "Orchestrator-workers",
+    "slug": "orchestrator-workers",
+    "def": "A pattern in which one call plans subtasks at run time, worker calls handle them (often in parallel) and a final call combines the results.",
+    "lesson": "agents/workflows-vs-agents"
+  },
+  {
+    "term": "Evaluator-optimiser",
+    "slug": "evaluator-optimiser",
+    "def": "A pattern in which one call drafts, another judges against criteria, and rejected drafts return with feedback for another attempt up to a round limit.",
+    "lesson": "agents/workflows-vs-agents"
+  },
+  {
+    "term": "Model Context Protocol (MCP)",
+    "slug": "model-context-protocol",
+    "def": "An open standard that lets AI applications (hosts) connect through clients to servers exposing tools, resources and prompts using JSON-RPC.",
+    "lesson": "agents/tools-and-mcp"
+  },
+  {
+    "term": "JSON-RPC",
+    "slug": "json-rpc",
+    "def": "A small protocol for remote calls in JSON with requests (id and method), responses (matching id with result or error) and notifications (no id, no reply).",
+    "lesson": "agents/tools-and-mcp"
+  },
+  {
+    "term": "Context compaction",
+    "slug": "context-compaction",
+    "def": "Replacing older parts of the transcript with a short summary or stubs so the context stays within a size bound while the run continues.",
+    "lesson": "agents/memory-and-state"
+  },
+  {
+    "term": "Idempotency key",
+    "slug": "idempotency-key",
+    "def": "A unique string sent with a side-effecting request so that a repeated request returns the stored result instead of repeating the action.",
+    "lesson": "agents/failures-and-recovery"
+  },
+  {
+    "term": "Exponential backoff",
+    "slug": "exponential-backoff",
+    "def": "A retry policy whose delay before retry a is min(cap, base times 2 to the power a), giving a struggling service time to recover.",
+    "lesson": "agents/failures-and-recovery"
+  },
+  {
+    "term": "Jitter",
+    "slug": "jitter",
+    "def": "Randomness added to retry delays so that many clients do not retry at the same instant and cause a retry storm.",
+    "lesson": "agents/failures-and-recovery"
+  },
+  {
+    "term": "Checkpoint",
+    "slug": "checkpoint",
+    "def": "A persisted snapshot of an agent run's state after a step, allowing a crashed run to resume instead of restarting.",
+    "lesson": "agents/failures-and-recovery"
+  },
+  {
+    "term": "Loop detection",
+    "slug": "loop-detection",
+    "def": "Detecting that an agent is repeating actions or making no progress, for example by counting identical tool-call signatures in a recent window.",
+    "lesson": "agents/failures-and-recovery"
+  },
+  {
+    "term": "Trace",
+    "slug": "trace",
+    "def": "The recording of one agent run as a tree of spans, each describing a model call, tool call or check with timing, inputs, outputs and status.",
+    "lesson": "agents/traces-and-evaluation"
+  },
+  {
+    "term": "pass^k",
+    "slug": "pass-power-k",
+    "def": "The probability that all k independent runs of a task succeed, p to the power k, a measure of consistency rather than capability.",
+    "lesson": "agents/traces-and-evaluation"
+  },
+  {
+    "term": "Permission tier",
+    "slug": "permission-tier",
+    "def": "A grouping of tools by worst-case misuse, from read-only through reversible and consequential writes to privileged actions, each with a default policy.",
+    "lesson": "agents/bounded-autonomy"
+  },
+  {
+    "term": "Blast radius",
+    "slug": "blast-radius",
+    "def": "The maximum damage a misbehaving agent can do before it is stopped, bounded by rate limits, scoped credentials, reversibility and detection time.",
+    "lesson": "agents/bounded-autonomy"
+  },
+  {
+    "term": "Sandbox",
+    "slug": "sandbox",
+    "def": "An isolated environment, with restricted filesystem, network, CPU and memory, in which untrusted or model-written code runs.",
+    "lesson": "agents/bounded-autonomy"
+  }
+]

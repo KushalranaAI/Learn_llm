@@ -1,0 +1,22 @@
+{
+  "title": "Online Evaluation: A/B Tests, Feedback and Drift",
+  "summary": "Offline evals tell you whether a change is promising; real users tell you whether it works. This lesson covers running an A/B test properly, guardrail metrics, what implicit feedback can and cannot tell you, detecting drift, and the traps (like Simpson's paradox) that mislead online analysis.",
+  "objectives": [
+    "Design an A/B test for an LLM feature: unit of randomisation, primary metric, sample size and duration",
+    "Analyse an A/B result with a z-test and a confidence interval for the difference, and check for sample-ratio mismatch",
+    "Define guardrail metrics and use a non-inferiority margin to decide whether a change is safe",
+    "Interpret implicit feedback and explain why explicit thumbs are a biased sample",
+    "Detect distribution drift with a population stability index and a control chart",
+    "Recognise and resolve Simpson's paradox when pooled and sliced results disagree"
+  ],
+  "prerequisites": "The z-test, confidence intervals and sample-size formula from [Comparing Systems You Can Trust](/learn/evaluation/comparing-systems), and slices from [Error Analysis](/learn/evaluation/error-analysis).",
+  "sims": ["ab-significance"],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "Trustworthy Online Controlled Experiments", "authors": "Kohavi, Tang and Xu", "year": 2020, "note": "A/B testing practice: sample ratio mismatch, guardrails, peeking, novelty effects" },
+    { "title": "Credit Scoring and Its Applications", "authors": "Thomas, Edelman and Crook", "year": 2002, "note": "Credit-scoring background for the population stability index as a distribution-shift measure" },
+    { "title": "The Interpretation of Interaction in Contingency Tables", "authors": "E. H. Simpson", "year": 1951, "note": "The paradox that bears his name" },
+    { "title": "Sex Bias in Graduate Admissions: Data from Berkeley", "authors": "Bickel, Hammel and O'Connell", "year": 1975, "note": "Simpson's paradox in a real data set" }
+  ]
+}

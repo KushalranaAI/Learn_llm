@@ -1,0 +1,20 @@
+{
+  "title": "Embeddings: Meaning as Geometry",
+  "summary": "A model cannot do arithmetic on a token ID, so the first thing it does is swap each ID for a learned vector. Similar meanings end up pointing in similar directions, and that geometry is what the rest of the network, and every semantic search system, builds on.",
+  "objectives": [
+    "Explain an embedding table as a learned lookup from token ID to vector and count its parameters",
+    "Compute a dot product and a cosine similarity by hand and say when each is appropriate",
+    "Explain why vector arithmetic such as king − man + woman lands near queen, and where the idea breaks",
+    "Distinguish static token embeddings from contextual embeddings produced deeper in the network",
+    "Estimate the storage and compute cost of an embedding index"
+  ],
+  "prerequisites": "You should know how text becomes token IDs ([Tokenization](/learn/model-foundations/tokenization)) and how a network is trained by gradient descent ([How a Network Learns](/learn/model-foundations/how-networks-learn)). Vectors are introduced from scratch.",
+  "sims": ["embedding-space"],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "Efficient Estimation of Word Representations in Vector Space", "authors": "Mikolov, Chen, Corrado and Dean", "year": 2013, "note": "word2vec: skip-gram and CBOW, and the vector-offset analogies" },
+    { "title": "GloVe: Global Vectors for Word Representation", "authors": "Pennington, Socher and Manning", "year": 2014, "note": "Embeddings from global co-occurrence statistics" },
+    { "title": "Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks", "authors": "Reimers and Gurevych", "year": 2019, "note": "Turning a transformer into a sentence-embedding model compared with cosine similarity" }
+  ]
+}

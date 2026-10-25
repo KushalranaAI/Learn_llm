@@ -1,0 +1,20 @@
+{
+  "title": "How a Network Learns: Loss and Gradient Descent",
+  "summary": "A neural network is a function with millions of adjustable numbers. Training measures how wrong it is and nudges every number downhill. Every LLM is trained this way.",
+  "objectives": [
+    "Describe a model as a parameterised function and count its parameters",
+    "Compute a loss (mean squared error and cross-entropy) by hand",
+    "Carry out one step of gradient descent and explain the learning rate",
+    "Explain backpropagation as the chain rule applied layer by layer",
+    "Explain why hidden layers and non-linear activations are needed (XOR)"
+  ],
+  "prerequisites": "No machine-learning background. You should be comfortable multiplying and adding numbers and with the idea of a function: numbers in, a number out. A little calculus (what a slope is) helps but is explained as we go.",
+  "sims": ["neuron", "gradient-descent", "xor-training"],
+  "labs": ["train-a-tiny-network"],
+  "sandbox": [],
+  "sources": [
+    { "title": "Deep Learning", "authors": "Goodfellow, Bengio and Courville", "year": 2016, "note": "Chapter 6 (deep feedforward networks) and Chapter 8 (optimisation)" },
+    { "title": "Learning representations by back-propagating errors", "authors": "Rumelhart, Hinton and Williams", "year": 1986, "note": "The paper that popularised backpropagation" },
+    { "title": "Neural Networks and Deep Learning", "authors": "Michael Nielsen", "year": 2015, "note": "Chapter 2: how backpropagation works" }
+  ]
+}

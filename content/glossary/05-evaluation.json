@@ -1,0 +1,110 @@
+[
+ {
+  "term": "Eval set",
+  "slug": "eval-set",
+  "def": "A fixed, versioned collection of inputs, each with a reference or rubric, used to score a system the same way every time.",
+  "lesson": "evaluation/success-criteria"
+ },
+ {
+  "term": "Goodhart's law",
+  "slug": "goodharts-law",
+  "def": "When a measure becomes a target it stops being a good measure, because systems learn to raise the proxy without improving the real goal.",
+  "lesson": "evaluation/success-criteria"
+ },
+ {
+  "term": "Precision and recall",
+  "slug": "precision-and-recall",
+  "def": "Precision is the share of what the system flagged that was right; recall is the share of what existed that the system found. F1 is their harmonic mean.",
+  "lesson": "evaluation/success-criteria"
+ },
+ {
+  "term": "Exact match",
+  "slug": "exact-match",
+  "def": "A metric that scores 1 when the normalised output equals the normalised reference and 0 otherwise.",
+  "lesson": "evaluation/reference-scoring"
+ },
+ {
+  "term": "Token-level F1",
+  "slug": "token-f1",
+  "def": "F1 computed over the words shared by an answer and its reference, giving partial credit for overlap but ignoring word order and meaning.",
+  "lesson": "evaluation/reference-scoring"
+ },
+ {
+  "term": "LLM-as-judge",
+  "slug": "llm-as-judge",
+  "def": "Using a language model with a rubric to grade or compare outputs when no single reference answer exists.",
+  "lesson": "evaluation/llm-as-judge"
+ },
+ {
+  "term": "Cohen's kappa",
+  "slug": "cohens-kappa",
+  "def": "Agreement between two raters corrected for chance: kappa = (observed - expected) / (1 - expected).",
+  "lesson": "evaluation/llm-as-judge"
+ },
+ {
+  "term": "Position bias",
+  "slug": "position-bias",
+  "def": "A judge's tendency to prefer the answer shown first (or second) regardless of quality, controlled by judging both orders.",
+  "lesson": "evaluation/llm-as-judge"
+ },
+ {
+  "term": "Standard error",
+  "slug": "standard-error",
+  "def": "The typical sampling wobble of a measured statistic; for a pass rate it is the square root of p(1-p)/n.",
+  "lesson": "evaluation/comparing-systems"
+ },
+ {
+  "term": "Confidence interval",
+  "slug": "confidence-interval",
+  "def": "A range computed from data that would contain the true value in a stated share (such as 95%) of repeated experiments.",
+  "lesson": "evaluation/comparing-systems"
+ },
+ {
+  "term": "p-value",
+  "slug": "p-value",
+  "def": "The probability of seeing a difference at least as large as observed if the systems were truly identical; not the probability that the null is true.",
+  "lesson": "evaluation/comparing-systems"
+ },
+ {
+  "term": "Statistical power",
+  "slug": "statistical-power",
+  "def": "The probability that a test detects a real effect of a given size; sample size is chosen to reach about 80%.",
+  "lesson": "evaluation/comparing-systems"
+ },
+ {
+  "term": "Slice metric",
+  "slug": "slice-metric",
+  "def": "A metric computed on a subset of the eval set defined by an input property such as language or topic, revealing weak groups the average hides.",
+  "lesson": "evaluation/error-analysis"
+ },
+ {
+  "term": "A/B test",
+  "slug": "ab-test",
+  "def": "An experiment that randomly assigns real users to the current system or a candidate and compares an outcome metric.",
+  "lesson": "evaluation/online-evaluation"
+ },
+ {
+  "term": "Guardrail metric",
+  "slug": "guardrail-metric",
+  "def": "A metric such as latency, cost or complaint rate that must not get worse while the primary metric is improved.",
+  "lesson": "evaluation/online-evaluation"
+ },
+ {
+  "term": "Sample-ratio mismatch",
+  "slug": "sample-ratio-mismatch",
+  "def": "A traffic split that differs from the configured one by more than chance allows, signalling a bug that invalidates the experiment.",
+  "lesson": "evaluation/online-evaluation"
+ },
+ {
+  "term": "Population stability index",
+  "slug": "population-stability-index",
+  "def": "A drift measure, the sum over buckets of (actual share - expected share) times the log of their ratio; above about 0.25 means a major shift.",
+  "lesson": "evaluation/online-evaluation"
+ },
+ {
+  "term": "Simpson's paradox",
+  "slug": "simpsons-paradox",
+  "def": "A reversal where one system wins within every slice yet loses overall because the groups have different slice mixes.",
+  "lesson": "evaluation/online-evaluation"
+ }
+]

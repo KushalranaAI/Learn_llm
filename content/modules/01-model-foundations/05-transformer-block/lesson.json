@@ -1,0 +1,25 @@
+{
+  "title": "The Transformer Block, Layer by Layer",
+  "summary": "A transformer is one block repeated L times: attention to mix information between tokens, a feed-forward network to process each token, normalisation to keep numbers stable, and a residual stream that ties it all together. This lesson builds the block piece by piece and then counts every parameter to reproduce real model sizes.",
+  "objectives": [
+    "Trace a token's vector through the residual stream of a pre-norm transformer block",
+    "Compute LayerNorm and RMSNorm by hand and explain why blocks normalise their inputs",
+    "Explain the feed-forward network, its 4× expansion and the SwiGLU variant",
+    "Explain why attention needs position information and how learned, sinusoidal and rotary encodings provide it",
+    "Count a transformer's parameters with 12·L·d² + V·d and reproduce GPT-2 small (124M) and Llama-2-7B (6.74B)"
+  ],
+  "prerequisites": "You should know scaled dot-product and multi-head attention from [Attention](/learn/model-foundations/attention), what an embedding table is from [Embeddings](/learn/model-foundations/embeddings), and how a layer's parameters are counted from [A model is a function with knobs](/learn/model-foundations/how-networks-learn).",
+  "sims": ["transformer-params"],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "Attention Is All You Need", "authors": "Vaswani et al.", "year": 2017, "note": "Section 3: the original encoder-decoder block, feed-forward sublayer and sinusoidal positions" },
+    { "title": "Language Models are Unsupervised Multitask Learners", "authors": "Radford et al.", "year": 2019, "note": "GPT-2: decoder-only model sizes and the move of layer norm to the input of each sub-block" },
+    { "title": "Deep Residual Learning for Image Recognition", "authors": "He, Zhang, Ren and Sun", "year": 2016, "note": "Residual connections" },
+    { "title": "Layer Normalization", "authors": "Ba, Kiros and Hinton", "year": 2016, "note": "The normalisation used inside transformer blocks" },
+    { "title": "Root Mean Square Layer Normalization", "authors": "Zhang and Sennrich", "year": 2019, "note": "RMSNorm, used in Llama-family models" },
+    { "title": "GLU Variants Improve Transformer", "authors": "Noam Shazeer", "year": 2020, "note": "SwiGLU feed-forward layers" },
+    { "title": "RoFormer: Enhanced Transformer with Rotary Position Embedding", "authors": "Su et al.", "year": 2021, "note": "Rotary position embeddings (RoPE)" },
+    { "title": "Llama 2: Open Foundation and Fine-Tuned Chat Models", "authors": "Touvron et al.", "year": 2023, "note": "Architecture details of the 7B model used in the parameter count" }
+  ]
+}

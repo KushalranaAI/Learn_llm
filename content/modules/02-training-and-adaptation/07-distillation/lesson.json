@@ -1,0 +1,22 @@
+{
+  "title": "Distillation and Small Models",
+  "summary": "A small student model can learn from a large teacher's full output distribution, not just its final answers. This lesson covers soft targets and temperature, the distillation loss as a scaled KL divergence, the two ways LLM teams distil (logits and generated data), what it costs, and how it fits with pruning and the over-training strategy.",
+  "objectives": [
+    "Explain why a teacher's soft probabilities carry more information than a hard label",
+    "Compute temperature-softened distributions and the T²-scaled KL distillation loss for a small example",
+    "Combine the distillation loss with the hard-label loss and say what each term does",
+    "Distinguish logit distillation from sequence-level (synthetic data) distillation and estimate the compute and storage of each",
+    "State the practical and licensing limits of distilling from another model and how to evaluate the student"
+  ],
+  "prerequisites": "You should know softmax and temperature ([Next-Token Prediction and Sampling](/learn/model-foundations/sampling)), cross-entropy ([How a Network Learns](/learn/model-foundations/how-networks-learn)) and the SFT setup ([Instruction Tuning](/learn/training-and-adaptation/instruction-tuning)). KL divergence is defined here from scratch.",
+  "sims": [],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "Distilling the Knowledge in a Neural Network", "authors": "Hinton, Vinyals and Dean", "year": 2015, "note": "Soft targets, temperature and the T² gradient scaling" },
+    { "title": "DistilBERT, a distilled version of BERT: smaller, faster, cheaper and lighter", "authors": "Sanh et al.", "year": 2019, "note": "Distilling a pretrained language model into a 40% smaller student that keeps most of its quality" },
+    { "title": "Sequence-Level Knowledge Distillation", "authors": "Kim and Rush", "year": 2016, "note": "Training the student on the teacher's generated sequences" },
+    { "title": "On-Policy Distillation of Language Models: Learning from Self-Generated Mistakes", "authors": "Agarwal et al.", "year": 2023, "note": "Training the student on its own samples scored by the teacher" },
+    { "title": "Compact Language Models via Pruning and Knowledge Distillation", "authors": "Muralidharan et al.", "year": 2024, "note": "Pruning a large model and recovering quality by distillation, with far fewer training tokens than from scratch" }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "title": "Design a Code Assistant",
+  "summary": "Two products behind one name: inline completion that must answer in a couple of hundred milliseconds, and a repository-aware chat that can take seconds. We size both, assemble context from the repo, use fill-in-the-middle, and plan evaluation.",
+  "objectives": [
+    "Estimate request rates, tokens, cost and GPUs for inline completion and chat separately, with workday-concentrated traffic",
+    "Assemble a token-budgeted context from the current file, its neighbours and a repository index",
+    "Explain fill-in-the-middle prompting and how a completion knows where to stop",
+    "Build a latency budget for inline completion and contrast it with chat",
+    "Plan offline (pass@k) and online (acceptance, retention) evaluation and the main safety risks"
+  ],
+  "prerequisites": "Work through [A Framework for LLM System Design](/learn/llm-system-design/design-framework) first. It helps to know [TTFT and TPOT](/learn/inference-and-serving/measuring-inference), [prefix caching](/learn/inference-and-serving/caching) and [embedding retrieval](/learn/retrieval-and-rag/sparse-and-dense).",
+  "sims": ["latency-breakdown"],
+  "labs": [],
+  "sandbox": ["code-assistant"],
+  "sources": [
+    { "title": "Evaluating Large Language Models Trained on Code", "authors": "Chen et al.", "year": 2021, "note": "HumanEval and the unbiased pass@k estimator" },
+    { "title": "Efficient Training of Language Models to Fill in the Middle", "authors": "Bavarian et al.", "year": 2022, "note": "The prefix-suffix-middle transformation and its training rate" },
+    { "title": "InCoder: A Generative Model for Code Infilling and Synthesis", "authors": "Fried et al.", "year": 2022, "note": "Infilling as a code-model objective" }
+  ]
+}

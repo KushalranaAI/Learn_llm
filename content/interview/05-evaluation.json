@@ -1,0 +1,332 @@
+{
+ "module": "evaluation",
+ "sections": [
+  {
+   "slug": "success-criteria",
+   "title": "Success Criteria",
+   "lesson": "success-criteria",
+   "questions": [
+    {
+     "level": "junior",
+     "q": "Why is trying a few prompts in a chat window not a reliable way to compare two versions of an LLM feature?",
+     "a": "Outputs vary from input to input and run to run, so a handful of examples is a tiny, unrepresentative sample. The pass rate from $n$ examples has standard error $\\sqrt{\\hat p(1-\\hat p)/n}$; with 10 examples at 80% it is about 0.126, giving a 95% range of roughly 55% to 100%. One extra good answer is well inside the noise. A proper evaluation fixes a set of inputs, a scoring rule and a summary statistic, so you can attach an error bar and repeat the measurement after every change. Vibe checks are still fine for spotting obvious breakage, but not for choosing between two versions that both look reasonable."
+    },
+    {
+     "level": "junior",
+     "q": "A model extracts 50 action items from a transcript that really contains 60, and 40 of the 50 are correct. Compute precision, recall and F1.",
+     "a": "True positives are 40, false positives are $50-40=10$, false negatives are $60-40=20$. Precision is $40/50=0.80$ (of what it extracted, how much was right). Recall is $40/60=0.667$ (of what existed, how much it found). F1 is the harmonic mean $2PR/(P+R)=2(0.8)(0.667)/1.467=0.727$. The harmonic mean sits below the arithmetic mean (0.733) and is dragged toward the weaker number, so a system cannot hide poor recall behind great precision. Accuracy is not used here because true negatives are not countable for an extraction task."
+    },
+    {
+     "level": "mid",
+     "q": "When does accuracy mislead, and what would you report instead?",
+     "a": "Accuracy misleads when classes are imbalanced or error costs differ. If 20 of 1,000 messages are harmful, a filter that flags nothing scores 98% accuracy with zero recall. Report the confusion matrix, then precision and recall for the class you care about, and pick a summary such as $F_\\beta$ to match the costs: $\\beta>1$ weights recall more (missing is worse), $\\beta<1$ weights precision more (false alarms are worse). For a score-producing classifier also report the precision-recall trade-off across thresholds, not a single point, and state which operating point you shipped."
+    },
+    {
+     "level": "mid",
+     "q": "False negatives cost 20 minutes of agent time and false positives cost 5. How do you choose a threshold for an LLM-scored ticket-escalation classifier?",
+     "a": "Label a representative sample, compute false positives and false negatives at several thresholds, and minimise $C(\\tau)=c_{FP}\\,FP(\\tau)+c_{FN}\\,FN(\\tau)$. If the score were a calibrated probability $q$, you would flag when $q>c_{FP}/(c_{FP}+c_{FN})=5/25=0.2$. LLM scores are rarely calibrated, so use the empirical search; for example on 1,000 tickets with 100 positives, thresholds 0.3, 0.5, 0.7 might cost 850, 600 and 800, making 0.5 best. Choose the threshold on one labelled set and report on another, and re-check it whenever the model, prompt or traffic mix changes."
+    },
+    {
+     "level": "mid",
+     "q": "How many eval examples do you need to estimate a pass rate near 80% within plus or minus 3 points at 95% confidence?",
+     "a": "Require $1.96\\sqrt{p(1-p)/n}\\le E$, so $n\\ge 1.96^2\\,p(1-p)/E^2=3.8416\\times0.16/0.0009\\approx 683$. If you have no idea of $p$, use 0.5 for the conservative $n\\approx 1068$. For ±5 points at $p=0.8$ you need about 246. Note this sizes the estimate of one system. Detecting a difference between two systems needs more, since the standard error of a difference is larger (lesson on comparing systems). Also remember slices: a 50-item slice only has about ±11 points of margin."
+    },
+    {
+     "level": "mid",
+     "q": "What is the difference between a gate and a graded criterion in a rubric, and how do you combine them?",
+     "a": "A gate is a hard pass/fail requirement that no other quality can offset, for example valid JSON or no leakage of another customer's data. A graded criterion can be partly met, for example completeness or tone. Combine them as $S=\\left(\\prod_j g_j\\right)\\sum_k w_k s_k$: any failed gate zeroes the score, while weighted graded scores (weights summing to 1) trade off. An additive safety weight is not enough, since a perfect but unsafe answer could still clear the pass threshold. Binary sub-questions are usually scored more consistently than 1 to 10 scales."
+    },
+    {
+     "level": "senior",
+     "q": "Your team optimises a support bot for 'conversations ending without escalation' and the metric improves while satisfaction drops. What happened and how do you prevent it?",
+     "a": "This is Goodhart's law: once the proxy became the target, the system found ways to raise it that do not help users, such as deflecting or ending conversations. Prevention is structural. Pair every metric with a counter-metric that catches its easy exploit (re-contact within 48 hours, thumbs-down rate, human-judged resolution on a random sample). Validate offline proxies against a trusted outcome by checking they rank past versions the same way. Write down, beside each metric, the cheapest way to inflate it. Review a random sample of raw conversations every release, and treat a proxy and outcome moving in opposite directions as an incident, not noise."
+    },
+    {
+     "level": "senior",
+     "q": "Design the evaluation set for a new customer-support assistant that has no production traffic yet.",
+     "a": "Combine sources into slices. Start with expert-written cases covering the main intents and policies, add synthetic variants for rare slices (languages, long inputs), and add adversarial cases (prompt injection, abusive users, out-of-scope requests). Write references as lists of required facts, not one ideal paragraph, and have a second person review a sample. Size the core set by margin of error (a few hundred items), give each critical slice at least 100, and hold out a portion scored only at milestones to avoid tuning leakage. Version the set, tag items by slice, and plan to replace synthetic data with sampled, privacy-filtered production traffic after launch."
+    },
+    {
+     "level": "senior",
+     "q": "Product wants 'fewer wrong refunds' and support wants 'fewer unnecessary escalations'. How do you turn this conflict into one threshold?",
+     "a": "Make the trade-off explicit as costs. Estimate the cost of a wrongly approved refund versus an unnecessary escalation (money, minutes, customer risk) and compute expected cost at each candidate threshold on labelled data; only the ratio $c_{FN}/c_{FP}$ matters. Where costs are hard to price, use a constraint form: require recall of at least 95% on wrong refunds and take the highest threshold that satisfies it, which maximises precision under that constraint. Put the chosen operating point, the ratio assumed, and the date in the success criteria, and revisit when the cost ratio or traffic changes."
+    }
+   ]
+  },
+  {
+   "slug": "reference-scoring",
+   "title": "Scoring Against References",
+   "lesson": "reference-scoring",
+   "questions": [
+    {
+     "level": "junior",
+     "q": "What is exact match, and why is normalisation needed?",
+     "a": "Exact match scores 1 when the output equals the reference and 0 otherwise. Raw strings differ in irrelevant ways (case, punctuation, articles, whitespace), so both sides first go through a normalisation function: lowercase, strip punctuation, drop a/an/the, collapse spaces. Then 'The Treaty of Versailles.' equals 'treaty of versailles'. Exact match has almost no false passes but many false fails on free-form text ('In 1989' against '1989'), so it suits labels, IDs and short fields, ideally after constraining the output format or parsing a field out of structured output."
+    },
+    {
+     "level": "junior",
+     "q": "Reference 'Paris, France', prediction 'Paris'. What is token F1?",
+     "a": "Reference tokens are {paris, france} so there are 2; the prediction has 1 token, which overlaps. Precision is $1/1=1.0$ and recall is $1/2=0.5$, so $F_1=2(1.0)(0.5)/1.5=0.667$. A prediction 'The Eiffel Tower is in Paris' normalises to five tokens with the same single overlap: precision 0.2, recall 0.5, $F_1=0.286$, so extra words are penalised. Token F1 treats answers as bags of words, so word order is ignored and one wrong crucial word barely changes it."
+    },
+    {
+     "level": "mid",
+     "q": "Explain BLEU's brevity penalty and why BLEU and ROUGE correlate poorly with human judgement for LLM outputs.",
+     "a": "BLEU is a geometric mean of clipped n-gram precisions; precision alone rewards short candidates, so it multiplies by $\\mathrm{BP}=e^{1-r/c}$ when the candidate length $c$ is below the reference length $r$ (a 2-word candidate against a 6-word reference gets $e^{-2}=0.135$). ROUGE is the recall-oriented counterpart. Both count shared n-grams with a reference, so a correct paraphrase scores low and a fluent answer with one wrong fact scores high. With a single reference and many valid outputs, single-item correlation with humans is weak. They remain useful for tracking one fixed system over time or for templated text."
+    },
+    {
+     "level": "mid",
+     "q": "Why is cosine similarity between answer and reference embeddings a poor correctness metric on its own?",
+     "a": "Cosine, $\\mathbf a\\cdot\\mathbf b/(\\lVert\\mathbf a\\rVert\\lVert\\mathbf b\\rVert)$, captures topic and general meaning but washes out details. A negation ('is not safe'), a changed number ('15' versus '50'), swapped roles ('Alice paid Bob') or one wrong claim in a long paragraph barely move a sentence vector, so wrong answers score high. Thresholds are also model-specific: 0.7 may mean unrelated in one embedding model and a close paraphrase in another. Use it as a coarse filter or drift signal, check critical fields (numbers, dates, names) exactly, and calibrate any threshold on labelled in-domain pairs."
+    },
+    {
+     "level": "mid",
+     "q": "You sample 10 solutions to a coding problem and 3 pass the tests. Compute pass@1 and pass@5.",
+     "a": "The unbiased estimator is $1-\\binom{n-c}{k}/\\binom{n}{k}$. For $k=1$ it is $1-7/10=0.3$, the plain pass rate. For $k=5$: $\\binom{7}{5}=21$ and $\\binom{10}{5}=252$, so pass@5 $=1-21/252=0.917$. The shortcut $1-(1-0.3)^5=0.832$ assumes independent draws with replacement and underestimates what the 10 samples you actually have imply. Average the per-problem values over the benchmark. pass@k is meaningful when your workflow really samples several candidates and verifies them with tests."
+    },
+    {
+     "level": "mid",
+     "q": "How do you check whether an automatic metric can be trusted on your task?",
+     "a": "Label 100 to 200 outputs with people, then treat the metric as a classifier of 'correct'. Compute metric precision (of what it passes, how much humans accept) and metric recall (of what humans accept, how much it passes). For example, passing 120 outputs of which 105 are correct, when humans accept 140, gives precision 0.875 and recall 0.75. Also check rank agreement on several past system versions. If you only compare versions on the same set a stable bias may be tolerable; as a release gate, drive down false passes. Re-validate when the task or model changes, for example when answers become wordier."
+    },
+    {
+     "level": "senior",
+     "q": "Exact match reports 41% on a free-form QA set but careful human grading says 83%. How do you investigate and fix the evaluation?",
+     "a": "Exact match almost never credits a wrong answer, so the gap is correct answers it rejects. Read 20 to 30 rejected-but-correct outputs and categorise: normalisation gaps (articles, units, number formats), verbose phrasing, paraphrases, multiple valid answers. Fix in order of cost: constrain output to the answer field, normalise by type (numeric tolerance, date parsing, alias lists), accept multiple references, then add token F1 or a rubric-based judge for genuinely free-form answers. Re-measure agreement with humans after each change, and keep the exact-match check as a high-precision gate rather than the only metric."
+    },
+    {
+     "level": "senior",
+     "q": "Design the automated checks for a document-extraction pipeline that outputs JSON with free-text summaries.",
+     "a": "Layer checks from cheapest to most expensive and report each stage's pass rate. First, parse and validate against the schema. Second, compare each extracted field with the reference using exact or numeric tolerance matching (amounts, dates, IDs), reporting per-field accuracy. Third, cross-field consistency rules (line items sum to total). Fourth, a claim-level or judge check on the free-text summary against the source document. Failures at early stages get precise labels that feed error analysis. Keep a hand-labelled set to validate the judge, run everything in CI, and store per-item results so paired comparisons are possible."
+    },
+    {
+     "level": "senior",
+     "q": "A team reports ROUGE-L improvements as evidence that a new summariser is better. What would you ask for before accepting that?",
+     "a": "Ask what ROUGE-L correlates with on this task: a sample of outputs rated by people, with correlation or rank agreement across versions. Ask for a paired comparison with a confidence interval, not two averages, plus the average output length, since ROUGE recall rises with length. Ask for a claim-level faithfulness check or judge with a rubric (every key fact present, nothing invented), and slice results by document type. A small ROUGE gain with longer outputs and no human-validated improvement is a reason to hold, not to ship."
+    }
+   ]
+  },
+  {
+   "slug": "llm-as-judge",
+   "title": "Using a Model as a Judge",
+   "lesson": "llm-as-judge",
+   "questions": [
+    {
+     "level": "junior",
+     "q": "What is LLM-as-judge, and what is the difference between pointwise and pairwise judging?",
+     "a": "A second model grades outputs against a rubric, so you can evaluate open-ended answers at scale. Pointwise judging scores one output (pass/fail or a grade) and suits absolute thresholds and monitoring. Pairwise judging sees two outputs for the same input and picks the better one or a tie; it is easier for the model and suits choosing between candidates, but it only gives relative information and costs more as systems multiply ($\\binom{k}{2}$ pairs for $k$ systems, doubled if you swap order). Either way the judge is a classifier whose agreement with humans must be measured before you trust it."
+    },
+    {
+     "level": "junior",
+     "q": "Why is percent agreement not enough to validate a judge?",
+     "a": "Agreement includes agreement by chance. If 95% of outputs are good, a judge that always says pass agrees with humans 95% of the time while knowing nothing. Cohen's kappa subtracts the expected chance agreement: $\\kappa=(p_o-p_e)/(1-p_e)$. For that always-pass judge $p_e=0.95$, so $\\kappa=0$. Report kappa, the confusion table and the judge's precision and recall on the failure class, because catching failures is usually the purpose."
+    },
+    {
+     "level": "mid",
+     "q": "Judge and human labels: both pass 60, judge pass/human fail 10, judge fail/human pass 5, both fail 25. Compute Cohen's kappa.",
+     "a": "$N=100$ and $p_o=(60+25)/100=0.85$. Judge pass rate $q_J=70/100=0.70$ and human pass rate $q_H=65/100=0.65$. Chance agreement $p_e=0.70\\times0.65+0.30\\times0.35=0.455+0.105=0.56$. Then $\\kappa=(0.85-0.56)/(1-0.56)=0.29/0.44=0.66$, conventionally 'substantial'. Compare it with human-human kappa on the same items, which is the practical ceiling; also check the judge's recall of human fails, here $25/35=71\\%$. Walk through it in order: build the 2x2 table, read the two marginal pass rates, compute chance agreement from them, then rescale the improvement over chance. Kappa is lower than the raw agreement of 85% because the judge and humans both pass most items, so a good part of that agreement would happen by luck. Interpret it against human-human kappa rather than a fixed scale."
+    },
+    {
+     "level": "mid",
+     "q": "How do you detect and mitigate position bias in a pairwise judge?",
+     "a": "Judge every pair in both orders and measure the swap-consistency rate (same winner both times) and the first-slot win rate (should be about 50%). In a test of 100 pairs with 70 consistent and 30 flips, mostly towards the first answer, the first slot might win 59% of 200 verdicts. Mitigate by averaging the margins from both orders, since an additive position bonus cancels: $m=(m^{AB}+m^{BA})/2$, or by counting inconsistent pairs as ties. Randomising order is the minimum. Report the consistency rate, because a low rate means the win rate rests on fewer decided pairs."
+    },
+    {
+     "level": "mid",
+     "q": "What is verbosity bias, why does swapping order not fix it, and how would you test for it?",
+     "a": "Judges tend to prefer longer answers. Swapping order does not help because the longer answer stays longer in both runs, so its bonus does not cancel. Test by looking at pairs where humans prefer the shorter answer and counting how often the judge still picks the longer one, or by padding a good answer with filler and checking whether its score rises. Mitigate with a rubric that says length is not a quality, matched-length comparisons, a statistical length term in the analysis, and monitoring average output length alongside win rate."
+    },
+    {
+     "level": "mid",
+     "q": "Estimate the cost of judging 2,000 items when each uses 1,500 input and 200 output tokens at 3 and 15 USD per million tokens.",
+     "a": "Input is $2000\\times1500=3$M tokens, costing $3\\times3=9$ USD. Output is $2000\\times200=0.4$M tokens, costing $0.4\\times15=6$ USD. Total 15 USD, finished in minutes, against roughly 1,000 USD for 0.50 USD-per-item human review. The comparison only holds if the judge is validated, so the usual design is hybrid: humans label a few hundred items to validate, the judge grades thousands, and humans spot-check a sample every release or whenever the judge prompt or model changes."
+    },
+    {
+     "level": "mid",
+     "q": "The judge says 72% pass. Calibration data shows TPR 0.90 and FPR 0.20. What is the corrected pass rate and what happens to uncertainty?",
+     "a": "The observed rate is $q=p\\,\\mathrm{TPR}+(1-p)\\,\\mathrm{FPR}$, so $p=(q-\\mathrm{FPR})/(\\mathrm{TPR}-\\mathrm{FPR})=(0.72-0.20)/0.70=0.743$. Forward check: $0.743\\times0.9+0.257\\times0.2=0.72$. Correction raises noise: the judge's sampling error is divided by $\\mathrm{TPR}-\\mathrm{FPR}=0.7$, about 43% larger, and the TPR and FPR estimates carry their own error, so validate with at least 100 human-labelled items per class. Use raw judge numbers to compare versions and corrected numbers when an absolute rate matters. In words: the judge's reported rate is a blend of its hits on good outputs and its false alarms on bad ones, so you solve for the mix that would produce it. A lenient judge (high FPR) overstates quality and a harsh one understates it. Report the corrected figure with an interval that includes the uncertainty of the calibration sample, and keep the gold set to recheck TPR and FPR whenever the judge changes."
+    },
+    {
+     "level": "senior",
+     "q": "Walk through how you would validate a judge before using it as a release gate.",
+     "a": "Build a gold set of 300 to 500 human-labelled items reflecting real traffic, with at least 100 per class and key slices. Run the judge and report agreement, kappa, the confusion table, and precision and recall on failures, with bootstrap intervals; compare with human-human kappa on a double-labelled subset. Probe biases: swap order, pad with filler, test with outputs from the judge's own model family. Read disagreements and fix rubric ambiguity. Freeze judge model version, prompt and temperature, store gold-set metrics with them, and re-run the gold set on any change. Add periodic human spot-checks in production."
+    },
+    {
+     "level": "senior",
+     "q": "Your judge's scores jumped 6 points overnight with no system change. What do you do?",
+     "a": "First suspect the instrument. Check whether the judge model or prompt changed (provider-side updates happen), whether the input distribution shifted, and whether output length changed. Re-run the frozen gold set through the current judge: if its agreement or TPR/FPR moved, the jump is a measurement artefact. Re-score a sample of old outputs with the current judge to separate judge drift from system change. Pin judge model versions where possible, log the judge version with every score, and never compare scores across judge versions without re-scoring or correcting."
+    },
+    {
+     "level": "senior",
+     "q": "How would you avoid self-preference and circularity when using one model to judge outputs of the same family?",
+     "a": "Judges tend to favour outputs resembling their own. Use a judge from a different family than the system under test when possible, or an ensemble of judges with majority vote, and check agreement between them. Always compare with human labels on a stratified sample, including outputs from the judge's own family and from others, to measure self-preference as a gap in TPR or win rate. Give the judge reference answers or source documents so it checks facts rather than style, use binary rubric items, and treat any judge-driven optimisation loop skeptically: periodically review raw outputs, since a system tuned against one judge can learn its quirks."
+    }
+   ]
+  },
+  {
+   "slug": "comparing-systems",
+   "title": "Comparing Systems You Can Trust",
+   "lesson": "comparing-systems",
+   "questions": [
+    {
+     "level": "junior",
+     "q": "A system passes 41 of 50 examples. Give its 95% confidence interval.",
+     "a": "$\\hat p=0.82$, $\\mathrm{SE}=\\sqrt{0.82\\times0.18/50}=0.054$, so the interval is $0.82\\pm1.96\\times0.054=0.82\\pm0.106$, about 71% to 93%. That is too wide to tell 80% from 90%. The width scales as $1/\\sqrt n$: quadrupling the sample to 200 halves it to about ±5 points. Remember it is an interval about the long-run average on inputs like these, not a statement about any one answer, and it assumes independent examples."
+    },
+    {
+     "level": "junior",
+     "q": "What does a p-value of 0.03 mean, and what does it not mean?",
+     "a": "If the two systems were truly identical, a difference at least this large would arise about 3% of the time from sampling alone. It does not mean a 3% chance that the null is true, a 97% chance the new system is better, or that the effect is large. It also says nothing about practical importance: with huge samples a negligible gain can be significant. Judge the confidence interval for the difference against the smallest improvement that is worth shipping."
+    },
+    {
+     "level": "mid",
+     "q": "A scored 390/500 and B scored 410/500 on different samples. Run the two-proportion z-test.",
+     "a": "Pooled $\\bar p=800/1000=0.80$. $\\mathrm{SE}_0=\\sqrt{0.8\\times0.2\\times(2/500)}=0.0253$. $z=0.04/0.0253=1.58$, two-sided $p=0.114$: not significant. The 95% interval for the gap is $0.04\\pm1.96\\times0.0253$, i.e. $(-0.0095,+0.0895)$, which includes zero and also a 9-point gain. 'Not significant' means inconclusive rather than 'no effect'; more data or a paired design is needed. Walk through the steps: pool the passes to get the null rate, compute the standard error of the difference under the null, divide the gap by it to get $z$, then convert to a p-value. A key habit is to quote the interval for the gap too, so readers see the plausible range of effects rather than only a significant or not-significant verdict, and to say which minimum improvement would justify shipping."
+    },
+    {
+     "level": "mid",
+     "q": "Why does a paired analysis often detect differences the unpaired test misses? Illustrate with McNemar.",
+     "a": "When both systems answer the same items, the items both pass or both fail carry no information about which is better. McNemar uses only discordant items: with $b=35$ (B only passes) and $c=15$ (A only), $\\chi^2=(35-15)^2/50=8$, $p=0.0047$, on exactly the data (78% versus 82%, $n=500$) where the unpaired test gave $p=0.114$. The paired standard error is about 0.0140 against 0.0253 unpaired. The gain is largest when the systems agree on most items, as two versions of one prompt usually do."
+    },
+    {
+     "level": "mid",
+     "q": "How many examples per arm are needed to detect +3 points from a base of 80% with 80% power at alpha 0.05?",
+     "a": "$n\\approx(z_{\\alpha/2}+z_\\beta)^2\\,2p(1-p)/\\delta^2=(1.96+0.8416)^2\\times0.32/0.03^2=7.85\\times0.32/0.0009\\approx2791$ per arm. Detecting +5 needs about 1005, +2 about 6279: $n\\propto1/\\delta^2$. 90% power needs about 34% more. A paired design needs roughly $(z_{\\alpha/2}+z_\\beta)^2\\,\\pi_d/\\delta^2$ where $\\pi_d$ is the discordant fraction; with $\\pi_d=0.10$ and $\\delta=0.04$ that is about 491 items instead of 1570 per arm. The three inputs you must choose in advance are the smallest improvement worth detecting, the false-alarm rate alpha, and the power. Halving the effect quadruples the sample, so teams often settle for a larger minimum effect or move to a paired design. Underpowered tests mislead twice: they miss real gains, and the few that reach significance tend to overstate the effect."
+    },
+    {
+     "level": "mid",
+     "q": "Explain the bootstrap and when you would prefer it to a formula.",
+     "a": "Resample $n$ items with replacement from your $n$ per-item results, compute the metric, repeat about 10,000 times, and take the 2.5th and 97.5th percentiles as a 95% interval. It needs no derivation, so it works for medians, p95 latency, F1, ratios and win-rate differences. For paired comparisons resample whole items so each item's A and B results stay together; on the 35/15/450 example it gives about (0.012, 0.068), matching McNemar. Limits: it cannot invent unseen cases, struggles with extremes like maxima, and clustered data (turns in conversations) needs cluster resampling."
+    },
+    {
+     "level": "mid",
+     "q": "You compare 10 prompt variants against a baseline, each at alpha 0.05. What is the chance of at least one false positive, and what do you do about it?",
+     "a": "If all variants are truly identical to the baseline, the family-wise error is $1-0.95^{10}=0.40$. Corrections: Bonferroni tests each at $0.05/10=0.005$ (simple, conservative, needs about 70% more data per comparison); Holm is uniformly more powerful with the same guarantee; Benjamini-Hochberg controls the false discovery rate and suits exploratory screens. Better still, pre-name one primary comparison and treat the rest as exploratory, then confirm the winner on fresh data."
+    },
+    {
+     "level": "senior",
+     "q": "You tried 12 prompt variants offline and the best beat the baseline by 4 points. How much do you trust that, and what is your process?",
+     "a": "Selection bias: the maximum of many noisy estimates is biased upward (winner's curse), and a 12-way comparison has an inflated chance of a false winner. Check the interval for the winner against the baseline with a paired test, apply a multiplicity correction, and most importantly re-evaluate only the winner on a fresh held-out set or online. Expect the real gain to be smaller than the observed one. Process: name one primary comparison beforehand, count every variant tried (including discarded notebook runs), hold out data you do not tune against, and report effect with an interval."
+    },
+    {
+     "level": "senior",
+     "q": "Your A/B result is not significant. What are your options?",
+     "a": "First read the interval for the difference: does it exclude effects worth caring about? If it spans only tiny effects, you can conclude the change is not worth shipping. If it also includes valuable gains, the test was underpowered: add data, use a paired or variance-reduced design (fixed seeds, temperature 0, covariate adjustment), or accept a larger minimum effect. Do not keep peeking until p dips below 0.05, do not slice until something is significant, and do not run it again and report the better run. Decide the plan in advance: effect size, power, sample size, stopping rule."
+    },
+    {
+     "level": "senior",
+     "q": "Your eval has 40 conversations with 10 turns each, scored per turn (400 items). A colleague reports ±3% confidence intervals. What is wrong?",
+     "a": "Turns within a conversation are correlated (same user, topic, context), so the effective sample size is closer to 40 than 400, and the interval from $\\sqrt{p(1-p)/400}$ is too narrow. Use cluster-aware estimation: resample whole conversations in a cluster bootstrap, or use cluster-robust standard errors; the variance inflates by roughly the design effect $1+(m-1)\\rho$ for cluster size $m$ and intra-cluster correlation $\\rho$ (with $m=10$, $\\rho=0.3$ that is 3.7, so intervals widen by about 1.9x). Better, randomise and analyse at the level of the independent unit."
+    }
+   ]
+  },
+  {
+   "slug": "error-analysis",
+   "title": "Error Analysis",
+   "lesson": "error-analysis",
+   "questions": [
+    {
+     "level": "junior",
+     "q": "Why read individual failures instead of just tracking the pass rate?",
+     "a": "A pass rate says how often the system fails, not why. Reading a random sample of 30 to 50 failures typically reveals the dominant causes (wrong retrieval, ignored context, formatting, eval mistakes) and suggests specific fixes, which is far more efficient than tweaking prompts blindly. Read a few passes too, to catch outputs that pass a metric for the wrong reason. Keep per-item results and traces so failures can be inspected."
+    },
+    {
+     "level": "junior",
+     "q": "What is open coding?",
+     "a": "Open coding means reading each failure and writing a short free-text label for what went wrong without fixing categories in advance. Similar labels are then grouped, producing a taxonomy that emerges from the data rather than from assumptions. Label the first point of failure in a pipeline, so a wrong retrieved document is a retrieval error even if the generator was fluent. Have a second person re-code a subset and compute Cohen's kappa to check that the categories are applied consistently."
+    },
+    {
+     "level": "mid",
+     "q": "A failure cause accounts for 5% of failures. How many failures must you read to see it with 95% probability?",
+     "a": "The chance of seeing at least one in $k$ random failures is $1-(1-q)^k$. Set $1-0.95^k\\ge0.95$, giving $k\\ge\\ln0.05/\\ln0.95=58.4$, so about 59 failures. At $k=20$ you see it only 64% of the time; at 50, 92%. A 20% cause needs only 14. So 30 to 50 failures find the large causes and 100 or more surface the smaller ones. Sample randomly, not by what looks interesting."
+    },
+    {
+     "level": "mid",
+     "q": "Given failure counts by category on 600 items (46, 28, 17, 12, 9, 8 of 120 failures), what is the gain from fixing the top category?",
+     "a": "Shares are 38.3%, 23.3%, 14.2%, 10.0%, 7.5% and 6.7%, cumulative 38.3, 61.7, 75.8, 85.8, 93.3 and 100%. Fully fixing the top category raises passes from 480 to 526, so pass rate 80% to 87.7%, +7.7 points. With a realistic resolution rate $r=0.6$ the gain is $0.6\\times46/600=4.6$ points. Fixing the top three gives 571/600 = 95.2%. Combine gain with severity and effort for priority: $r\\,f\\,w/\\text{effort}$."
+    },
+    {
+     "level": "mid",
+     "q": "Overall pass rate is 82.5% on 400 items. How do slice metrics change the picture?",
+     "a": "With English 270/300 (90%), Hindi 25/50 (50%) and code-mixed 35/50 (70%), the average hides a weak slice. Hindi's interval is $0.5\\pm1.96\\sqrt{0.25/50}=\\pm0.139$, and against the other 350 items (87.1%) the gap of 37 points has $z\\approx5.1$, so it is real. Lifting Hindi to 90% adds $50\\times0.4/400=5$ points overall. Report a table of items, rate, interval and gap-versus-rest, give each important slice at least 100 items, and correct for multiple comparisons when scanning many slices."
+    },
+    {
+     "level": "mid",
+     "q": "What makes a good failure taxonomy?",
+     "a": "Categories should be mutually exclusive (one primary label per failure), roughly exhaustive with an 'other' bucket under about 10%, actionable (each points to a different lever such as retrieval, prompt, tool use or constraints), few (5 to 10), and defined with an example and a counter-example so that two coders agree (kappa of about 0.6 or higher). Include an 'eval artefact' category for wrong references or over-strict metrics, which are often 5 to 15% of apparent failures. Refine by splitting categories with several unrelated fixes and merging ones always fixed together."
+    },
+    {
+     "level": "senior",
+     "q": "After error analysis you find 12% of 'failures' are mistakes in the eval itself. What do you do?",
+     "a": "Fix the eval first: correct stale references, widen rubrics for items with multiple valid answers, loosen over-strict metrics, and drop ambiguous items or mark them. Then recompute the baseline for all compared versions, since scores before and after are not comparable. Record the change in the eval-set version. This often raises measured quality by several points at no model cost and prevents optimising towards wrong targets. Add a review step for new items (second reader on a sample) to keep the artefact rate low."
+    },
+    {
+     "level": "senior",
+     "q": "Explain how you would use a regression set and why it should not be your headline quality number.",
+     "a": "A regression set collects inputs that once failed and were fixed, plus near-miss variants, so later changes cannot silently undo fixes. It acts as a ratchet in CI. It is biased as a quality estimate because items were chosen for having failed and you tuned the system against them, so their pass rate overstates real-world quality. Keep a separate held-out set, sampled from traffic and rarely touched, for estimating quality, and report the regression set as pass or fail with a zero-regression expectation."
+    },
+    {
+     "level": "senior",
+     "q": "A change lifts overall pass rate 2 points but a critical 40-item slice drops 15 points. How do you decide?",
+     "a": "A 40-item slice has an interval of about ±12 points, so the drop may partly be noise, but 15 points in a critical area is too large to ignore. Run a paired comparison on that slice (how many items fixed versus broken), collect more items for it (aim for 100+), and read the broken items to see whether there is a mechanism (for instance, a retrieval change that hurts billing documents). Pre-agree a release rule such as no important slice drops more than 3 points with at least 100 items, so this decision does not get made ad hoc under pressure."
+    }
+   ]
+  },
+  {
+   "slug": "online-evaluation",
+   "title": "Online Evaluation",
+   "lesson": "online-evaluation",
+   "questions": [
+    {
+     "level": "junior",
+     "q": "Why do we run A/B tests when we already have an offline eval set?",
+     "a": "An eval set is a model of traffic; real users do things it did not include, and offline metrics are proxies for what users actually want. An A/B test randomises real users between control and treatment, so any systematic difference in outcome is caused by the change. Randomisation balances time of day, user mix and task difficulty. Offline evals are fast and cheap for iterating; online tests are the final check of user outcomes and guardrails."
+    },
+    {
+     "level": "mid",
+     "q": "Baseline resolution is 30% and the smallest worthwhile gain is 1.5 points. Size the test and say how long it runs at 5,000 users per day.",
+     "a": "$n\\approx7.85\\times2\\times0.3\\times0.7/0.015^2=3.297/0.000225\\approx14{,}650$ users per arm. A 50/50 split of 5,000 per day gives 2,500 per arm per day, so 5.9 days; round up to 7 days to cover every weekday. If only 5% of traffic may see the candidate, the treatment arm gets 250 users per day and reaching the target takes about 59 days. Pre-specify the primary metric, guardrails and stopping rule, and avoid stopping early on the first significant p-value."
+    },
+    {
+     "level": "mid",
+     "q": "A 50/50 test of 20,000 users ends 10,300 versus 9,700. What do you do?",
+     "a": "Check sample-ratio mismatch: $\\chi^2=300^2/10000+300^2/10000=18$, far above the 3.84 critical value ($p<0.0001$). A 3% imbalance looks small but is extremely unlikely under correct randomisation. Something biases who is counted per arm: a crash or timeout in one variant, bot filtering, logging bugs, or redirects. Do not interpret outcome metrics until the cause is found and fixed; then re-run. SRM checks should be automatic in the experiment platform."
+    },
+    {
+     "level": "mid",
+     "q": "How do you test a guardrail such as complaint rate, where the question is harm rather than difference?",
+     "a": "Use non-inferiority: pick a tolerance (say +1.0 point) and compare it with the upper end of the confidence interval for B minus A. With 12.0% versus 12.6% on 10,000 users per arm, the difference is +0.6 with $\\mathrm{SE}=0.00465$, giving $(-0.31,+1.51)$; the upper bound exceeds 1.0, so safety is not shown even though the point estimate is under the margin. Ruling out harm needs more data (about 52,000 per arm here). For latency and cost compare percentiles (p95, p99) with bootstrap intervals, since means hide tails."
+    },
+    {
+     "level": "mid",
+     "q": "Why are thumbs-up and thumbs-down ratings a biased measure of satisfaction?",
+     "a": "Only a small share of users rate, and unsatisfied users are often more motivated. If true satisfaction is 85%, satisfied users rate with probability 2% and unsatisfied with 6%, the up-share of ratings is $0.017/(0.017+0.009)=65\\%$, not 85%. The bias direction depends on the product. Use ratings for trends, finding failures and building labelled data, and for estimates prefer a random 'was this helpful?' prompt shown to a random subset, or validate implicit signals against human labels and correct with $p=(q-\\mathrm{FPR})/(\\mathrm{TPR}-\\mathrm{FPR})$."
+    },
+    {
+     "level": "mid",
+     "q": "Compute the PSI for baseline bucket shares (0.25, 0.35, 0.25, 0.15) against (0.15, 0.30, 0.30, 0.25) and interpret it.",
+     "a": "$\\mathrm{PSI}=\\sum(a_i-e_i)\\ln(a_i/e_i)$. Terms: 0.0511, 0.0077, 0.0091, 0.0511, total about 0.119. By the usual rule of thumb (under 0.1 stable, 0.1 to 0.25 moderate, above 0.25 major) this is a moderate shift, here prompts getting longer. It warrants investigation, such as whether quality dropped on long prompts, but not an alarm. PSI depends on the binning and needs several hundred requests per window."
+    },
+    {
+     "level": "senior",
+     "q": "Version B beats A on easy and on hard questions, yet loses overall. Explain and say how to proceed.",
+     "a": "This is Simpson's paradox: overall rate is a weighted average of slice rates, and if the arms have different mixes (A: 200 easy and 100 hard; B: 100 easy and 200 hard), weights differ. A is 180/200 and 40/100 giving 73.3%; B is 95/100 and 90/200 giving 61.7%, though B wins each slice. Standardising to a common mix (50/50) gives A 65% and B 70%. If the mix differs because assignment was non-random, trust the slices; if the treatment causes the mix shift, the pooled result is the effect. In a randomised test a reversal signals an assignment or logging bug."
+    },
+    {
+     "level": "senior",
+     "q": "A product manager checks the A/B dashboard daily and wants to stop as soon as p is below 0.05. What is the problem and what are the alternatives?",
+     "a": "Repeated looks inflate the false-positive rate well above 5%, because the p-value random-walks and will cross 0.05 by chance in many null experiments. Options: fix the sample size from a power calculation and look once; use sequential methods designed for continuous monitoring (alpha-spending, group sequential designs, always-valid p-values); or monitor only guardrails during the run and stop early for safety, not for success. Pre-register the decision rule and run in whole weeks to avoid weekday effects."
+    },
+    {
+     "level": "senior",
+     "q": "Design the production monitoring for the quality of an LLM feature.",
+     "a": "Log request, model, prompt, index and tool versions on every call. Track input statistics (length, topic mix, language) with PSI against a stable baseline, output statistics (length, refusal rate, format errors), and cost and latency percentiles. Score a daily random sample (say 200 items) with a validated judge and chart the pass rate with 3-sigma control limits ($p_0\\pm3\\sqrt{p_0(1-p_0)/n}$) plus run rules for slow slides. Add implicit signals (regenerate, escalation) validated against human labels, and a random user survey. Run the full offline suite on a schedule to catch provider-side changes. Route alerts to a checklist: what changed that day."
+    },
+    {
+     "level": "senior",
+     "q": "Offline eval says B is better by 3 points but the A/B test shows no difference. What could explain it?",
+     "a": "Candidates: the eval set is unrepresentative of traffic (slice mix differs, too clean, stale); the offline metric is a weak proxy for the user outcome (check its validated correlation); the offline gain was inflated by selection and tuning against the eval set (winner's curse); the online test was underpowered for a gain of that size; novelty or learning effects; or the improvement exists only on cases users rarely hit. Diagnose by checking the interval online (does it include 3 points?), re-slicing online data by the offline slices, validating the offline metric against online outcomes, and refreshing the eval set from recent traffic."
+    }
+   ]
+  }
+ ]
+}

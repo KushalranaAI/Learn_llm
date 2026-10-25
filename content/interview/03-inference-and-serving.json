@@ -1,0 +1,334 @@
+{
+  "module": "inference-and-serving",
+  "sections": [
+    {
+      "slug": "measuring-inference",
+      "title": "Measuring Inference",
+      "lesson": "measuring-inference",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "Define TTFT and TPOT, and write end-to-end latency in terms of them.",
+          "a": "**Time to first token (TTFT)** is the time from sending a request until the first output token arrives. It covers network, queueing and prefill. **Time per output token (TPOT)** is the average gap between consecutive output tokens after the first, set by the decode step time. For an answer of $n_{out}$ tokens, end-to-end latency is $T = \\text{TTFT} + (n_{out}-1)\\cdot\\text{TPOT}$. The minus one appears because the first token is already included in TTFT. Users feel TTFT as 'how fast does it start' and TPOT as 'how smoothly does it flow'. Because the two have different causes (queue and prompt length versus batch size and context length), dashboards should show them separately rather than as one latency number."
+        },
+        {
+          "level": "junior",
+          "q": "Why do we report p95 and p99 latency instead of the mean?",
+          "a": "Latency distributions are right-skewed: most requests are fast and a thin tail is very slow. The mean mixes the two and describes nobody's experience. In twenty samples of 180 to 400 ms with one 2,400 ms outlier, the mean is about 407 ms, yet the median is 250 ms and 19 of 20 users saw under 900 ms. Percentiles answer concrete questions: p50 is the typical request, p95 is what one user in twenty is worse than, p99 what one in a hundred is worse than. Tails also compound: if a page makes 10 independent calls, each with a 1% chance of being slow, about 9.6% of page loads hit at least one slow call. Set SLOs on percentiles, and collect enough samples (hundreds) for the tail to mean something."
+        },
+        {
+          "level": "mid",
+          "q": "A request has TTFT 300 ms and TPOT 30 ms and returns 200 tokens. What is the end-to-end latency, and what would you optimise first?",
+          "a": "$T = 0.300 + (200-1)\\times0.030 = 0.300 + 5.97 = 6.27$ s. Decode accounts for 5.97 s, about 95% of the total, so the TTFT is a small share. For a streamed chat UI the user already sees text after 300 ms, so the stream's smoothness (30 ms is about 33 tokens/s, faster than reading speed) is probably fine and the experience is acceptable. What to optimise depends on the product. If a program consumes the full answer (JSON for a tool call), end-to-end time matters and the levers are shorter outputs, a lower TPOT (quantization, smaller model, speculative decoding) or fewer tokens. If it is a streamed chat, shaving TTFT further or cutting output length helps more than a faster TPOT. Always ask which phase the user is actually waiting on."
+        },
+        {
+          "level": "mid",
+          "q": "Explain the difference between throughput and goodput with a numeric example.",
+          "a": "Throughput counts completed work per second regardless of how long each request took. Goodput counts only work that met the service-level objective (for example TTFT at most 500 ms and TPOT at most 50 ms). Suppose config A serves 10 requests/s with 90% inside the SLO, and config B, with a larger batch limit, serves 14 requests/s but only 40% inside it. Goodput is $10\\times0.9 = 9$ requests/s for A and $14\\times0.4 = 5.6$ for B. B wins on throughput by 40% and loses on goodput by 38%. Bigger batches raise throughput but slow each user, so past some point goodput falls even as throughput rises. Tune to the peak of the goodput curve. For offline jobs with no per-request deadline, raw throughput is the right objective."
+        },
+        {
+          "level": "mid",
+          "q": "Users say the stream 'freezes for a second' mid-answer, but TPOT on your dashboard is a healthy 30 ms. How do you diagnose it?",
+          "a": "TPOT is a mean over gaps, so a few long pauses barely move it: eight gaps of 25 ms and one of 500 ms average only about 78 ms over nine gaps, and over hundreds of tokens they vanish. Look at the distribution of inter-token latencies (ITL), especially p99 and the maximum per request, and correlate spikes in time with other events. The classic cause is a long prompt being prefilled in the same engine: a 8,000-token prefill on an 8B model takes roughly 200 ms of GPU compute, and without chunking every running decode stalls for that long. Other causes are preemption when the KV pool is full, garbage collection or CPU contention in the server, and network buffering. Fixes: chunked prefill with a token budget per step, a separate pool for long prompts, more KV memory, and an ITL-based alert."
+        },
+        {
+          "level": "mid",
+          "q": "Why can a closed-loop load test understate tail latency, and what would you use instead?",
+          "a": "A closed-loop generator runs a fixed number of virtual users, each sending the next request only after the previous one returns. When the server slows down, response times rise and the users send fewer requests, so offered load falls exactly when the system struggles. This is called coordinated omission, and it hides the queue that real, independent users would create. The response-time law shows it: $\\lambda = C/(W+Z)$, so as $W$ grows $\\lambda$ shrinks. An open-loop generator sends requests on a schedule, typically Poisson arrivals with exponential gaps $-\\ln(U)/\\lambda$, regardless of how the server is doing. Sweep the arrival rate upward until the SLO breaks, replay real prompt and output length distributions, warm up first, and report percentiles and goodput at each rate."
+        },
+        {
+          "level": "senior",
+          "q": "Design the latency budget for a voice assistant that must start speaking within 800 ms of the user finishing a sentence.",
+          "a": "Silence is the sum of the stages before first audio: $T = t_{asr} + t_{endpoint} + \\text{TTFT}_{llm} + t_{tts,first}$. Suppose speech recognition finalisation takes 150 ms, end-of-speech detection 200 ms and first synthesised audio 150 ms. That leaves 300 ms for the LLM's TTFT including network and queueing. So: keep the prompt short and cache the stable prefix (system prompt, persona), since prefill dominates TTFT; keep replicas at modest utilisation so queueing is near zero; pin a low-latency model tier; stream tokens to the synthesiser sentence by sentence rather than waiting for the full answer; and cut ASR and endpointing by streaming partial transcripts and starting LLM work speculatively. Decode speed only needs to outpace speech (a few words per second). Set the SLO on p95, test open-loop, and alert when TTFT p95 exceeds 250 ms so there is headroom before users notice."
+        },
+        {
+          "level": "senior",
+          "q": "An agent makes 5 sequential model calls per task and each call has a p99 latency of 2 s. What happens to the task's tail, and how do you improve it?",
+          "a": "If each call independently lands in its slow 1% with probability 0.01, the chance that at least one of five does is $1 - 0.99^5 = 4.9\\%$, so about one task in twenty experiences some call's p99. Their latencies also add, so the task's p50 is roughly five typical calls and its tail is much worse than any single call's. Improvements, roughly in order: remove calls (merge steps or parallelise independent ones, so the latency is the maximum instead of the sum); shrink prompts and outputs; use prefix caching because each step resends earlier context; keep servers below the utilisation where queueing blows up; set per-call timeouts with a retry or hedged request to a second replica for the slow tail; and give the task an overall budget with a degraded fallback. Measure task-level percentiles, not just per-call ones."
+        }
+      ]
+    },
+    {
+      "slug": "memory-and-compute",
+      "title": "Memory Bandwidth, Compute and the Roofline",
+      "lesson": "memory-and-compute",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "Why is LLM decoding limited by memory bandwidth rather than compute?",
+          "a": "Each decode step produces one token per sequence, but it must still read every weight of the model from GPU memory (HBM) to multiply by that token's activations. A matrix-vector product does only about 2 FLOPs per weight read. A GPU can perform hundreds of FLOPs for every byte it can fetch, so the arithmetic units sit mostly idle waiting for data. For an 8B model in BF16, reading the 16 GB of weights at about 3.35 TB/s takes roughly 4.8 ms, while the 16 GFLOP of arithmetic takes about 16 microseconds at peak. Decode speed at small batch is therefore roughly bandwidth divided by model size, and a GPU with more FLOP/s but the same bandwidth would not decode any faster."
+        },
+        {
+          "level": "junior",
+          "q": "Why does a forward pass cost about 2N FLOPs per token for a model with N parameters?",
+          "a": "Almost all of the work is matrix multiplication, and each weight is used once per token: it is multiplied by one input value and added into one output. A multiply and an add are 2 FLOPs, so a weight matrix with $m\\times k$ entries applied to one token costs about $2mk$ FLOPs, which is twice its parameter count. Summing over all matrices (attention projections, MLP, output head) gives about $2N$. For an 8B model that is about $1.6\\times10^{10}$ FLOPs per token. This ignores the attention score computation, which adds about $4Lnd$ FLOPs per token at context length $n$ and only matters at long contexts. Training costs about $6N$ per token because the backward pass needs roughly twice the forward work."
+        },
+        {
+          "level": "mid",
+          "q": "Estimate batch-1 decode speed of an 8B model in BF16 on an H100, and what you would expect after 4-bit quantization.",
+          "a": "Weights: $8.03\\times10^{9}\\times2 = 16.06$ GB. The H100 SXM has approximately 3.35 TB/s of HBM bandwidth, so reading the weights takes about $16.06/3350 = 4.8$ ms and the ceiling is about 209 tokens/s. Real kernels reach perhaps 70 to 80% of peak bandwidth, so expect roughly 150 to 165 tokens/s. With 4-bit weights and group scales (about 4.1 bits per weight) the weights shrink to about 4.1 GB, a read time of about 1.2 ms and a ceiling near 800 tokens/s. In practice dequantization overhead and non-weight work (attention, norms, kernel launches) make the gain smaller than 4x, often 2.5 to 3.5x. The estimate only holds at small batch and short context; KV-cache reads add to the bytes as either grows."
+        },
+        {
+          "level": "mid",
+          "q": "What is arithmetic intensity, and what is the ridge point of an H100?",
+          "a": "Arithmetic intensity is FLOPs performed per byte moved to or from memory, $I = \\text{FLOPs}/\\text{bytes}$. A GPU's ridge point is its peak compute divided by its memory bandwidth, $I^* = P/\\beta$. For an H100 SXM, approximately 989 TFLOP/s dense BF16 over 3.35 TB/s is about 295 FLOP/byte. Workloads below the ridge are memory-bound and attain $I\\cdot\\beta$ FLOP/s; above it they are compute-bound and attain $P$. For BF16 weights, a decode step at batch $B$ has $I\\approx B$ (weights are read once and used for $B$ tokens), so batch 1 achieves about 0.3% of peak compute and you need roughly 295 sequences to reach the ridge. With 4-bit weights $I\\approx4B$, so the ridge is reached at about batch 74. Prefill with an $n$-token prompt has $I\\approx n$ and is usually compute-bound."
+        },
+        {
+          "level": "mid",
+          "q": "Estimate the prefill time of a 4,000-token prompt on an 8B model on an H100.",
+          "a": "FLOPs: $2\\times8.03\\times10^{9}\\times4000 = 6.42\\times10^{13}$. At peak (989 TFLOP/s dense BF16) that is 65 ms. Real prefill kernels typically reach 50 to 70% of peak, so at 60% the effective rate is $5.93\\times10^{14}$ FLOP/s and prefill takes about 108 ms. The attention term adds a few percent at this length (roughly $4Lnd/(2N)\\approx n/(6d) = 16\\%$ per token at the end of the prompt, about half that on average). Prefill is compute-bound because 4,000 tokens share each weight read, giving an arithmetic intensity near 4,000 FLOP/byte against a ridge of about 295. So TTFT is at least about 110 to 120 ms plus queueing and network, and it scales roughly linearly with prompt length until attention's quadratic term starts to matter."
+        },
+        {
+          "level": "mid",
+          "q": "What are MBU and MFU, and which should you report for decode?",
+          "a": "Model FLOPs utilisation (MFU) is achieved model FLOP/s divided by the hardware's peak FLOP/s, counting only the $2N$-per-token work the model needs. Memory bandwidth utilisation (MBU) is achieved bytes moved per second divided by peak bandwidth. They measure how close a phase is to the limit that binds it. Prefill and training are compute-bound, so MFU is the right measure (50 to 60% is good). Decode is memory-bound, so MFU is tiny by construction (a single stream at 150 tokens/s on an 8B model does about $2.4\\times10^{12}$ FLOP/s, a quarter of a percent of an H100's peak) and would make a healthy system look broken. Report MBU instead: 150 tokens/s times 16 GB is 2.4 TB/s, about 72% of 3.35 TB/s, which is respectable. Tracking MBU also tells you how much headroom kernel work could still recover."
+        },
+        {
+          "level": "senior",
+          "q": "Llama 3 70B (80 layers, 8 KV heads, head dim 128) serves 32 sequences of 8,192 tokens in BF16 on 8 H100s with tensor parallelism. Estimate the ideal decode step time.",
+          "a": "KV bytes per token: $2\\times80\\times8\\times128\\times2 = 327{,}680$ bytes (320 KiB). Cache size: $32\\times8192\\times327{,}680 = 85.9$ GB. Weights: $70.6\\times10^9\\times2 = 141$ GB. A step reads both, about 227 GB. Aggregate bandwidth of 8 GPUs is approximately $8\\times3.35 = 26.8$ TB/s, so the ideal step time is $227/26{,}800 = 8.5$ ms, about 118 tokens/s per user and 3,780 tokens/s for the replica. Note the KV cache is already 60% of the weight bytes, so at longer contexts or bigger batches KV reads dominate; that is why GQA models, KV-cache quantization and context caps matter. Real systems add all-reduce time (two per layer, 160 per step) and run at 70 to 80% of peak bandwidth, so expect roughly 11 to 13 ms."
+        },
+        {
+          "level": "senior",
+          "q": "A vendor offers GPUs with twice the FLOP/s at the same memory bandwidth and price. Will your chat service get faster or cheaper?",
+          "a": "It depends on how your GPU time splits between prefill and decode. Decode is memory-bound, so doubling FLOP/s changes nothing for TPOT or for decode throughput at batch sizes below the ridge (which moves from about 295 to about 590, making it even harder to leave the memory-bound regime). Prefill is compute-bound, so it roughly halves: TTFT drops and the GPU time per request falls by half of the prefill share. Quantify with your traffic: with a 1,000-token prompt and 300-token answer on an 8B model, prefill is about 27 ms and decode about 45 ms of GPU time per request, so a 2x compute gain saves about 13 ms of 72 ms (19%). For a RAG workload with 8,000-token prompts and short answers the saving would be much larger. Also check whether the GPU gains FP8 support, which helps both phases. Decide with a measured benchmark on your length mix, not the spec sheet."
+        }
+      ]
+    },
+    {
+      "slug": "batching",
+      "title": "Batching and Scheduling",
+      "lesson": "batching",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What is continuous batching and why is it better than static batching?",
+          "a": "In static batching a group of requests starts together and the batch is released only when the longest one finishes, so short answers leave their slots idle and new requests wait for a whole batch to drain. In continuous batching (iteration-level scheduling) the server makes the scheduling decision after every decode step: finished sequences leave immediately and waiting requests are admitted into the free slots. With answers of 50, 100, 200 and 400 tokens, a static batch of four is only $750/1600 = 47\\%$ utilised, while continuous batching keeps slots full. It also cuts queueing delay, since a new request waits for roughly one step plus its own prefill rather than the longest answer in progress. Every mainstream serving engine uses it by default."
+        },
+        {
+          "level": "junior",
+          "q": "Why does a larger batch increase throughput but slow each user down?",
+          "a": "A decode step reads all the weights once regardless of how many sequences ride along, so more sequences share the same fixed memory cost and total tokens per second rises almost linearly while the weights dominate. Each sequence also adds its own KV-cache reads and a little compute, so the step gets longer as the batch grows, and every user's tokens arrive less often. With an 8B model on an H100 and 2,000-token contexts, step time is about 4.9 ms at batch 1, 7.3 ms at batch 32 and 14.8 ms at batch 128. Throughput goes from 205 to 4,385 to 8,643 tokens/s, but per-user speed falls from 205 to 137 to 67 tokens/s. Past a point you gain little throughput and lose a lot of speed."
+        },
+        {
+          "level": "mid",
+          "q": "Static batch of four requests with output lengths 100, 100, 100 and 900: what is slot utilisation, and what does continuous batching change?",
+          "a": "A static batch runs for $\\max n_i = 900$ steps, reserving $4\\times900 = 3{,}600$ slot-steps, of which $100+100+100+900 = 1{,}200$ are useful, so utilisation is $1200/3600 = 33\\%$. Three of the four slots are idle for 800 steps while the queue waits. With continuous batching, each short request frees its slot after 100 steps and the scheduler fills it with the next waiting request, so slots stay near fully occupied if there is a supply of requests. Throughput can roughly triple in this scenario, and the queued requests start after about one step instead of after 900. The remaining cost is scheduling complexity: per-sequence KV memory management and handling prefill of new arrivals without stalling the running decodes."
+        },
+        {
+          "level": "mid",
+          "q": "What problem does PagedAttention solve, and how much memory does it save?",
+          "a": "Contiguous KV allocation reserves space for the maximum possible length per request, so most of the reserved memory is never filled (reservation waste), requests that end early leave unused tails (internal fragmentation), and free memory splits into gaps that are too small for a new request (external fragmentation). PagedAttention stores KV in fixed-size blocks (for example 16 tokens) mapped by a per-sequence block table, allocated only when needed, so the only waste is part of the last block. If sequences average 600 tokens but 4,096 are reserved, contiguous memory is at best 15% used, while paging wastes about 8 tokens in 608, so 98.7% is useful. With 60 GB of KV memory that is 120 sequences versus roughly 800. Block tables also allow cheap sharing of common prefixes with copy-on-write."
+        },
+        {
+          "level": "mid",
+          "q": "A service handles 12 requests/s and the average request spends 6 s in the system. Use Little's law to say how many are in flight, and what that means for capacity.",
+          "a": "Little's law says $L=\\lambda W = 12\\times6 = 72$ requests in the system on average, whatever the arrival pattern or scheduling. If the boundary is 'decoding in the engine', 72 sequences are running at once on average, so the KV cache must hold at least 72 contexts and the decode batch is around 72. If dashboards show only 30 running sequences while the gateway shows 72 in flight, about 42 are waiting in a queue or elsewhere, which points to a capacity problem or a measurement boundary mismatch. Used backwards, a replica that can hold at most 120 concurrent sequences with 15 s per request can sustain at most $120/15 = 8$ requests/s. Note the feedback: more load means bigger batches, slower steps, longer $W$, and so even more in flight."
+        },
+        {
+          "level": "mid",
+          "q": "How do you pick the batch limit for a TPOT target?",
+          "a": "Model the step time as $t(B)\\approx(W+BK)/(\\eta\\beta)$ with $W$ the weight bytes, $K$ the KV bytes per sequence at typical context, $\\beta$ bandwidth and $\\eta$ the achieved fraction. Require $t(B)\\le\\tau$: $B_{max}=\\lfloor(\\eta\\beta\\tau-W)/K\\rfloor$, then cap it by KV memory, $B\\le M_{kv}/K$. For an 8B model ($W=16.06$ GB, $K=0.262$ GB at 2,000 tokens) on an H100 at ideal bandwidth, $\\tau=20$ ms gives $B_{max}=194$ and $\\tau=10$ ms gives 66. Then validate with an open-loop load test at your real length mix, because real efficiency is below the ideal and prefill steals time. Set the production limit somewhat below $B_{max}$ to leave room for arrivals, and watch goodput rather than throughput."
+        },
+        {
+          "level": "senior",
+          "q": "p99 inter-token latency spikes whenever someone sends a long prompt. How do chunked prefill and its chunk size trade off?",
+          "a": "Without chunking, admitting an 8,000-token prompt runs about 220 ms of compute on an 8B model (H100 at 60% of peak) and every running decode waits, so users see a 225 ms gap against the usual 8 ms. Chunked prefill splits the prompt into pieces of at most $c$ tokens, one per step, mixed with decode work. With $c=512$ there are 16 chunks, each adding about 14 ms, so other users see about 22 ms per token instead of a freeze, while the newcomer's TTFT rises from about 220 ms to about 350 ms because its prefill is spread across shared steps. Smaller $c$ gives smoother ITL and later first tokens for long prompts; larger $c$ the reverse. Pick $c$ from the ITL SLO (step time budget minus decode time), and route very long prompts to a dedicated pool or a disaggregated prefill tier if even small chunks hurt."
+        },
+        {
+          "level": "senior",
+          "q": "Design the scheduling for one model serving both interactive chat and bulk summarisation jobs.",
+          "a": "Goals: protect interactive TTFT and TPOT, and soak up idle GPU time with bulk work. Use two priority classes in one engine, or two pools. Interactive requests get strict priority for admission; bulk requests are admitted only when the running batch is below a utilisation threshold and are the first to be preempted (recompute or swap) when the KV pool is tight. Cap bulk's share of the token budget per step and use chunked prefill so a large document cannot stall chat decodes. Set batch limits from the interactive SLO ($B_{max}$ from the TPOT target), and let bulk fill only the slack. Separate pools are simpler to reason about and avoid interference, at the cost of lower utilisation; sharing wins when interactive load is spiky. Measure goodput for the interactive class and throughput for bulk, with per-class queue-time alerts and an admission limit that sheds bulk first."
+        }
+      ]
+    },
+    {
+      "slug": "quantization",
+      "title": "Precision and Quantization",
+      "lesson": "quantization",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "How much memory do the weights of a 70B-parameter model need in BF16, INT8 and INT4?",
+          "a": "Weight memory is $N\\cdot q/8$ bytes for $q$ bits per weight. For $N=70.6\\times10^{9}$: BF16 ($q=16$) is about 141 GB, INT8 about 70.6 GB and INT4 about 35.3 GB. With group-wise scales, INT4 is closer to 4.125 to 4.25 bits per weight, about 36 to 37.5 GB. On 80 GB GPUs that means BF16 needs at least two GPUs just for weights, INT8 barely fits on one with almost no KV-cache room, and INT4 fits on one with roughly 40 GB left for the KV cache. These are weights only: add the KV cache for your batch and context, plus a few GB for activations and the runtime. Quantization therefore buys both fewer GPUs and larger batches."
+        },
+        {
+          "level": "junior",
+          "q": "What is a quantization scale and how do you compute it for symmetric quantization?",
+          "a": "Integer formats store whole numbers, so a **scale** says what real value one integer step represents. For symmetric (absmax) quantization to $b$ bits, $q_{max}=2^{b-1}-1$ (127 for 8 bits, 7 for a symmetric 4-bit range) and $s=\\max|w|/q_{max}$. Each weight is stored as $q=\\operatorname{round}(w/s)$ and recovered as $\\hat{w}=s\\cdot q$, with error at most $s/2$. For example, if the largest weight magnitude is 2.54, the INT8 scale is $2.54/127=0.02$, and the weight 1.00 is stored as 50 and recovered exactly. Smaller $q_{max}$ means a bigger step: going from INT8 to INT4 multiplies the step by about 18, because 255 levels become 15."
+        },
+        {
+          "level": "mid",
+          "q": "Why is group-wise quantization used, and what does it cost in memory?",
+          "a": "One scale per large tensor is fragile: a single big outlier forces a large step and rounds all the ordinary weights to zero or a coarse level. Group-wise quantization gives each group of $g$ weights (commonly 32, 64 or 128) its own scale, so an outlier damages only its own group. The price is storing the scales: with a 16-bit scale per group, effective bits per weight are $q+16/g$, so INT4 is 4.125 bits at $g=128$, 4.25 at $g=64$ and 4.5 at $g=32$ (and $+32/g$ if a zero-point is stored too). For an 8B model, INT4 with $g=128$ takes about 4.14 GB versus 4.02 GB without scales, a 3% increase that usually recovers most of the quality lost to sharing scales. Smaller groups improve accuracy further at the cost of more memory and slower kernels."
+        },
+        {
+          "level": "mid",
+          "q": "Compare weight-only quantization (W4A16) with weight-and-activation quantization (W8A8 or FP8). Which speeds up prefill and which decode?",
+          "a": "Weight-only schemes store weights in 4 or 8 bits and dequantize to BF16 inside the kernel, so the multiplication still runs in BF16. They cut bytes read from HBM and memory footprint, which is exactly what decode needs (memory-bound), but do nothing for compute. Weight-and-activation schemes also quantize the activations so the matrix multiply runs on low-precision tensor cores; on an H100, FP8 has approximately twice the dense BF16 throughput. That raises the compute roof and helps prefill (compute-bound) as well as halving weight bytes for decode. The difficulty is activations: they vary per token and contain outliers, so W8A8 needs rescaling tricks (SmoothQuant-style) or FP8 for its range. Typical recipes: FP8 for both phases on recent GPUs, INT4 weight-only when memory or decode cost dominates."
+        },
+        {
+          "level": "mid",
+          "q": "In one paragraph each, how do GPTQ and AWQ improve on rounding to nearest?",
+          "a": "Both are post-training methods that use a small calibration set to see the layer's inputs $X$, because what matters is output error $\\lVert WX-\\hat{W}X\\rVert$, not weight error. **GPTQ** quantizes a layer's columns one at a time and, after rounding each, updates the not-yet-quantized columns using the inverse Hessian $H=2XX^\\top$ to cancel the error just introduced; with correlated inputs, later weights absorb earlier errors, which keeps 4-bit models accurate and makes 3-bit usable. **AWQ** observes that about 1% of weight channels, the ones meeting large activations, cause most of the damage. It multiplies those weights by a per-channel factor $\\sigma>1$ before quantizing (shrinking their relative rounding error) and divides the matching activation by $\\sigma$, leaving the product unchanged. Round-to-nearest ignores both effects and is fine at 8 bits but degrades at 4."
+        },
+        {
+          "level": "mid",
+          "q": "A 4-bit model scores 88.5% on your 400-case test set versus 90.0% for BF16. Is it worse?",
+          "a": "Not provably. For a pass rate near 0.9 on $n=400$ the standard error is $\\sqrt{0.9\\times0.1/400}=0.015$, so a 95% interval is about plus or minus 3 points, and a 1.5-point difference is within noise. Both numbers are estimates. To decide properly: use a paired comparison on the same cases (count cases where only one model fails and apply a sign or McNemar test), which is much more sensitive than comparing two independent percentages; enlarge the test set, since detecting a 1.5-point difference needs thousands of cases; and slice by category, because quantization often hurts long context, arithmetic, rare languages and strict formats first. Decide against a pre-agreed tolerance (say, at most 1 point lost on the critical slices) and the cost saved, not against perplexity alone."
+        },
+        {
+          "level": "senior",
+          "q": "Plan how you would roll out a 4-bit quantized model to production.",
+          "a": "First define acceptance criteria tied to the product: task pass rates on critical slices, latency and cost targets, and a tolerated regression. Pick candidates (AWQ or GPTQ, group size 128, possibly sensitive layers left in 8-bit), record method, group size and calibration data, and calibrate on text resembling real traffic. Evaluate offline against BF16: perplexity as a smoke test, then your own regression suite including long-context, structured-output and multilingual cases, with paired statistics and enough cases to detect the tolerated drop. Benchmark speed under open-loop load, since dequantization overhead means real gains are below the ideal 4x; measure goodput and cost per useful answer. Then shadow or canary a small traffic share, compare live quality metrics (user feedback, task success, format-error rate) and latency, and keep BF16 deployable for rollback. Re-evaluate after any model or engine upgrade."
+        },
+        {
+          "level": "senior",
+          "q": "Can Llama 3 70B serve 32 concurrent 4,000-token conversations on a single 80 GB GPU with INT4 weights? What are your options if not?",
+          "a": "Weights at about 4.125 bits are $70.6\\times10^{9}\\times4.125/8 = 36.4$ GB. KV per token is 320 KiB in BF16, so $32\\times4000\\times327{,}680 = 41.9$ GB. The total of 78.3 GB plus several GB of activations and runtime exceeds 80 GB, so it does not fit. Options: quantize the KV cache to 8 bits, halving it to 21 GB for a total near 57 GB, which fits with room to spare; cap the context or batch (24 concurrent sessions would need about 31 GB of KV); use an H200 with 141 GB; or split across two GPUs, which also raises bandwidth. Check quality for each choice, because KV quantization and INT4 errors can compound on long contexts, and check per-user speed: step time is about $(36.4+21)/(0.8\\times3350)\\approx21$ ms, around 47 tokens/s per user."
+        }
+      ]
+    },
+    {
+      "slug": "caching",
+      "title": "Caching Repeated Work",
+      "lesson": "caching",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What is prefix caching, and why can only a prefix be reused?",
+          "a": "Prefix caching stores the KV cache of recently processed prompts so that when a new request starts with exactly the same tokens, the server skips prefill for that shared part and computes only the new tail. In a causal transformer, a token's keys and values depend on all the tokens before it and none after it. Two prompts with the same first $P$ tokens therefore have identical KV entries for those positions. But if the same paragraph appears after different preceding text, its KV entries differ, since its context differs, so it cannot be reused. Engines identify matches by hashing token blocks together with the previous block's hash, or with a radix tree, and reuse whole blocks. A cache hit saves prefill compute and TTFT; it does not shorten decode."
+        },
+        {
+          "level": "junior",
+          "q": "A system prompt starts with 'Current time: <timestamp>' followed by 5,000 tokens of fixed rules. Why is the cache hit rate near zero, and what is the fix?",
+          "a": "The timestamp changes on every request, so the very first tokens of the prompt differ. Because KV entries for every later token depend on everything before them, the 5,000 identical instruction tokens now have different KV entries in every request and nothing past the timestamp is reusable. Prefix caches only match from the start of the prompt. The fix is to order content from most stable to most volatile: tool definitions and fixed rules first, then slowly changing documents, then conversation history, and per-request values such as the time, user name or retrieved passages last. After moving the timestamp to the end, the 5,000-token prefix matches on every request. Check with a diff of the longest common prefix across consecutive production requests, and watch the cached-token share in usage metrics."
+        },
+        {
+          "level": "mid",
+          "q": "A provider charges 10% of the normal input price for cache reads and a 25% premium for cache writes. Compute the cost per request for an 8,000-token prefix, 500-token suffix, 300 output tokens, at 80% hit rate. Prices: \\$3 per million input, \\$15 per million output.",
+          "a": "Expected input cost uses the prefix factor $hd+(1-h)(1+w)=0.8(0.1)+0.2(1.25)=0.33$. Input token-equivalents are $500+8000\\times0.33=3{,}140$, costing $3140\\times3\\times10^{-6}=\\$0.00942$. Output is $300\\times15\\times10^{-6}=\\$0.0045$, so the request costs $\\$0.01392$. Without caching it costs $8500\\times3\\times10^{-6}+0.0045=\\$0.030$, so caching saves 53.6%. At a 95% hit rate the saving is 67%, at 50% it is 26%, and at 0% the 25% write premium makes it 20% more expensive. The floor is set by what cannot be cached: the output tokens and the suffix. Verify with the cached versus uncached input-token counts that the provider returns in the usage field, rather than assuming the hit rate."
+        },
+        {
+          "level": "mid",
+          "q": "Derive the break-even hit rate for prompt caching with read discount d and write premium w.",
+          "a": "Caching helps when the expected cost of the prefix is below its uncached cost. Per prefix token, a hit costs $d\\,p$, a miss writes it at $(1+w)\\,p$, and no caching costs $p$. Expected cost with hit rate $h$ is $p[hd+(1-h)(1+w)]$. Setting this equal to $p$: $hd+(1+w)-h(1+w)=1$, so $h(1+w-d)=w$ and $h^*=w/(1+w-d)$. With $w=0.25$ and $d=0.1$, $h^*=0.25/1.15=21.7\\%$. If the provider charges no write premium, $w=0$ and $h^*=0$: caching never costs more. The result tells you whether to enable caching for a low-traffic feature: if the prefix is reused less often than the break-even rate, or its cache lifetime expires between requests, you pay write premiums without reading back. Compare $h^*$ with your measured hit rate per route."
+        },
+        {
+          "level": "mid",
+          "q": "Requests sharing a prefix arrive at 0.2 per minute and the cache time-to-live (refreshed on use) is 5 minutes. What hit rate should you expect?",
+          "a": "With Poisson arrivals at rate $\\lambda$ per minute and TTL $T$ minutes, the probability that the next request arrives before the entry expires is $1-e^{-\\lambda T}$. Here $\\lambda T=0.2\\times5=1$, so the hit rate is $1-e^{-1}=63.2\\%$. At 0.1 per minute it drops to $1-e^{-0.5}=39.3\\%$, and at one request per hour ($\\lambda=0.0167$) to about 8%. At 2 per minute it is essentially 100%. So low-traffic tenants may sit below the break-even hit rate and lose a little money if writes carry a premium, while busy prefixes are almost always warm. With several replicas and round-robin routing, each replica sees only $\\lambda/R$, which lowers the hit rate; prefix-aware routing concentrates traffic and raises it, at some cost in load balance."
+        },
+        {
+          "level": "mid",
+          "q": "When would you use an exact-match cache, and when a semantic cache?",
+          "a": "An exact-match cache keys on a hash of everything that determines the answer (model, prompt version, normalised input, retrieved document versions, decoding parameters, tenant). It never returns a wrong answer for the same key, costs almost nothing and catches repeats such as retries, refreshes and popular identical queries. Use it first, everywhere the answer is deterministic or acceptably fixed. A semantic cache embeds the query and returns a stored answer when the nearest cached query has cosine similarity above a threshold; it catches paraphrases but can return a wrong answer for near-miss questions (negation, different numbers, entities, or user-specific state). Use it only for context-free, stable content such as FAQs and documentation, behind a measured false-hit rate, with scopes by tenant and language. Never use it for user-specific or time-sensitive queries such as order status."
+        },
+        {
+          "level": "senior",
+          "q": "How do you choose a semantic cache's similarity threshold?",
+          "a": "Treat it as an expected-value problem on labelled data. Collect several hundred real query pairs with human judgements of whether the cached answer would be acceptable, and measure at each threshold $\\tau$ the hit rate $H$ and the false share of hits $\\varphi$. The net benefit per query is $V=H[(1-\\varphi)c-\\varphi L]-e$, where $c$ is the LLM cost saved by a correct hit, $L$ the cost of showing a wrong answer and $e$ the lookup cost. With $c=\\$0.01$ and $L=\\$0.20$, a threshold of 0.97 ($H=10\\%$, $\\varphi=1\\%$) gives about +\\$0.00077 per query, 0.95 gives +\\$0.00065, and 0.90 ($H=31\\%$, $\\varphi=12\\%$) loses \\$0.0047 per query. The optimum moves with $L/c$: stricter for sensitive domains. Add guard checks on entities and numbers, run in shadow mode first, report wrong answers per thousand queries, and re-sample hits weekly as traffic drifts."
+        },
+        {
+          "level": "senior",
+          "q": "Design caching for a multi-tenant RAG assistant: layers, keys, invalidation and isolation.",
+          "a": "Use layers from safest to riskiest. First, prefix (KV) caching in the serving engine or provider for the system prompt, tool definitions and tenant-level instructions placed first in the prompt; salt block hashes with the tenant ID so tenants never share KV state and timing cannot leak. Second, an exact response cache keyed by a hash of tenant, model and prompt template version, normalised question, retrieved chunk IDs with their versions and decoding parameters; give it a TTL set from how fast sources change. Third, optionally a semantic cache scoped per tenant, for FAQ-type queries only, with a guard on entities and a measured false-hit rate. Tag every entry with document and prompt versions so a document update purges its entries immediately instead of waiting for the TTL. Never cache answers that include personal data across users, apply the same retention and deletion rules as for stored user data, and report hits per layer, tokens saved and sampled wrong-answer rate."
+        }
+      ]
+    },
+    {
+      "slug": "speculative-and-parallel",
+      "title": "Speculative Decoding and Model Parallelism",
+      "lesson": "speculative-and-parallel",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What is speculative decoding, and does it change the model's outputs?",
+          "a": "A small, fast draft model proposes the next $k$ tokens. The large target model then scores all $k$ proposals in a single forward pass and keeps the longest prefix it agrees with, plus one token of its own (a correction, or a bonus if all were accepted). Each pass can therefore emit several tokens. It does not change the output distribution: each drafted token is accepted with probability $\\min(1,p(x)/q(x))$, where $p$ is the target's and $q$ the draft's probability, and a rejection is replaced by a sample from the normalised residual $\\max(0,p-q)$. This construction makes the emitted tokens follow exactly the target's distribution. Only the speed changes, which is why quality metrics should be unchanged when you turn it on."
+        },
+        {
+          "level": "junior",
+          "q": "Why does verifying several draft tokens cost about the same as generating one?",
+          "a": "Decode is memory-bound: a step is dominated by reading the model's weights from HBM, and the arithmetic units are mostly idle (arithmetic intensity near 1 FLOP/byte at batch 1, against a ridge point of about 295 on an H100). Verifying $k+1$ positions in one pass reads the same weights once and does $k+1$ times the arithmetic, which fits into the idle compute. So the pass takes almost the same time as an ordinary step, but can yield up to $k+1$ tokens. If the model were compute-bound, for example at a large batch size, extra verified tokens would cost extra time and the trick would stop paying. That is also why speculation is a low-load, latency-oriented optimisation."
+        },
+        {
+          "level": "mid",
+          "q": "With acceptance rate 0.7 and draft length 4, what are the expected tokens per target pass, and the speedup if a draft step costs 10% of a target step?",
+          "a": "Expected tokens per pass is $\\sum_{j=0}^{k}\\alpha^j=(1-\\alpha^{k+1})/(1-\\alpha)$. With $\\alpha=0.7$, $k=4$: $1+0.7+0.49+0.343+0.2401=2.773$. The extra term at $j=0$ is the always-emitted correction or bonus token. A round costs $k$ draft steps plus one target verification, $1+ck=1+0.4=1.4$ target-step equivalents with $c=0.1$. Speedup is $2.773/1.4=1.98$, about 2x. Without the draft cost it would be 2.77x, so the draft eats about 29% of the gain. Try $k=2$: $(1-0.343)/0.3=2.19$ tokens over $1.2$ gives 1.83x; $k=3$: $2.533/1.3=1.95$; $k=4$: 1.98; $k=5$: $2.941/1.5=1.96$. The optimum is near 4 for this acceptance rate and draft cost."
+        },
+        {
+          "level": "mid",
+          "q": "How do you choose the draft length k?",
+          "a": "The speedup is $\\dfrac{(1-\\alpha^{k+1})/(1-\\alpha)}{1+ck}$, where $\\alpha$ is the per-token acceptance rate and $c$ the draft step cost relative to a target step. The numerator has diminishing returns (each extra term is $\\alpha^k$) and the denominator grows linearly, so there is an optimum. With $c=0.1$, the best $k$ is about 3 for $\\alpha=0.6$ (speedup 1.67), 6 for $\\alpha=0.8$ (2.47) and about 10 for $\\alpha=0.9$ (3.43). Measure $\\alpha$ on your own traffic (engines report mean accepted length, from which you can solve for $\\alpha$), evaluate the formula for a few $k$, and pick the maximum. Because acceptance varies by task and temperature, some systems adapt $k$ dynamically per request, and many turn speculation off at high load."
+        },
+        {
+          "level": "mid",
+          "q": "Why can speculative decoding hurt throughput at high batch sizes?",
+          "a": "Verification processes $B(k+1)$ token positions per pass. The pass is free only while it stays memory-bound, that is while $B(k+1)$ is below the ridge point (about 295 for BF16 on an H100). With $k=4$ that is a batch of about 59. Beyond it, the pass becomes compute-bound and every position costs real time, including the rejected ones: with acceptance 0.8 and $k=4$, only 3.36 of 5 positions per sequence are useful, so about a third of the verification compute is wasted. A loaded server using continuous batching is already spending its spare compute serving other users, so speculation takes that compute away from them. It also needs memory for the draft model and its KV cache, reducing the batch you can hold. Typical policy: speculate at low load, shrink or disable it near saturation."
+        },
+        {
+          "level": "mid",
+          "q": "Explain tensor parallelism and why it needs fast interconnects.",
+          "a": "Tensor parallelism splits each weight matrix across GPUs. In the Megatron layout the attention heads and the MLP's first projection are split by columns (no communication needed), and the output and down projections are split by rows, which produces partial sums that must be added with an all-reduce. That gives two all-reduces per layer, on a tensor of size $B\\times d$. A ring all-reduce sends $2(p-1)/p$ times the payload per GPU. For a 70B model ($L=80$, $d=8192$) at batch 32 on 8 GPUs, a step has 160 all-reduces of 0.5 MiB; on NVLink (about 450 GB/s) each takes a few microseconds of bandwidth plus fixed latency, roughly 1.5 ms per step against about 5.3 ms of weight reads. On PCIe-class links, communication would roughly equal the compute. So tensor parallelism is used inside an NVLink-connected node, typically degree 2 to 8."
+        },
+        {
+          "level": "senior",
+          "q": "How would you deploy a 405B-parameter model for interactive use?",
+          "a": "In BF16 the weights are about 810 GB, more than one 8x80 GB node (640 GB), so the options are: quantize to FP8 (about 405 GB), which fits on one 8-GPU node with TP=8, leaving roughly 230 GB for KV cache across GPUs, or keep BF16 on two nodes with TP=8 inside each and pipeline parallelism (PP=2) across them over InfiniBand. The single-node FP8 path avoids slow inter-node links, halves the GPU count and gives lower latency: each GPU reads about 50.6 GB per step, roughly 15 ms ideal plus all-reduce overhead. Pipeline parallelism does not reduce per-token latency and adds bubbles at low load. Validate FP8 quality on your task, check the KV budget at your context lengths (GQA helps), and consider speculative decoding at low load. Scale throughput with replicas, and consider disaggregated prefill if long prompts hurt TPOT."
+        },
+        {
+          "level": "senior",
+          "q": "Compare tensor and pipeline parallelism for decode latency, and compute the pipeline bubble for 4 stages and 8 micro-batches.",
+          "a": "With tensor parallelism of degree $p$ all GPUs read their slices simultaneously, so the weight-read time per token falls to about $W/(p\\beta)$ plus all-reduce time. With pipeline parallelism a token traverses $p$ stages in sequence, each reading $W/p$, so per-token latency is about $W/\\beta$ plus hop times: no improvement over one GPU. For a 70B BF16 model on 4 H100s, TP gives about 10.5 ms of reads plus 1.6 ms of communication per token (about 12 ms), pipeline about 42 ms. Pipeline parallelism helps throughput when many micro-batches are in flight, and needs far less communication, so it suits slower inter-node links. The bubble fraction is $(p-1)/(m+p-1)=3/11=27\\%$ for $p=4$, $m=8$; with $m=32$ it falls to 8.6%. Use TP within a node for latency, and PP across nodes only when the model exceeds one node."
+        }
+      ]
+    },
+    {
+      "slug": "capacity-and-cost",
+      "title": "Capacity Planning and Cost per Request",
+      "lesson": "capacity-and-cost",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "How many GPUs do you need for a peak of 60 requests/s if one GPU saturates at 8 requests/s and you target 75% utilisation?",
+          "a": "Use $G=\\lceil\\lambda_{peak}/(\\lambda_{max}\\cdot u)\\rceil$. Here $60/(8\\times0.75)=60/6=10$, so 10 GPUs before redundancy. Without the utilisation target you would compute $60/8=7.5$, round to 8, and run those GPUs at 94% at peak, where queues build and latency SLOs break. Then add redundancy: N+1 gives 11 so losing a GPU does not push the rest past target, and if the fleet spans three zones and must survive losing one, total capacity must satisfy $G\\times2/3\\ge10$, so 15 GPUs. The numbers that feed the formula should be measured per GPU at your SLO and your real length mix, not taken from a datasheet."
+        },
+        {
+          "level": "junior",
+          "q": "How do you convert a GPU price per hour into a cost per million output tokens?",
+          "a": "Divide the hourly price by the number of tokens produced per hour: $\\text{cost per 1M}=c/(3600\\cdot X\\cdot\\bar{u})\\times10^6$, where $c$ is dollars per GPU-hour, $X$ the saturated output tokens per second and $\\bar{u}$ the average utilisation. For an H100 at \\$2.50 per hour producing 6,670 tokens/s: tokens per hour at saturation are $3600\\times6670=24.0$ million, so the cost is $2.50/24.0=\\$0.104$ per million at 100% utilisation, \\$0.149 at 70% and \\$0.40 at 26%. Utilisation is the factor most people forget: a fleet sized for peak and idle off-peak pays for all its hours. When comparing with an API's list price, use the measured average utilisation and include all GPUs, spares and non-GPU costs."
+        },
+        {
+          "level": "mid",
+          "q": "Why target 70% utilisation rather than 95%?",
+          "a": "Queueing delay grows steeply as utilisation approaches 1. In the simplest single-server model the mean wait is $\\rho/(1-\\rho)$ times the service time: 1x at 50% utilisation, 2.3x at 70%, 4x at 80%, 9x at 90% and 19x at 95%. LLM replicas are more complicated, since continuous batching absorbs short bursts by growing the batch, but the shape holds: near saturation the batch hits its memory or latency limit, new requests queue, TTFT spikes and per-user TPOT rises, so goodput falls even though throughput looks high. Headroom also covers traffic bursts, autoscaling lag (GPUs take minutes to start), a failed replica and noisy estimates of per-GPU capacity. Choose the target from the SLO: measure p95 TTFT and TPOT at several load levels and pick the highest utilisation that still meets them with a margin."
+        },
+        {
+          "level": "mid",
+          "q": "Compute cost per useful answer: model A costs \\$0.012 per attempt and succeeds 90% of the time; model B costs \\$0.003 and succeeds 60%, with a \\$0.001 verifier on each B attempt; failures of B escalate to A.",
+          "a": "Always A: cost per request \\$0.012, useful fraction 0.9, so \\$0.012/0.9=\\$0.0133 per useful answer. Cascade: every request pays B and its verifier, \\$0.004; the 40% that fail pay A as well. Expected cost per request is $0.004+0.4\\times0.012=\\$0.0088$. Useful fraction is $0.6+0.4\\times0.9=0.96$. Cost per useful answer is $0.0088/0.96=\\$0.00917$, 31% cheaper than always-A and with a higher success rate because the verifier filters B's bad outputs. The result depends on B's success rate and the verifier's reliability: if B succeeded only 20% of the time, the cascade would cost $0.004+0.8\\times0.012=\\$0.0136$ per request, more than always-A. Measure success rates on your own tasks before routing."
+        },
+        {
+          "level": "mid",
+          "q": "Your fleet is sized for peak but average utilisation is 26%. What can you do?",
+          "a": "Average utilisation is $\\bar{\\lambda}/(G\\lambda_{max})$, so a peak-to-average ratio of 2.5 with 70% utilisation at peak gives roughly 28%. Options, roughly by effort: autoscale replicas with the daily curve (needs scale-up to lead the load because GPUs take minutes to start, and works for slow patterns, not second-scale bursts); run offline and batch work in the valleys at low priority and preempt it at peak; split traffic classes so interactive traffic keeps headroom and bulk fills the rest; shed or degrade gracefully at the extreme (smaller model, shorter answers) rather than provisioning for the rarest spike; and send overflow to a hosted API while self-hosting the baseline. Also reduce per-request GPU time (prefix caching, quantization), which lowers the fleet needed at every load level."
+        },
+        {
+          "level": "mid",
+          "q": "When is self-hosting cheaper than a hosted API? Give the break-even formula.",
+          "a": "Self-hosting has a roughly fixed monthly cost: $G\\cdot c\\cdot730+F$, with $G$ GPUs sized for peak, $c$ the GPU-hour price and $F$ operating costs (engineering, monitoring, networking). An API costs $p_{req}V$ for $V$ requests per month. Break-even is $V^*=(Gc\\cdot730+F)/p_{req}$. For 11 GPUs at \\$2.50/hour (\\$20,075) plus \\$10,000 of fixed costs and an API at \\$0.00033 per request, $V^*=30{,}075/0.00033=91$ million requests per month, about 35 requests/s on average. Below that the API is cheaper; above it, self-hosting wins, provided the open model is good enough for the task. Utilisation shifts the answer: filling idle off-peak capacity lowers the effective self-hosted price. Non-cost factors count too: data residency, latency control, customisation and the operational burden. A thin abstraction in front lets you move later."
+        },
+        {
+          "level": "senior",
+          "q": "Walk through a capacity plan for a new LLM feature expected to reach 50 requests/s at peak.",
+          "a": "First characterise the workload: peak and average rate, prompt and output length distributions (from a prototype or similar feature), burst factor. Define the SLO (for example p95 TTFT under 1 s, p95 TPOT under 50 ms). Then derive per-GPU capacity: GPU-seconds per request $g=t_p+n_{out}/X$ with $X$ from the batch limit that meets the TPOT target; for a 1,000-token prompt and 300-token answer on an 8B model that is about 72 ms, so about 13.9 requests/s per GPU. Confirm by open-loop load test. Choose a utilisation target (70%) giving $\\lceil50/(13.9\\times0.7)\\rceil=6$ GPUs, then add N+1 redundancy (7) or zone survival. Cost it per month, per 1,000 requests at average load and per useful answer. List levers (prefix caching, INT8 or FP8, shorter outputs) with expected savings and risks, and re-plan triggers: traffic up 30%, output length drift, model change. Keep the load-test script in the repository."
+        },
+        {
+          "level": "senior",
+          "q": "Your inference bill doubled overnight with no traffic increase. How do you investigate?",
+          "a": "Decompose the bill with the identity cost $=\\text{requests}\\times(n_{in}p_{in}+n_{out}p_{out})$ for APIs, or GPU-hours times price for self-hosting, and find which factor moved. Check requests per route and tenant (retry storms, a looping agent or a new client can multiply calls without changing user traffic); input tokens per request (a prompt template change, more retrieved chunks, longer histories, a lost prefix cache because a volatile line moved to the top of the prompt); output tokens per request (a model upgrade that is more verbose, a missing max-tokens limit); and cached-token share, which should show a drop if a cache broke. For self-hosted fleets look at replica count and utilisation, autoscaler behaviour, preemptions and recomputes, and whether a quantization or batching setting was reverted. Compare the last good and bad deploys, add per-feature cost dashboards with alerts on tokens per request, and set budgets and rate limits to stop a runaway quickly."
+        }
+      ]
+    }
+  ]
+}

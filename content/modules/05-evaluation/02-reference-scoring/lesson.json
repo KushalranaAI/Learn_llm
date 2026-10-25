@@ -1,0 +1,22 @@
+{
+  "title": "Scoring Against References: Exact, Lexical and Semantic",
+  "summary": "When you have a reference answer, you can score outputs automatically. This lesson builds exact match, token F1, BLEU and ROUGE, embedding similarity and code-based checks by hand, and shows exactly where each one breaks.",
+  "objectives": [
+    "Normalise answers and compute exact match and token-level F1 by hand",
+    "Explain n-gram precision (BLEU) and longest-common-subsequence recall (ROUGE-L) and compute small examples",
+    "Score answers with embedding cosine similarity and explain why negation and numbers defeat it",
+    "Use programmatic checks and estimate pass@k from repeated samples",
+    "Pick a reference metric for a task and name its failure cases"
+  ],
+  "prerequisites": "Precision, recall and F1 from [Success Criteria](/learn/evaluation/success-criteria). Cosine similarity is introduced from scratch, but [Embeddings](/learn/model-foundations/embeddings) gives useful background.",
+  "sims": ["metric-compare"],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "SQuAD: 100,000+ Questions for Machine Comprehension of Text", "authors": "Rajpurkar, Zhang, Lopyrev and Liang", "year": 2016, "note": "Exact match and token-level F1 for extractive question answering" },
+    { "title": "BLEU: a Method for Automatic Evaluation of Machine Translation", "authors": "Papineni, Roukos, Ward and Zhu", "year": 2002, "note": "Clipped n-gram precision and the brevity penalty" },
+    { "title": "ROUGE: A Package for Automatic Evaluation of Summaries", "authors": "Chin-Yew Lin", "year": 2004, "note": "ROUGE-N and ROUGE-L (longest common subsequence)" },
+    { "title": "BERTScore: Evaluating Text Generation with BERT", "authors": "Zhang, Kishore, Wu, Weinberger and Artzi", "year": 2020, "note": "Token-level semantic matching with contextual embeddings" },
+    { "title": "Evaluating Large Language Models Trained on Code", "authors": "Chen et al.", "year": 2021, "note": "The unbiased pass@k estimator" }
+  ]
+}

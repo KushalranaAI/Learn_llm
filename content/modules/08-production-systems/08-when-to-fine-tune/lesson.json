@@ -1,0 +1,21 @@
+{
+  "title": "When to Fine-Tune, and a Production-Readiness Plan",
+  "summary": "Prompting, retrieval and fine-tuning solve different problems at very different costs. This lesson gives a decision framework based on failure analysis, break-even arithmetic and total cost of ownership, then closes the module with a production-readiness checklist and a scoring method.",
+  "objectives": [
+    "Classify failures into knowledge, behaviour and capability problems and pick the cheapest fix for each",
+    "Estimate the expected quality gain of each intervention from failure shares and fix rates",
+    "Compute the break-even volume and payback time for a fine-tune, including maintenance",
+    "Explain why retrieval beats fine-tuning for changing or permissioned knowledge",
+    "Score a feature against a production-readiness checklist and set launch gates"
+  ],
+  "prerequisites": "You should have met prompting ([Anatomy of a Prompt](/learn/prompt-and-context/prompt-anatomy)), RAG ([How RAG Works](/learn/retrieval-and-rag/rag-architecture)) and the idea of parameter-efficient fine-tuning ([LoRA and QLoRA](/learn/training-and-adaptation/peft-lora)). The cost formulas come from [Choosing and Routing Models](/learn/production-systems/model-routing), and error analysis from [Error Analysis](/learn/evaluation/error-analysis).",
+  "sims": [],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks", "authors": "Lewis et al.", "year": 2020, "note": "Combining a retriever with a generator so knowledge can be updated without retraining" },
+    { "title": "Language Models are Few-Shot Learners", "authors": "Brown et al.", "year": 2020, "note": "Shows that examples in the prompt can steer behaviour without changing weights" },
+    { "title": "LoRA: Low-Rank Adaptation of Large Language Models", "authors": "Hu et al.", "year": 2021, "note": "A cheap fine-tuning method that trains small adapter matrices" },
+    { "title": "Hidden Technical Debt in Machine Learning Systems", "authors": "Sculley et al.", "year": 2015, "note": "Why the ongoing maintenance of ML systems outweighs the first build" }
+  ]
+}

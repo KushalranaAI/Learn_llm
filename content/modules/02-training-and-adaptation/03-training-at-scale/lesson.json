@@ -1,0 +1,24 @@
+{
+  "title": "Training at Scale: Memory, Precision and Parallelism",
+  "summary": "A 7B model needs about 16 bytes of GPU memory per parameter to train with Adam, before counting activations, so even modest models do not fit on one GPU. This lesson does the memory arithmetic, explains mixed precision and activation checkpointing, shows how data, tensor and pipeline parallelism and ZeRO split the work, and ends with the learning-rate schedule that keeps it all stable.",
+  "objectives": [
+    "Break training memory into weights, gradients, optimizer states and activations, and compute the 16 bytes per parameter of mixed-precision Adam",
+    "Explain FP32, FP16 and BF16 and why master weights stay in FP32",
+    "Estimate activation memory per layer and the saving and cost of gradient checkpointing",
+    "Compute per-GPU memory under ZeRO stages 1 to 3 and the pipeline bubble for a given number of micro-batches",
+    "Write the warmup-plus-cosine learning-rate schedule and evaluate it at any step"
+  ],
+  "prerequisites": "You should know how parameters are counted ([The Transformer Block](/learn/model-foundations/transformer-block)), what gradient descent and backpropagation do ([How a Network Learns](/learn/model-foundations/how-networks-learn)), and how much compute a run needs ([Scaling Laws and Compute Budgets](/learn/training-and-adaptation/scaling-laws)).",
+  "sims": ["training-memory", "lr-schedule"],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "Mixed Precision Training", "authors": "Micikevicius et al.", "year": 2018, "note": "FP16 compute with FP32 master weights and loss scaling" },
+    { "title": "ZeRO: Memory Optimizations Toward Training Trillion Parameter Models", "authors": "Rajbhandari, Rasley, Ruwase and He", "year": 2020, "note": "Sharding optimizer states, gradients and parameters across data-parallel workers; the 16-bytes-per-parameter accounting" },
+    { "title": "Megatron-LM: Training Multi-Billion Parameter Language Models Using Model Parallelism", "authors": "Shoeybi et al.", "year": 2019, "note": "Tensor parallelism inside attention and MLP layers" },
+    { "title": "GPipe: Efficient Training of Giant Neural Networks using Pipeline Parallelism", "authors": "Huang et al.", "year": 2019, "note": "Micro-batched pipeline parallelism and the pipeline bubble" },
+    { "title": "Reducing Activation Recomputation in Large Transformer Models", "authors": "Korthikanti et al.", "year": 2022, "note": "Per-layer activation memory of about sbh(34 + 5as/h) bytes" },
+    { "title": "Training Deep Nets with Sublinear Memory Cost", "authors": "Chen, Xu, Zhang and Guestrin", "year": 2016, "note": "Gradient (activation) checkpointing" },
+    { "title": "SGDR: Stochastic Gradient Descent with Warm Restarts", "authors": "Loshchilov and Hutter", "year": 2017, "note": "The cosine learning-rate schedule" }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "title": "Shipping Changes: Shadow, Canary and Rollback",
+  "summary": "Changing a prompt, a model or a retriever can quietly break an LLM feature. This lesson shows how to introduce changes safely: why offline tests miss regressions, shadow traffic, canary sizing with the 1 − (1 − p)^n rule, guard metrics, rollback and a staged playbook.",
+  "objectives": [
+    "Explain why LLM changes need production-style testing beyond an offline evaluation set",
+    "Design a shadow deployment and compare candidate and baseline outputs",
+    "Size a canary using the probability of seeing at least one failure and estimate detection time",
+    "Choose guard metrics and thresholds that trigger automatic rollback",
+    "Plan a staged rollout with gates, holds and a tested rollback path"
+  ],
+  "prerequisites": "You should be comfortable with the evaluation basics from [Comparing Systems You Can Trust](/learn/evaluation/comparing-systems), with error rates and SLOs from [Observability and Incident Analysis](/learn/production-systems/observability), and with independent-event probabilities.",
+  "sims": ["canary-rollout"],
+  "labs": [],
+  "sandbox": ["bad-rollout"],
+  "sources": [
+    { "title": "Site Reliability Engineering", "authors": "Beyer, Jones, Petoff and Murphy (eds.)", "year": 2016, "note": "Chapter on release engineering and canarying" },
+    { "title": "Continuous Delivery", "authors": "Humble and Farley", "year": 2010, "note": "Deployment pipelines, rollbacks and incremental release" },
+    { "title": "Trustworthy Online Controlled Experiments", "authors": "Kohavi, Tang and Xu", "year": 2020, "note": "Running and analysing A/B tests on live traffic" }
+  ]
+}

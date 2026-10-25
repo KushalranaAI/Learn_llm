@@ -1,0 +1,122 @@
+[
+  {
+    "term": "Retrieval-augmented generation (RAG)",
+    "slug": "retrieval-augmented-generation",
+    "def": "A pattern where the system searches a document collection at query time and puts the best passages into the prompt so the model answers from evidence instead of memory.",
+    "lesson": "retrieval-and-rag/rag-architecture"
+  },
+  {
+    "term": "Chunk",
+    "slug": "chunk",
+    "def": "A passage of a document, usually a few hundred tokens, that is embedded and retrieved as one unit.",
+    "lesson": "retrieval-and-rag/chunking"
+  },
+  {
+    "term": "Inverted index",
+    "slug": "inverted-index",
+    "def": "A map from each term to the list of documents that contain it, which lets keyword search touch only the documents sharing a query term.",
+    "lesson": "retrieval-and-rag/sparse-and-dense"
+  },
+  {
+    "term": "TF-IDF",
+    "slug": "tf-idf",
+    "def": "A keyword score that multiplies how often a term appears in a document by the log of how rare it is across the collection.",
+    "lesson": "retrieval-and-rag/sparse-and-dense"
+  },
+  {
+    "term": "BM25",
+    "slug": "bm25",
+    "def": "The standard keyword ranking function: TF-IDF with saturating term frequency (k1) and document length normalisation (b).",
+    "lesson": "retrieval-and-rag/sparse-and-dense"
+  },
+  {
+    "term": "Dense retrieval",
+    "slug": "dense-retrieval",
+    "def": "Search that embeds query and documents as vectors and returns the documents whose vectors are most similar to the query vector.",
+    "lesson": "retrieval-and-rag/sparse-and-dense"
+  },
+  {
+    "term": "Bi-encoder",
+    "slug": "bi-encoder",
+    "def": "A retriever model that embeds query and document separately, so document vectors can be precomputed and searched quickly.",
+    "lesson": "retrieval-and-rag/sparse-and-dense"
+  },
+  {
+    "term": "Cross-encoder",
+    "slug": "cross-encoder",
+    "def": "A model that reads a query and a document together and outputs one relevance score; more accurate than a bi-encoder but too slow to run over a whole collection.",
+    "lesson": "retrieval-and-rag/sparse-and-dense"
+  },
+  {
+    "term": "Approximate nearest neighbour (ANN)",
+    "slug": "approximate-nearest-neighbour",
+    "def": "Search that returns probably-the-nearest vectors while examining only a small fraction of the collection, trading a little recall for large speed-ups.",
+    "lesson": "retrieval-and-rag/vector-indexes"
+  },
+  {
+    "term": "IVF index",
+    "slug": "ivf-index",
+    "def": "An inverted-file vector index that clusters vectors with k-means and searches only the nprobe clusters nearest to the query.",
+    "lesson": "retrieval-and-rag/vector-indexes"
+  },
+  {
+    "term": "HNSW",
+    "slug": "hnsw",
+    "def": "A graph-based vector index with layers of proximity graphs; search walks greedily from sparse top layers down to the full bottom layer, at roughly logarithmic cost.",
+    "lesson": "retrieval-and-rag/vector-indexes"
+  },
+  {
+    "term": "Product quantisation",
+    "slug": "product-quantisation",
+    "def": "A compression method that splits each vector into sub-vectors and stores only the index of the nearest centroid for each, shrinking vectors by 30 times or more.",
+    "lesson": "retrieval-and-rag/vector-indexes"
+  },
+  {
+    "term": "Recall@k",
+    "slug": "recall-at-k",
+    "def": "The fraction of relevant items that appear in the top k results; in RAG, whether the evidence reached the prompt.",
+    "lesson": "retrieval-and-rag/hybrid-and-reranking"
+  },
+  {
+    "term": "Hybrid search",
+    "slug": "hybrid-search",
+    "def": "Running keyword and embedding retrieval together and merging their results, since each finds queries the other misses.",
+    "lesson": "retrieval-and-rag/hybrid-and-reranking"
+  },
+  {
+    "term": "Reciprocal Rank Fusion (RRF)",
+    "slug": "reciprocal-rank-fusion",
+    "def": "A way to merge ranked lists by summing 1/(k + rank) for each document across lists, with k usually 60; it needs no score normalisation.",
+    "lesson": "retrieval-and-rag/hybrid-and-reranking"
+  },
+  {
+    "term": "Reranking",
+    "slug": "reranking",
+    "def": "Rescoring a short candidate list from fast retrieval with a slower, more accurate model, then keeping the best few.",
+    "lesson": "retrieval-and-rag/hybrid-and-reranking"
+  },
+  {
+    "term": "HyDE",
+    "slug": "hyde",
+    "def": "Hypothetical Document Embeddings: embedding an LLM-written hypothetical answer instead of the question, to search in answer-shaped space.",
+    "lesson": "retrieval-and-rag/advanced-rag"
+  },
+  {
+    "term": "Graph RAG",
+    "slug": "graph-rag",
+    "def": "A RAG variant that builds an entity-relation graph and community summaries from the documents to answer relational and corpus-wide questions.",
+    "lesson": "retrieval-and-rag/advanced-rag"
+  },
+  {
+    "term": "Faithfulness",
+    "slug": "faithfulness-rag",
+    "def": "The fraction of claims in an answer that are supported by the retrieved context.",
+    "lesson": "retrieval-and-rag/evaluating-rag"
+  },
+  {
+    "term": "Context recall",
+    "slug": "context-recall",
+    "def": "The fraction of the facts needed for a complete answer that appear in the retrieved context.",
+    "lesson": "retrieval-and-rag/evaluating-rag"
+  }
+]

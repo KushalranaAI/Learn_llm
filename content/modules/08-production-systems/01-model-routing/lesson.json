@@ -1,0 +1,19 @@
+{
+  "title": "Choosing and Routing Models",
+  "summary": "No single model is the best choice for every request. Production systems pick models on a quality, cost and latency frontier, then cascade or route traffic so that cheap models handle easy requests and expensive ones handle the rest.",
+  "objectives": [
+    "Compare models on a quality, cost and latency frontier and discard dominated options",
+    "Compute the cost of a request and of a month of traffic from token counts and prices",
+    "Derive the expected cost, quality and latency of a two-model cascade",
+    "Choose a router threshold from a labelled evaluation set and compare it with random and oracle routing",
+    "Design a routing layer that is observable, version-pinned and budget-aware"
+  ],
+  "prerequisites": "You should know what tokens are and how they are priced ([Tokenization](/learn/model-foundations/tokenization)), what TTFT and TPOT mean ([Measuring Inference](/learn/inference-and-serving/measuring-inference)), and how to build an evaluation set with a pass rate ([Success Criteria](/learn/evaluation/success-criteria)).",
+  "sims": ["model-cascade", "token-cost"],
+  "labs": ["route-the-traffic"],
+  "sandbox": ["model-router"],
+  "sources": [
+    { "title": "FrugalGPT: How to Use Large Language Models While Reducing Cost and Improving Performance", "authors": "Chen, Zaharia and Zou", "year": 2023, "note": "LLM cascades with a learned scorer that decides when to stop at a cheaper model" },
+    { "title": "RouteLLM: Learning to Route LLMs with Preference Data", "authors": "Ong et al.", "year": 2024, "note": "Training routers that pick between a strong and a weak model before calling either" }
+  ]
+}

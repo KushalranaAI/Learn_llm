@@ -1,0 +1,21 @@
+{
+  "title": "Instruction Tuning (SFT)",
+  "summary": "A base model continues text; an assistant answers. Supervised fine-tuning closes the gap by training on prompt-response examples with the same next-token loss, counted only on the response. This lesson covers chat templates, loss masking, data quality and quantity, packing and hyperparameters, and what SFT cannot fix.",
+  "objectives": [
+    "Explain how a base model and an instruction-tuned model differ and why a small amount of SFT changes behaviour so much",
+    "Format a conversation with a chat template and explain why the template must match at inference",
+    "Compute the SFT loss with prompt tokens masked, and compare it with the unmasked loss",
+    "Estimate SFT training tokens, steps and compute, and compare them with pretraining",
+    "Choose packing, learning rate and epochs for SFT and recognise overfitting and forgetting"
+  ],
+  "prerequisites": "You should know the pretraining objective ([Pretraining Data](/learn/training-and-adaptation/pretraining-data)) and the memory cost of full fine-tuning ([Training at Scale](/learn/training-and-adaptation/training-at-scale)). Familiarity with tokens and special tokens ([Tokenization](/learn/model-foundations/tokenization)) helps with chat templates.",
+  "sims": [],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "Finetuned Language Models Are Zero-Shot Learners", "authors": "Wei et al.", "year": 2021, "note": "FLAN: instruction tuning on many tasks phrased as instructions improves zero-shot performance" },
+    { "title": "Training language models to follow instructions with human feedback", "authors": "Ouyang et al.", "year": 2022, "note": "InstructGPT: SFT on human demonstrations as the first stage before RLHF" },
+    { "title": "LIMA: Less Is More for Alignment", "authors": "Zhou et al.", "year": 2023, "note": "About 1,000 carefully chosen examples produce a strong assistant from a good base model" },
+    { "title": "Self-Instruct: Aligning Language Models with Self-Generated Instructions", "authors": "Wang et al.", "year": 2022, "note": "Generating instruction data with a model and filtering it" }
+  ]
+}

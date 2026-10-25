@@ -1,0 +1,20 @@
+{
+  "title": "Guardrails and Safe Deployment",
+  "summary": "Guardrails are checks around a model: on what goes in, what comes out and what it is allowed to do. This lesson treats them as classifiers with thresholds, precision and recall, base rates and costs, then covers PII redaction and the design decisions (fail open or closed, human review) that make a deployment safe.",
+  "objectives": [
+    "Describe input, output and action guardrails and combine layered checks with the right independence assumptions",
+    "Compute precision, recall, F1 and expected cost at several classifier thresholds",
+    "Use Bayes' rule to explain why a very accurate detector can still be wrong most of the time it fires",
+    "Estimate residual PII leakage after redaction and size a human review queue",
+    "Choose between fail-open and fail-closed behaviour for a given feature"
+  ],
+  "prerequisites": "You should know what a classifier threshold is and have met precision and recall ([Scoring Against References](/learn/evaluation/reference-scoring)), and understand prompt injection at a high level ([Prompt Injection and Trust Boundaries](/learn/prompt-and-context/prompt-injection)). Probability of independent events is used throughout.",
+  "sims": ["guardrail-threshold"],
+  "labs": [],
+  "sandbox": ["guarded-assistant"],
+  "sources": [
+    { "title": "Not what you've signed up for: Compromising Real-World LLM-Integrated Applications with Indirect Prompt Injection", "authors": "Greshake et al.", "year": 2023, "note": "Describes indirect prompt injection and why input filtering alone is not enough" },
+    { "title": "OWASP Top 10 for Large Language Model Applications", "authors": "OWASP Foundation", "year": 2023, "note": "A community list of the main application-level risks and mitigations for LLM systems" },
+    { "title": "Pattern Recognition and Machine Learning", "authors": "Christopher Bishop", "year": 2006, "note": "Bayes' rule and decision theory for classifiers, Chapter 1" }
+  ]
+}

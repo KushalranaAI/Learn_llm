@@ -1,0 +1,23 @@
+{
+  "title": "Using a Model as a Judge",
+  "summary": "When answers are open-ended and no single reference exists, a second model can grade them against a rubric. This lesson shows how to set that up, how to measure whether the judge agrees with people, and how to detect and correct its biases.",
+  "objectives": [
+    "Design a pointwise or pairwise judge prompt with a clear rubric and choose between the two",
+    "Compute agreement rate and Cohen's kappa between a judge and human labels",
+    "Measure position bias with order swapping and verbosity bias with length-stratified comparisons",
+    "Compute win rates with ties and relate them to Bradley-Terry strength differences",
+    "Correct a judge-estimated pass rate using the judge's true and false positive rates"
+  ],
+  "prerequisites": "Precision, recall and thresholds from [Success Criteria](/learn/evaluation/success-criteria), and the reference metrics from [Scoring Against References](/learn/evaluation/reference-scoring), whose failures motivate judges.",
+  "sims": ["judge-agreement"],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena", "authors": "Zheng et al.", "year": 2023, "note": "Agreement of strong judges with humans; position, verbosity and self-enhancement biases" },
+    { "title": "Large Language Models are not Fair Evaluators", "authors": "Wang et al.", "year": 2023, "note": "Position bias in pairwise judging and order-swap calibration" },
+    { "title": "A Coefficient of Agreement for Nominal Scales", "authors": "Jacob Cohen", "year": 1960, "note": "Cohen's kappa" },
+    { "title": "The Measurement of Observer Agreement for Categorical Data", "authors": "Landis and Koch", "year": 1977, "note": "Commonly quoted bands for interpreting kappa" },
+    { "title": "Rank Analysis of Incomplete Block Designs: I. The Method of Paired Comparisons", "authors": "Bradley and Terry", "year": 1952, "note": "The pairwise preference model behind win rates and Elo-style ratings" },
+    { "title": "Estimating Prevalence from the Results of a Screening Test", "authors": "Rogan and Gladen", "year": 1978, "note": "Correcting an observed rate for an imperfect classifier" }
+  ]
+}

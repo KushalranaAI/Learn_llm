@@ -1,0 +1,23 @@
+{
+  "title": "Hallucination and the Limits of Next-Token Prediction",
+  "summary": "A model trained to predict likely text will produce fluent, confident text whether or not it is true. This lesson explains hallucination in terms of next-token probabilities, measures calibration, and shows how grounding, abstention and tools work around the limits of a fixed, frozen model.",
+  "objectives": [
+    "Explain hallucination as the consequence of sampling plausible tokens, and why fluency is not evidence of truth",
+    "Measure calibration with a reliability table and expected calibration error",
+    "Explain how grounding in retrieved sources and abstention thresholds reduce unsupported answers",
+    "Reason about knowledge cutoffs and why a model's parameters cannot know recent or private facts",
+    "Identify tasks where fixed per-token computation and tokenization make models unreliable, and the standard workarounds"
+  ],
+  "prerequisites": "You should be comfortable with softmax, temperature, log-probs and entropy from [Next-Token Prediction and Sampling](/learn/model-foundations/sampling), and with how a context window works from [Context Windows, Prefill and the KV Cache](/learn/model-foundations/context-and-kv-cache). Tokenization artefacts are covered in [Tokenization](/learn/model-foundations/tokenization).",
+  "sims": ["sampling"],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "On Calibration of Modern Neural Networks", "authors": "Guo, Pleiss, Sun and Weinberger", "year": 2017, "note": "Reliability diagrams and expected calibration error" },
+    { "title": "Language Models (Mostly) Know What They Know", "authors": "Kadavath et al.", "year": 2022, "note": "Large language models' probabilities on answer options are reasonably calibrated; self-evaluation of answers" },
+    { "title": "Survey of Hallucination in Natural Language Generation", "authors": "Ji et al.", "year": 2023, "note": "Taxonomy of intrinsic and extrinsic hallucination" },
+    { "title": "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks", "authors": "Lewis et al.", "year": 2020, "note": "Grounding generation in retrieved documents" },
+    { "title": "GPT-4 Technical Report", "authors": "OpenAI", "year": 2023, "note": "Reports that the pretrained model was well calibrated and post-training reduced calibration" },
+    { "title": "Why Language Models Hallucinate", "authors": "Kalai, Nachum, Vempala and Zhang", "year": 2025, "note": "Argues that training and accuracy-only evaluation reward guessing over abstaining" }
+  ]
+}

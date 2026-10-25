@@ -1,0 +1,411 @@
+{
+  "module": "llm-system-design",
+  "sections": [
+    {
+      "slug": "design-framework",
+      "title": "A Framework for LLM System Design",
+      "lesson": "design-framework",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What are the steps you follow when given an open-ended LLM design question, and why in that order?",
+          "a": "I use eight steps: **clarify** requirements, **estimate** load and cost, sketch the **architecture**, **deep-dive** into the risky parts, plan **evaluation**, cover **safety**, walk through **failures and scaling**, and state **trade-offs**. The order matters because early mistakes multiply: a 10x error in users or a 4x error in model size flows into every later decision. Estimates come before boxes so the numbers can shape the design, and I loop back when an estimate surprises me (for example, 100 GPUs may push me toward a cascade). I time-box roughly 5, 7, 7, 12, 5, 3, 4 and 2 minutes in a 45-minute slot and say my plan out loud at the start so the interviewer can steer."
+        },
+        {
+          "level": "junior",
+          "q": "2M daily users send 5 messages each. What are the average and peak QPS?",
+          "a": "Requests per day are $2\\text{M} \\times 5 = 10\\text{M}$. Average QPS is $10{,}000{,}000 / 86{,}400 \\approx 116$. With a peak factor of 3 (a common default for consumer traffic with spikes), peak is about 347 QPS. I would state the peak factor as an assumption and justify it: office tools might see 2.4x just from working-hours concentration, while a batch pipeline could be near 1. The peak, not the average, sizes GPUs and rate limits, so I always carry both numbers forward."
+        },
+        {
+          "level": "mid",
+          "q": "Compute monthly API cost for 1,500 input and 300 output tokens per request at 10M requests a day, with \\$1 per 1M input and \\$4 per 1M output tokens.",
+          "a": "Input tokens: $10\\text{M} \\times 1{,}500 = 15$ billion per day, which at \\$1 per million is \\$15,000. Output: $10\\text{M} \\times 300 = 3$ billion, at \\$4 per million is \\$12,000. Total \\$27,000 per day, or \\$810,000 per 30-day month, about \\$0.0027 per request. Output is only 17% of tokens but 44% of cost, so shortening answers is the first lever. If 60% of input is a cached prefix billed at a 90% discount, input falls to \\$6,900 per day and the month to \\$567,000, a 30% saving."
+        },
+        {
+          "level": "mid",
+          "q": "How do you estimate GPU count for self-hosting, and what assumptions must you state?",
+          "a": "Divide the peak token rate by per-GPU throughput, separately for decode and prefill, then divide by target utilisation: $G = \\text{QPS}_{peak} T_{out}/(u\\,\\Theta_{dec}) + \\text{QPS}_{peak} T_{in}/(u\\,\\Theta_{pre})$. For 347 QPS, 300 output tokens and an assumed 1,050 decode tokens/s per GPU, decode alone needs 99 GPUs at full utilisation. Prefill at 20,000 tokens/s adds 26. At $u = 0.7$ the total is about 179. The assumptions that matter are model size, GPU type, serving engine, batch size and the per-GPU throughput figures, which should be measured, not quoted. I would also say that the quality tier differs from a large API model."
+        },
+        {
+          "level": "mid",
+          "q": "Use Little's law to estimate KV-cache memory at peak.",
+          "a": "Little's law gives concurrency $N = \\lambda W$. At 347 requests/s and 7.8 s per request (0.3 s TTFT plus 300 tokens at 25 ms), $N \\approx 2{,}708$ sequences. KV per token for an 8B-class model (32 layers, 8 KV heads, head dim 128, bf16) is $2 \\times 32 \\times 8 \\times 128 \\times 2 = 131{,}072$ bytes. A 1,800-token conversation holds about 236 MB, so total KV is about 639 GB, roughly 6.4 GB per GPU across 100 GPUs. It fits next to 16 GB of weights. Slow requests increase $W$ and therefore memory, so latency problems and memory problems compound."
+        },
+        {
+          "level": "mid",
+          "q": "How do you decide whether to self-host or use an API?",
+          "a": "Compute a break-even. Self-hosting has a fixed monthly cost $F$; an API costs $v$ per request. Self-hosting wins above $R_m = F/v$. With $F = \\$326{,}675$ and a cached large-model API at \\$0.00189 per request, break-even is about 173M requests a month (5.8M a day), so at 10M a day self-hosting wins on cost. Against a small API model at \\$0.00027 per request, break-even is about 40M a day, so the API is cheaper. I also weigh quality (does the self-hosted model pass my eval?), operational burden, data-residency needs and the risk of capacity shortage. The answer depends on which alternative you compare against."
+        },
+        {
+          "level": "senior",
+          "q": "The interviewer says p95 latency must halve. Walk through how you re-plan.",
+          "a": "First decompose the latency budget: network, gateway, retrieval, queue, prefill, then decode at TPOT per token. For streamed chat, perceived latency is TTFT, so I look at queue and prefill first: more replicas or lower target utilisation cuts queue wait; prefix caching and shorter prompts cut prefill. If total time matters, decode dominates (300 tokens at 25 ms is 7.5 s), so options are shorter answers, a smaller or quantised model, speculative decoding, or a cascade that answers easy requests with a faster model. Each has a cost: lowering utilisation from 0.7 to 0.5 grows the fleet by 40%. I would quantify these, pick the cheapest option that meets the target, and re-run the estimate out loud."
+        },
+        {
+          "level": "senior",
+          "q": "A classifier has 95% recall and a 2% false-positive rate, and 0.5% of traffic is attacks. Is it good enough to auto-block?",
+          "a": "Compute precision with Bayes: $0.005 \\times 0.95 / (0.005 \\times 0.95 + 0.995 \\times 0.02) \\approx 0.19$. Only about 19% of blocked messages are real attacks, so auto-blocking refuses roughly four legitimate users per attacker. Whether that is acceptable depends on the cost of a false block versus a miss. A better design tiers the controls: a cheap filter flags traffic, a stronger model or a rule re-checks only the flagged few percent, and low-confidence cases get friction (a challenge, rate limiting, logging) rather than a block. I would tune the threshold from the cost ratio and re-measure when the base rate shifts."
+        },
+        {
+          "level": "senior",
+          "q": "How would you build confidence in a design with no production data yet?",
+          "a": "Build a golden set before launch: collect or synthesise a few hundred to a few thousand representative requests with reference answers or rubric labels. Sample size follows $n = 1.96^2\\hat{p}(1-\\hat{p})/h^2$; about 683 examples gives plus or minus 3 points at an 80% pass rate. Evaluate each layer separately (retrieval recall, grounded-answer rate, end-to-end task success) so failures are attributable. Then launch behind a shadow or canary, compare online metrics against the offline bar, and feed every production failure back into the golden set. I would also run failure drills (provider outage, empty retrieval) before launch, because those paths have no natural traffic to exercise them."
+        },
+        {
+          "level": "senior",
+          "q": "Your estimate shows the design costs ten times the budget. What do you do?",
+          "a": "Treat it as design feedback, not a failure. Locate the money: usually output tokens (priced about 4x input), then input context size, then model tier. Levers in order of risk: shorten outputs and prompts; add prefix caching (60% cached at a 90% discount saves 30% of the bill in our example); cascade easy requests to a small model (30% escalation cuts cost about 60%); cache frequent answers; and only then consider self-hosting or a cheaper model for everything (a 10x cheaper model is a 10x cost cut but needs an eval pass). I would also re-check the requirement itself: perhaps not every user needs the large model, or messages per user could be capped. Each lever gets a quality check."
+        }
+      ]
+    },
+    {
+      "slug": "design-support-assistant",
+      "title": "Design a Customer-Support Assistant",
+      "lesson": "design-support-assistant",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What is containment rate, and why is it not enough on its own to judge a support bot?",
+          "a": "**Containment rate** is the share of conversations finished without a human agent. It is easy to inflate: a bot that refuses to escalate, or marks conversations solved when the customer gave up, scores high.\n\nPair it with the **false-resolution rate** (contained conversations that were wrong) and the **7-day repeat-contact rate**. In the worked case, a careful bot with 40% containment and 5% false resolution saved about \\$296,000 a day, while an aggressive bot with 50% containment and 12% false resolution saved only about \\$196,000 (hypothetical \\$5 per human contact, \\$25 per false resolution). Report containment next to repeat contacts and CSAT, never alone."
+        },
+        {
+          "level": "mid",
+          "q": "A retailer has 200,000 conversations a day with 6 customer turns each. Estimate average and peak QPS and daily input tokens if each turn sends 2,500 tokens.",
+          "a": "1. **Turns per day:** 200,000 × 6 = 1.2M.\n2. **Average rate:** 1.2M / 86,400 ≈ 13.9 turns per second.\n3. **Peak:** with a peak factor of 3 (evenings, sales), about 41.7 per second.\n4. **Input tokens:** 1.2M × 2,500 = 3.0 billion a day; at 200 output tokens, 240M output.\n\nAt a hypothetical \\$1.00 per 1M input and \\$4.00 per 1M output that is \\$3,000 + \\$960 = \\$3,960 a day, or about two cents a conversation. State that input dominates because every turn re-sends the system prompt, history and retrieved text, and that this is where caching and history caps pay off."
+        },
+        {
+          "level": "mid",
+          "q": "Answer accuracy for your RAG bot is 78%. How do you find out whether to improve retrieval or generation?",
+          "a": "Decompose accuracy into stages: $P(\\text{correct}) \\approx P(\\text{covered}) \\times \\text{recall@}k \\times \\text{faithfulness}$. Measure each separately on a labelled set.\n\n- **Coverage:** is the answer in the help centre at all? If not, only content work fixes it.\n- **Recall@k:** is the right chunk among those given to the model?\n- **Faithfulness:** given the right chunk, does the answer stay within it?\n\nWith recall 0.85 and faithfulness 0.92 the product is 0.78. Lifting recall to 0.95 gives 0.874; lifting faithfulness to 0.97 gives only 0.8245. So retrieval has more headroom here. Pick the stage with the largest gap to its ceiling and cheapest fix (reranking, chunking, query rewriting) before touching the model."
+        },
+        {
+          "level": "mid",
+          "q": "Why retrieve 30 chunks and rerank to 3, instead of just retrieving 8?",
+          "a": "Every chunk passed to the model is re-sent on every turn. Going from 3 chunks (about 1,000 tokens) to 8 (about 2,500) adds 1,500 input tokens per turn: with 1.2M turns a day that is 1.8 billion tokens, about \\$1,800 a day at the hypothetical price, nearly half the original bill.\n\nRetrieving wide and reranking narrow gets the recall of a large candidate set at the token cost of a small one: the cheap first stage casts a net of 30, a cross-encoder scores them with the query, and only the best 3 reach the generator. The reranker adds some milliseconds and a small GPU cost, so measure recall@3 with and without it before committing."
+        },
+        {
+          "level": "senior",
+          "q": "The bot can issue refunds. How do you design the permission model so a prompt-injected customer cannot get a \\$400 refund?",
+          "a": "Never rely on the model to refuse. Put limits in **code the model cannot influence**.\n\n1. **Tiers:** reads (order status) are automatic; reversible writes need an explicit confirmation turn; small refunds (say up to \\$50) go through a deterministic policy engine; large or unusual refunds go to a human, with the bot preparing the case.\n2. **Policy engine:** the model proposes `refund(order_id, amount, reason)`; a rules service checks item eligibility, return window, amount cap and recent refunds, then executes or rejects.\n3. **Identity from the session,** never from message text.\n4. **Screen retrieved and tool-returned text** for injection, and never let it change available tools.\n5. **Audit:** log proposed-but-blocked actions; a spike signals an attack.\n\nEconomics check: 10,000 small refunds a day at 2% wrongly granted, \\$30 each, leaks \\$6,000 a day against \\$20,000 for human review of all of them."
+        },
+        {
+          "level": "senior",
+          "q": "Primary model provider availability is 99.9% and your fallback is 99.5%. What availability do you claim, and what would make that number wrong?",
+          "a": "If failures are independent, both must be down together: 0.001 × 0.005 = 5×10⁻⁶, so combined availability is 99.9995% (about 13 seconds a month with both down at once).\n\nThe number is wrong when:\n- **Failures correlate:** same cloud region, shared gateway, shared DNS or auth.\n- **Failover is untested or slow:** detection delay, cold caches, a prompt tuned only for the primary.\n- **Rate limits bite:** the fallback's quota may not absorb 100% of peak.\n- **Quality differs:** the fallback may be available but worse, so define a degraded mode.\n\nSo: quote the multiplication as an upper bound, test failover with game days, pre-provision fallback quota, and track availability end to end (answered correctly within the SLO), not per provider."
+        },
+        {
+          "level": "senior",
+          "q": "Black Friday brings 10x average traffic. What do you do beforehand and during?",
+          "a": "Average load is 13.9 turns per second; at 10x that is 139 per second, which at 2,500 input tokens is about 20.8 million input tokens per minute (versus 6.25M at the normal 3x peak).\n\n**Before:** negotiate provider quota for that figure plus headroom, load-test the whole path including the orders API, warm prompt caches, and write a degradation order.\n\n**Degrade in a planned sequence:** drop the reranker, cap history to the last 4 turns, route simple intents to the small model, shorten replies, and only last lengthen the human queue or raise escalation thresholds.\n\n**During:** watch queue depth, provider 429 rate and p95 TTFT, shed non-urgent work (email summarisation) first, and keep the hand-off path capacity-checked because escalations rise when the bot degrades."
+        },
+        {
+          "level": "senior",
+          "q": "Your router sends 60% of turns to a small model, saving about \\$2,100 a day. How do you know it is a good idea?",
+          "a": "Cost alone is the wrong test. At 60% routing the daily cost falls from \\$3,960 to about \\$1,822, a saving near \\$2,100. But a single false resolution costs about \\$25 in the example, so if misrouted hard turns cause just 100 extra false resolutions a day (\\$2,500) the router loses money.\n\nMeasure:\n- **Router accuracy on hard intents specifically** (complaints, multi-step policy), not average accuracy.\n- **False-resolution and repeat-contact rate** by route, in an A/B test.\n- **Escalation rate** shifts.\n\nShip a single large model first to set the quality baseline, collect labelled traffic, then route only intents where the small model matches the large one on your evaluation set, with a confidence threshold that sends uncertain turns up."
+        },
+        {
+          "level": "mid",
+          "q": "How large an offline evaluation set do you need, and how do you build it?",
+          "a": "For a pass rate near 0.8 and a margin of ±3 points at 95% confidence: n = 1.96² × 0.8 × 0.2 / 0.03² ≈ 683, so about 700 conversations. With 100 the margin is about ±8 points, too coarse to detect most prompt changes.\n\nBuild it from **real transcripts**, stratified by intent and language, and add a separate **hard set** of conversations that should escalate so you can verify the bot steps aside. Score per layer: retrieval recall@3, answer quality by an LLM judge calibrated on human labels, correct tool calls with arguments, and escalation quality (summary and queue). Refresh monthly so the set tracks new products and policies."
+        }
+      ]
+    },
+    {
+      "slug": "design-enterprise-search",
+      "title": "Design Enterprise Search over Company Documents",
+      "lesson": "design-enterprise-search",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "Why does enterprise search need permission-aware retrieval, when a public RAG bot does not?",
+          "a": "Company documents have different audiences: salaries, legal matters, unreleased plans. If the retriever returns a chunk from a document the asker cannot open, the model may quote it, and the system has leaked data through a side door.\n\nSo each chunk stores the principals (users and groups) allowed to read its parent document, and retrieval returns only chunks whose allowed principals intersect the user's. Treat this as an **invariant**, not a quality metric: no answer may contain content the user cannot open. Missing or unparseable permissions mean the chunk is not searchable (deny by default)."
+        },
+        {
+          "level": "mid",
+          "q": "Size the index: 20 million documents of 1,500 tokens, 500-token chunks, 768-dimension embeddings.",
+          "a": "- **Corpus tokens:** 20M × 1,500 = 30 billion.\n- **Chunks:** 30B / 500 = 60 million.\n- **Vectors:** 60M × 768 × 4 bytes ≈ 184 GB in float32; 46 GB in int8; about 3.8 GB with product quantisation to 64 bytes (at some recall cost).\n- **HNSW links:** 32 neighbours × 4 bytes × 60M ≈ 7.7 GB.\n- **One-off embedding cost:** 30,000 million-tokens × a hypothetical \\$0.02 = \\$600.\n\nSo an int8 HNSW index of about 54 GB split over 4 shards is roughly 13.5 GB each; run 2 replicas for availability, 8 nodes total. Keep float32 originals on disk for rebuilds."
+        },
+        {
+          "level": "mid",
+          "q": "Explain reciprocal rank fusion and compute it for a document ranked 3rd in BM25 and 1st in embeddings.",
+          "a": "RRF combines ranked lists using only ranks: $\\text{RRF}(d) = \\sum_m 1/(k_0 + \\text{rank}_m(d))$, with $k_0 = 60$. It avoids mixing incomparable scores (BM25 values versus cosine similarities).\n\nFor the document: 1/63 + 1/61 = 0.015873 + 0.016393 = **0.032266**. A document that is rank 1 in only one list scores 1/61 = 0.0164, about half, so documents that both retrievers like beat documents only one likes.\n\nWhy hybrid at all: exact codes, names and titles favour BM25; paraphrases favour embeddings. Evaluate recall by query type to confirm that fusion is close to the better method on each."
+        },
+        {
+          "level": "senior",
+          "q": "A user can see only 5% of the corpus. Why does post-filtering fail them, and what do you do instead?",
+          "a": "If you retrieve $k'$ candidates and then filter, the expected number visible is $k' f$. With $f = 0.05$ and $k' = 50$ that is only 2.5 chunks, and for 95% confidence of 8 visible you would need about 260 candidates. Also, relevance and permission are correlated: the best documents may be the ones they cannot see, so the survivors are weaker.\n\nOptions:\n- **Pre-filter** inside the index (guarantees count, but filtered HNSW traversal slows roughly as 1/f or loses recall).\n- **Partition:** a large 'visible to everyone' index searched unfiltered, plus a filtered index for restricted content; merge the lists.\n- **Per-group indexes** for a few large audiences.\n\nAdd a live permission check on the final 8 chunks either way."
+        },
+        {
+          "level": "senior",
+          "q": "An employee is removed from a group at 10:00. A search at 10:03 still shows that group's document. Where can this happen and how do you stop it?",
+          "a": "Three places lag the source:\n\n1. **The ACL mirror** in the index (last sync).\n2. **The principal cache** that expands the user into groups (cached minutes or hours).\n3. **Derived artefacts:** cached answers, summaries, suggestions.\n\nFixes: sync permissions on a **separate, faster path** than content (target 5 minutes versus 15), updating only the `allowed_principals` field without re-embedding; keep principal caches short; run a **live permission check** against the source for the 8 chunks about to be shown (cheap, closes the window); key caches by ACL or the user's principal set; and test with a **revocation probe** that measures time to disappearance, alerting if it exceeds the target."
+        },
+        {
+          "level": "senior",
+          "q": "How would you prove the system does not leak restricted content?",
+          "a": "You cannot prove it absolutely; you build evidence and gates.\n\n- **Canary documents** with unique phrases in restricted spaces, queried by users outside the group with many phrasings, follow-ups and rewrites. Assert the phrase never shows in results, answers, citations, suggestions or caches.\n- **Differential tests:** the same query as two users; each result set must be a subset of what that user can open in the source.\n- **Volume:** with zero leaks in $n$ independent probes, the rule of three bounds the rate at about $3/n$ at 95% confidence, so 30,000 probes support a claim of under 1 in 10,000 on probed paths.\n- **Revocation and group-lag tests.**\n- Run it as a release gate, plus periodic red-team exercises for paths you did not think of (injection in documents, tool access)."
+        },
+        {
+          "level": "mid",
+          "q": "Budget the read path so the first answer token arrives within 1.5 s at p95.",
+          "a": "Sum the stages with hypothetical p95 values: identity and groups from cache 10 ms, query normalisation 5 ms, query embedding 20 ms, scatter-gather retrieval 60 ms (the slowest of 4 shards sets it), RRF plus reranking of 30 candidates 180 ms, generator prefill on about 4,500 tokens 450 ms, first token 30 ms. Total about 755 ms, leaving roughly 745 ms for network, queueing and tails.\n\nTricks: show ranked results right after the rerank (about 275 ms) while the answer streams; hedge requests to the second replica when a shard exceeds its p95; give the reranker a timeout with fallback to fused order; and track per-stage latency so a regression is attributable."
+        },
+        {
+          "level": "mid",
+          "q": "Where does the money go, and how would you cut the bill by 30%?",
+          "a": "In the worked estimate (hypothetical prices): generation about \\$29,280 a month (77%), reranker GPUs \\$5,475, index nodes \\$2,920, ongoing embedding about \\$180; total about \\$37,900.\n\nSince generation dominates, target it:\n- **Results-only for lookup queries:** if 30% of queries need no generated answer, generation falls to \\$20,496 (save \\$8,784).\n- **5 chunks instead of 8:** \\$0.0046 versus \\$0.0061 per query, saving about \\$7,200 a month.\n- **Prompt caching** of the shared instructions, and a **small model** for easy answers.\n\nTogether these reach about 40% of total. Verify with groundedness, citation precision and answer correctness on the labelled set so quality does not quietly drop."
+        }
+      ]
+    },
+    {
+      "slug": "design-code-assistant",
+      "title": "Design a Code Assistant",
+      "lesson": "design-code-assistant",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "Why does a code assistant need two different serving paths, inline completion and chat?",
+          "a": "They have different latency, volume and model needs.\n\n- **Inline completion** competes with typing: p50 under about 250 ms, output of a dozen tokens, roughly 1,000 requests per second at peak for 50,000 developers. It needs a small, fast, often self-hosted model.\n- **Chat** tolerates a first token in about 1.5 s and then streams a long answer. Volume is about 20 times lower (around 52 QPS) but each request is heavier (about 8,000 input tokens), so a large model and retrieval are justified.\n\nA single model either blows the inline budget or underperforms on repository questions. Shared parts are the IDE plugin, identity, the repository index and telemetry."
+        },
+        {
+          "level": "junior",
+          "q": "What is fill-in-the-middle and why does inline completion need it?",
+          "a": "Fill-in-the-middle (FIM) gives the model the code before the cursor (prefix) and after it (suffix) and asks it to generate the missing middle. The prompt is rearranged into special tokens, for example prefix, then suffix, then a marker after which the middle is produced.\n\nA left-to-right model that only sees the prefix cannot know that a closing brace or a following function already exists, so it duplicates code or runs past the end. With FIM the model can end the completion where the suffix resumes. You also add stop rules in post-processing, such as stopping at a blank line or a dedent, and a maximum token cap."
+        },
+        {
+          "level": "mid",
+          "q": "Estimate peak QPS for inline completion: 50,000 developers, 400 requests each per working day.",
+          "a": "Requests per day: 50,000 × 400 = 20 million. Developers work in about an 8-hour window, so the workday average is 20M / 28,800 s ≈ 694 QPS, not 231 (which spreads load over 24 hours).\n\nBursts after stand-up and lunch add a factor of about 1.5, giving **about 1,040 QPS peak**, 4.5 times the 24-hour average. The usual 3× rule of thumb would be wrong here.\n\nSay the assumption (one region, one time zone) and the sensitivity: a company split across two continents flattens the curve. Also check the 400 figure against telemetry after debouncing and cancellation, since a 2× error there is a 2× error in GPUs."
+        },
+        {
+          "level": "mid",
+          "q": "Inline requests average 2,000 input and 40 output tokens. Size the self-hosted GPU fleet for 1,042 QPS with an 8B-class model.",
+          "a": "Prefill cost is about 2N FLOPs per input token, N = 8×10^9, so 1.6×10^10 FLOPs per token.\n\n- Load: 1,042 × 2,000 = 2.08M tokens/s × 1.6×10^10 = 3.3×10^16 FLOP/s.\n- Per GPU at 400 TFLOP/s effective and 70% target utilisation: 2.8×10^14.\n- GPUs: 3.3×10^16 / 2.8×10^14 ≈ **119, call it 120**, about 219,000 dollars a month at the hypothetical 2.50 per GPU-hour.\n\nConsecutive keystrokes share most of their prefix. With a 60% prefix-cache hit rate only 40% of tokens need prefill: about **48 GPUs**, roughly 87,600 dollars a month. The saving needs session affinity so a developer's requests reach the replica holding the cache."
+        },
+        {
+          "level": "mid",
+          "q": "How do you assemble context for a completion when the repository has 500 million lines?",
+          "a": "Use a token budget (say 2,000 tokens) and fill it in priority order:\n\n1. Prefix and suffix around the cursor (highest value, always included).\n2. Recently edited files and open tabs from the IDE, which are free and local.\n3. Symbols and signatures referenced near the cursor, from the language server or a symbol index.\n4. A few retrieved snippets from an embedding or keyword index of the repository.\n\nEach source gets a cap so one cannot starve the others, and snippets are ranked by similarity and recency. Measure it with an internal eval: remove code from real commits, rebuild the context, run the tests, and ablate each source to see its effect on pass@1. Keep the server-side part within about 15 ms by querying indexes in parallel."
+        },
+        {
+          "level": "mid",
+          "q": "A problem has 10 samples, 3 of which pass. Compute pass@1 and pass@5, and say which matters for inline completion.",
+          "a": "pass@1 = c/n = 3/10 = 0.30.\n\npass@5 = 1 - C(7,5)/C(10,5) = 1 - 21/252 = **0.9167**. The fraction is the probability that a random set of 5 samples contains only failures.\n\nInline completion shows one suggestion, so **pass@1** is the honest number. pass@5 matters for chat with a regenerate button, or an agent that tests its own output and retries. Report pass@k on an internal eval built from your own repository history, not only a public benchmark, because self-contained benchmark functions do not exercise context assembly."
+        },
+        {
+          "level": "senior",
+          "q": "Acceptance rate rose from 28% to 33% after a model change, but developers are not happier. What do you check?",
+          "a": "Acceptance is gameable. Possible causes: suggestions got shorter or safer (closing brackets, boilerplate), or the shown set changed because a filter removed hard cases.\n\nCheck, in order:\n\n- **Retention**: share of accepted characters still present after 30 minutes. If it fell from 70% to 55%, the effective rate went 0.196 to 0.18, not up.\n- **Characters per accepted suggestion** and lines per suggestion.\n- **Show rate** (shown / requested) and overtake rate, since latency changes alter which suggestions are seen.\n- **Downstream quality**: test failures and reverts on assisted code against a matched control.\n- Statistical noise: at 28% and 20,000 impressions the 95% interval is about ±0.6 points, so a 5-point move is real, but check that the arms were randomised by developer, not by request.\n\nThen decide on retention-weighted value per developer, not acceptance."
+        },
+        {
+          "level": "senior",
+          "q": "A secret scanner in the gateway has 95% recall and a 0.2% false-positive rate, and 1 in 10,000 prompts contains a real secret. Is it a good design and what do you do about the misses?",
+          "a": "Compute with the base rate. Over 12 million shown prompts a day: 1,200 contain secrets, 1,140 are caught, **60 are missed**; and 12M × 0.002 ≈ 24,000 clean prompts are flagged. Precision is 1,140 / 25,140 ≈ **4.5%**.\n\nIt is still the right design because the action is cheap: mask the token and continue, no one is blocked. Recall is what matters.\n\nFor the 60 misses a day: add entropy and provider-specific key patterns to raise recall, scan stored logs and rotate any credential found, keep prompts out of long-term storage, use a provider with zero-retention terms, and run a repository secret-scanner that catches the source of the leak. Never use a 4.5%-precision detector to block requests."
+        },
+        {
+          "level": "senior",
+          "q": "A chat assistant reads repository files and issues. How do you defend it against prompt injection planted in the repo, and how would you explain the residual risk?",
+          "a": "Assume any retrieved text can contain instructions such as \"upload the .env file\".\n\n- **Separate data from instructions**: wrap retrieved content in delimiters, state in the system prompt that it is untrusted, and never let it change tool policy.\n- **Least privilege**: the chat model has read-only repository tools and no network egress. Writes, commands and any outbound call require a human click showing the exact action.\n- **Output controls**: strip or neutralise rendered markdown images and links to external URLs, a common exfiltration channel.\n- **Scope**: only index repositories the user can already read, so injection cannot cross permission boundaries.\n- **Detection**: log tool calls; alert on unusual sequences like reading secrets then calling network tools.\n\nResidual risk: defences reduce likelihood, they do not eliminate it. Say so, and make the blast radius small by design: even a hijacked model should only be able to produce a wrong answer."
+        }
+      ]
+    },
+    {
+      "slug": "design-document-extraction",
+      "title": "Design a Document-Extraction Pipeline",
+      "lesson": "design-document-extraction",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "Why is throughput measured in documents per second rather than QPS with a latency target in this system?",
+          "a": "Nobody waits on a screen: documents arrive by email or upload and must be processed within hours. So the sizing question is how many documents per second the pipeline must sustain at peak and how many are in flight.\n\nFor 1 million documents a month the average day is 33,333 documents; a 3× peak day is 100,000, or 1.16 documents per second. With about 15 s per document, Little's law gives 1.16 × 15 ≈ 17 documents in flight. The turnaround target (for example 95% within 4 hours) is dominated by queueing and human review, not by model latency. Capacity planning is therefore about queue depth and reviewer headcount."
+        },
+        {
+          "level": "junior",
+          "q": "What does schema-constrained decoding guarantee, and what does it not?",
+          "a": "At each step the decoder allows only tokens that keep the output valid under the JSON schema (types, enums, required keys, closing brackets), sets the rest to zero probability and renormalises.\n\n**It guarantees** well-formed output: no prose before the JSON, no string where an integer is required, no missing brackets. Without it, 0.5% slip per decision over six decisions gives about 3% malformed outputs.\n\n**It does not guarantee** correct values. 211.14 and 211.41 are both valid numbers. It also does not stop a truncated output when the length limit is hit. So you still need validators, evidence checks, a length-stop check and review. Make fields nullable so the model has a legal way to say the value is absent."
+        },
+        {
+          "level": "mid",
+          "q": "Estimate the monthly cost of extracting 1 million four-page documents with OCR plus a small model, and with a vision model. Use hypothetical prices.",
+          "a": "Assumptions: 800-token prompt, 400 output tokens; image 1,500 tokens per page; OCR text 700 tokens per page; OCR engine 0.0015 dollars per page; large model 1.00 / 4.00 per million tokens, small 0.10 / 0.40.\n\n- **Vision, large**: 6,800 in, 400 out = 0.0068 + 0.0016 = 0.0084 per doc = **8,400 per month**.\n- **OCR + small**: 3,600 in = 0.00036 + 0.00016 = 0.00052 per doc = 520, plus OCR 4M × 0.0015 = 6,000 → **6,520**.\n- **Vision, small**: 6,800 in = 0.00084 per doc → **840**.\n\nThe conclusion matters more than the figures: all options are under 12,000 a month, while human review costs about 90,000 a month. Choose the model on accuracy and review rate, not on token price."
+        },
+        {
+          "level": "mid",
+          "q": "Per-field accuracy is 97% across 12 fields. Why is that not good enough, and what do you do about it?",
+          "a": "Record accuracy is 0.97^12 = **69.4%**: about 30.6% of documents contain at least one wrong field, although every field looks 97% accurate. If a wrong record costs 40 dollars, a million documents carry about 12 million dollars of exposure.\n\nDo three things:\n\n1. Add **cross-field validators** (line items sum to the subtotal, tax rate times subtotal equals tax, subtotal plus tax equals total). With 3% error per numeric field, 14.1% of documents have an error in five numeric fields and the checks catch nearly all of it.\n2. Attach **calibrated confidence** per field and route doubtful documents to review.\n3. Audit a random 1% of auto-accepted documents to estimate residual error.\n\nQuote both field-level and record-level accuracy so requirements are unambiguous."
+        },
+        {
+          "level": "mid",
+          "q": "How do you calibrate and use field confidence from token probabilities?",
+          "a": "Take the probabilities of the tokens in a field's value and summarise them: the **minimum** (or a low percentile) for numbers, since one uncertain digit causes a wrong value, and the geometric mean for free text. For 211.41 with token probabilities 0.99, 0.98, 0.60, 0.97, 0.99 the minimum is 0.60 but the geometric mean is 0.89, so the mean hides the problem.\n\nThen **calibrate**: bin scores on a labelled set and compare mean confidence with observed accuracy. Expected calibration error = sum over bins of (n_b / N) × |accuracy - confidence|. With the example bins it is 0.024, and low bins are over-confident. Fit a mapping (Platt scaling or isotonic regression) from raw score to observed accuracy, and re-fit when the model, prompt or document mix changes. Use calibrated values in the routing threshold."
+        },
+        {
+          "level": "mid",
+          "q": "Compute the reviewer headcount and monthly review cost for 1 million documents at a 20% review rate.",
+          "a": "Reviewed documents: 200,000. At 90 seconds each, hours = 200,000 × 90 / 3,600 = **5,000 hours**.\n\nA reviewer has about 6 productive hours a day × 21 days = 126 hours a month, so 5,000 / 126 = 39.7, or 40 reviewers; with 15% for absence and rework, **about 46**.\n\nCost at 18 dollars per productive hour: 5,000 × 18 = **90,000 a month**, or 0.45 per reviewed document and 0.09 per document processed. That is more than ten times the 0.0078 per document of OCR plus model. Reducing review time per document from 90 s to 60 s saves 30,000 a month, which is why reviewer tooling (highlighting, pre-filled corrections, cropped evidence) is a first-class part of the design."
+        },
+        {
+          "level": "senior",
+          "q": "How do you choose the confidence threshold for auto-acceptance?",
+          "a": "Derive it from costs rather than choosing 0.9 by habit.\n\nReviewing a document costs C_rev (0.45 here) and cuts its error probability from p to the residual p_res (0.5%, reviewers err too). A wrong record costs C_err (40). Review pays when (p - p_res) × C_err > C_rev, i.e. **p > p_res + C_rev / C_err = 0.005 + 0.01125 = 1.6%**. On calibrated scores that is a threshold of about 0.984.\n\nValidate with a sweep on labelled data: reviewing 0, 10, 20, 30 and 40% of documents (riskiest first) gives totals of 780k, 365k, 310k, 315k and 344k dollars including error cost, so 20% is the minimum and 30% is nearly as good. If wrong records cost 400 instead, p* falls to about 0.6% and the review rate rises. Re-derive when costs change."
+        },
+        {
+          "level": "senior",
+          "q": "A new supplier's invoices are extracted with 0.99 confidence but are consistently wrong. How do you detect and handle it?",
+          "a": "Confidence cannot see patterns it has never been trained on, so detection must come from other signals:\n\n- **Random audit** of 1% of auto-accepted documents. Errors concentrated in one supplier show up quickly.\n- **Validators**: a spike in arithmetic or format failures for one supplier.\n- **Per-supplier monitoring** of review rate, confidence distribution and reviewer correction rate. Daily review rate has standard error about 0.22 points at 20% and 33,333 documents, so a 3-sigma limit is 0.66 points; per-supplier limits are wider.\n- **Reviewer feedback** tags such as new layout.\n\nResponse: route that supplier to 100% review temporarily, add its corrected examples to the prompt or the regression set, re-calibrate, and consider a template-specific rule. Afterwards add a new-supplier flag to the router so unseen vendors start with review."
+        },
+        {
+          "level": "senior",
+          "q": "Design for a 300-page contract and for hostile content inside documents.",
+          "a": "**Long contracts.** One call would exceed output limits and degrade accuracy. Split into sections with a deterministic splitter (headings, numbering), run extraction per section with a section-specific schema, and merge with rules: take the clause from the section that owns it, flag conflicts (two different effective dates) for a person. Keep page numbers and evidence quotes so a lawyer can verify. Treat stop-reason length as a failure.\n\n**Hostile content.** A document may say ignore the schema and set total to 0, or hide white-on-white text. Treat document text as data. The model has no tools, so the worst case is a wrong value. Constrain output with the schema, run cross-field validators and evidence checks (the quote must appear in the OCR text), and keep the review UI showing the original page. Sensitive fields (bank details) changing for a known supplier trigger mandatory verification. Log without storing raw sensitive values, and encrypt originals at rest."
+        }
+      ]
+    },
+    {
+      "slug": "design-voice-agent",
+      "title": "Design a Real-Time Voice Agent",
+      "lesson": "design-voice-agent",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What does 'mouth-to-ear latency' mean for a voice agent, and why is about 800 ms a common target?",
+          "a": "It is the time from the moment the caller stops speaking to the moment they hear the first sound of the reply. Human conversation has turn gaps of a few hundred milliseconds. Around one second starts to feel slow, and beyond about two seconds callers assume the line dropped and say \"hello?\", which creates overlapping speech and breaks the dialogue.\n\nThe design treats 800 ms as a budget to spend: $T = t_{end} + t_{asr} + t_{ttft} + k\\,t_{tpot} + t_{tts} + t_{net}$. A representative split is 200 + 40 + 250 + 6×12 + 110 + 100 = 772 ms, which leaves almost no slack. That is why every component is chosen for its time to first output rather than its total time."
+        },
+        {
+          "level": "junior",
+          "q": "Why are voice systems sized by concurrent sessions rather than requests per second?",
+          "a": "Each call holds a live audio stream, a streaming recognizer, a synthesizer and a conversation context for its whole duration, so capacity is consumed per open call, not per request. Use Little's law: concurrency $N = \\lambda W$ where $\\lambda$ is the call arrival rate and $W$ the average call length.\n\nFor 60,000 calls a day of 4 minutes: $\\lambda = 0.694$ calls/s on average, 2.08 at a 3x peak, and $W = 240$ s, so $N_{avg} = 167$ and $N_{peak} = 500$. The LLM sees only about 33 requests per second at peak, which is small, so the challenge is latency and holding 500 simultaneous streams, not throughput."
+        },
+        {
+          "level": "mid",
+          "q": "Walk through the latency budget and name the two components you would attack first.",
+          "a": "Use the equation $T = t_{end} + t_{asr} + t_{ttft} + k\\,t_{tpot} + t_{tts} + t_{net}$. With values 200, 40, 250, 6×12, 110 and 100 ms the total is 772 ms. The endpointer (silence wait, 200 ms) and LLM time to first token (250 ms) are 58% of it.\n\nFor the endpointer, use a semantic end-of-turn model plus adaptive silence thresholds rather than a fixed pause. For TTFT, use a smaller model for the first sentence, prefix caching with session affinity, and keep replicas lightly loaded so p95 queueing stays low. Also check p95: if component p95s sum to 1,320 ms, the p95 requirement of 1.2 s needs work, mostly on TTFT queueing and long pauses."
+        },
+        {
+          "level": "mid",
+          "q": "Why does streaming matter, and how much does it save in the budget?",
+          "a": "Streaming overlaps stages. ASR works while the caller is still speaking, the LLM emits tokens as it generates, and TTS starts as soon as the first phrase (about 6 tokens) exists, while later phrases are still being generated.\n\nCompare with a design that passes complete results between stages: ASR on the whole utterance (300 ms), a full 60-token reply ($250 + 60\\times12 = 970$ ms) and full TTS rendering (400 ms). With endpoint wait and network, the total is $200 + 300 + 970 + 400 + 100 = 1{,}970$ ms against 772 ms streaming, roughly 2.5x slower with identical models. The gain comes from overlap, not faster components."
+        },
+        {
+          "level": "mid",
+          "q": "How does the endpointing choice trade cut-offs against slow replies?",
+          "a": "An endpointer decides when the caller has finished. A short silence threshold (say 300 ms) replies quickly but cuts people off mid-thought, such as when reading out a booking reference. A long threshold (say 700 ms) rarely interrupts the caller but adds 400 ms to every turn.\n\nQuantify it: if 8% of turns are cut off at 300 ms and 1% at 700 ms, the choice costs 400 ms on every turn to avoid 7 extra cut-offs per 100 turns. A cut-off is expensive (the caller repeats, trust drops). The usual answer is a hybrid: a semantic model judges whether the sentence is complete, a short wait applies to complete sentences, a longer wait when the transcript ends mid-clause or after digits are expected."
+        },
+        {
+          "level": "senior",
+          "q": "Design barge-in. What must happen between the caller interrupting and the next turn?",
+          "a": "Detect speech from the caller while agent audio is playing (voice activity detection plus echo cancellation so the agent's own voice is not mistaken for the caller). Then in order: stop audio playback within about 100 to 150 ms, cancel TTS synthesis, cancel the LLM stream so no tokens or GPU time are wasted, and flush buffers.\n\nThe subtle part is memory. TTS runs ahead of playback, so if the agent has generated 3.75 words beyond what was played (1.5 s of audio at 2.5 words/s), the caller never heard them. Truncate the assistant turn in the conversation history to the words actually played, using word timestamps from TTS, or the model will refer to things the caller did not hear. Distinguish real interruptions from backchannels (\"mm-hm\") with a short duration or content check."
+        },
+        {
+          "level": "senior",
+          "q": "Call volume triples during a storm that cancels flights. What happens and how do you protect the system?",
+          "a": "Arrivals jump from 2.08 to about 6.2 calls/s, so concurrency goes from 500 to $6.2 \\times 240 = 1{,}500$ calls (and calls often run longer). ASR, TTS and LLM capacity, plus vendor concurrency limits and telephony trunks, all become ceilings. If you accept calls past capacity, p95 TTFT rises, endpointing misfires and every call degrades.\n\nProtect accepted calls with admission control: cap concurrent sessions at what you can serve within the latency budget, then offer a callback, queue music with an estimated wait or an app link. Degrade deliberately, for example fall back to a smaller LLM and shorter replies. Keep a human transfer path and make sure the failover chain has capacity, because transfers also surge. Pre-agree these levers and load test at 3x."
+        },
+        {
+          "level": "senior",
+          "q": "How would you evaluate a voice agent before and after launch?",
+          "a": "Stage metrics: word error rate and entity accuracy on real phone audio (narrowband 8 kHz, noise; lab WER does not transfer), cut-off and late-reply rates for the endpointer, barge-in stop time, tool-call accuracy, and latency percentiles per stage and end to end.\n\nCall-level metrics: task completion with confidence intervals, transfer-to-human rate, repeat rate, and call-level satisfaction. Use a simulated-caller regression suite in CI with scripted accents, noise and interruptions, and fail the build if p95 mouth-to-ear latency rises more than a set margin. After launch, review a stratified sample of recordings weekly and shadow new models. Also track money: telephony and TTS often dominate cost, not tokens, so cost per resolved call is the headline number."
+        }
+      ]
+    },
+    {
+      "slug": "design-moderation",
+      "title": "Design Content Moderation at Scale",
+      "lesson": "design-moderation",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "Why can a classifier with 95% recall and a 2% false-positive rate still be a poor moderation tool?",
+          "a": "Because precision depends on the base rate. Precision $= \\dfrac{r\\pi}{r\\pi + f(1-\\pi)}$, where $r$ is recall, $f$ the false-positive rate and $\\pi$ the share of items that truly violate.\n\nWith $r = 0.95$, $f = 0.02$, $\\pi = 0.005$: $0.00475 / (0.00475 + 0.0199) = 19.3\\%$. On 50M posts a day that is 237,500 violations caught but also 995,000 innocent posts flagged. Four out of five flags are wrong. When violations are rare, the false-positive rate drives both reviewer workload and wrongful removals, so that is what you work to reduce."
+        },
+        {
+          "level": "junior",
+          "q": "Why not use the largest available LLM on every post?",
+          "a": "Cost and unnecessary precision. With 50M posts a day, 480 input and 5 output tokens each, a large model at \\$1.00 and \\$4.00 per million tokens costs $24{,}000 + 1{,}000 = \\$25{,}000$ a day, about \\$750,000 a month, for text alone. A small LLM costs \\$2,500 a day. A fine-tuned classifier on 4 GPUs costs about \\$243 a day.\n\nMost posts are obviously fine and do not need a large model. A cascade runs the cheap model on everything and sends only the uncertain few percent to bigger models, keeping the expensive reasoning for where it matters."
+        },
+        {
+          "level": "mid",
+          "q": "Price a four-tier cascade given that 8% of posts escalate from tier 1, 10% from tier 2 and 40% from tier 3 to humans.",
+          "a": "Items per day: tier 1 sees 50M, tier 2 sees 4M, tier 3 sees 400,000, humans see 160,000. Expected cost per post is $\\bar c = c_1 + f_1c_2 + f_1f_2c_3 + f_1f_2f_3c_h$.\n\nWith the classifier at \\$243/day, the small LLM at \\$0.00005 per item (\\$200/day), the large LLM at \\$0.00088 per item (\\$352/day) and humans at 30 s and \\$18/h (\\$0.15 each, \\$24,000/day), the total is about \\$24,800 a day. Models are \\$795; humans are 97%. The lever is therefore the human escalation fraction: cutting $f_3$ from 0.40 to 0.30 saves \\$6,000 a day, which funds a lot of model improvement."
+        },
+        {
+          "level": "mid",
+          "q": "How do you choose the score threshold for automatic removal?",
+          "a": "Decision theory on calibrated probabilities. Let $a$ be the harm of wrongly removing an innocent post and $b$ the harm of leaving a violation up. Remove when $p\\,b > (1-p)\\,a$, i.e. $p > a/(a+b)$.\n\nWith $a = 100$ and $b = 200$ (harassment) the threshold is 0.33; with $b = 2{,}000$ (threats) it is 0.048; with $b = 4{,}900$ it is 0.02. Severe classes act at low probabilities, but typically by escalating to a human rather than auto-removing. This only works if scores are calibrated per tier, and $a$ and $b$ are policy decisions that the policy owners should sign off, not tune silently."
+        },
+        {
+          "level": "mid",
+          "q": "How do you use appeals to estimate precision, and what is the bias?",
+          "a": "The overturn rate $o$ is overturned appeals over appeals. If 200,000 posts are removed, 5% appeal (10,000) and 30% are overturned (3,000), the naive precision is $1 - 3{,}000/200{,}000 = 98.5\\%$.\n\nThat assumes every wronged user appeals. If only a fraction $q = 0.30$ of wrongly removed authors appeal, false removals are about $3{,}000/0.30 = 10{,}000$ and precision is 95%, a false-removal rate over three times higher. Estimate $q$ from audit samples of removals or surveys. Appeals are a useful signal by class (a 45% overturn rate flags a bad threshold) but a biased absolute measure."
+        },
+        {
+          "level": "senior",
+          "q": "How do you measure recall when violations are 0.5% of traffic and you cannot label everything?",
+          "a": "Stratified sampling of unflagged items by model score. Split passed items into strata with sizes $N_s$, label $n_s$ in each, and estimate misses as $\\sum_s N_s \\hat p_s$. For example strata of 47M (rate 0.0001), 1.5M (0.002) and 270k (0.02) give 4,700 + 3,000 + 5,400 = 13,100 misses. With 237,500 caught, recall is 94.8%.\n\nFor near-empty strata use the rule of three: zero violations in 30,000 labels bounds the rate at $3/30{,}000 = 10^{-4}$, i.e. at most 4,700 misses in 47M. Allocate more labels to strata whose intervals matter. Add a refreshed red-team set for adversarial recall, and repeat weekly to catch drift."
+        },
+        {
+          "level": "senior",
+          "q": "Labeler agreement is 98.5% but your lead says the labels are unreliable. Are they right?",
+          "a": "Possibly. Raw agreement is dominated by the easy majority. If each labeler flags 1% of items, chance agreement is $p_e = 0.01^2 + 0.99^2 = 0.9802$, so Cohen's $\\kappa = (0.985 - 0.9802)/(1 - 0.9802) = 0.24$. They mostly disagree on the actual violations. At $p_o = 0.995$, $\\kappa$ is 0.75.\n\nLow kappa means the policy is ambiguous and caps what any model can achieve, so evaluating the model against these labels is premature. Rewrite the guideline with examples at the boundary, run calibration sessions, adjudicate disagreements with experts, and re-measure kappa per class before blaming the classifier."
+        },
+        {
+          "level": "senior",
+          "q": "A new slang term evades your filters and flag volume on the review queue spikes the next week. What do you do?",
+          "a": "Treat it as two incidents. First, protect the humans: queue age is the alarm, so use pre-agreed levers such as demoting rather than queueing the uncertain band, or temporarily raising a tier-2 threshold, to keep the SLA.\n\nSecond, fix detection: patch immediately with rules and blocklists for the new term (minutes), edit the tier-2 prompt to include examples (hours), rapidly label a few hundred examples and fine-tune the tier-1 model (days), and update the red-team set. Check that a spike in flags is real by auditing a sample, since a 30% rise could also be a pipeline bug or a campaign. Afterwards add per-week recall audits and flag-volume anomaly alerts per class."
+        }
+      ]
+    },
+    {
+      "slug": "design-llm-platform",
+      "title": "Design an Internal LLM Platform (Gateway, Routing, Cost)",
+      "lesson": "design-llm-platform",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What is an LLM gateway and why would a company put one in front of all model calls?",
+          "a": "An LLM gateway is a shared service every internal LLM call passes through. It authenticates the calling team, applies quotas, routes to a model or provider, caches, logs, and attributes cost to a tenant.\n\nWithout it each team embeds provider keys, reimplements retries and has its own bill, so nobody can enforce limits, switch providers or answer \"who spent the money\". With 20M requests a day, if routing alone moves 70% of traffic from a large to a small model, monthly spend falls from about \\$2.16M to \\$799,200 at hypothetical prices: that single shared lever pays for the platform."
+        },
+        {
+          "level": "junior",
+          "q": "How many concurrent streams must a gateway hold for 20M requests a day with a peak factor of 3 and 6.4 s per streaming request?",
+          "a": "Use Little's law, $N = \\lambda W$. The average rate is $2\\times10^7 / 86{,}400 = 231$ req/s; at a 3x peak that is 694 req/s. With each request open 6.4 s, $N = 694 \\times 6.4 \\approx 4{,}444$ concurrent streams.\n\nThe gateway is therefore a connection-holding proxy, not just a stateless router: size its connection limits, memory per stream and load balancer timeouts for roughly 4,500 open streams at peak, plus headroom for deploys."
+        },
+        {
+          "level": "mid",
+          "q": "Compare a router with a cascade for sending traffic to a small versus a large model. Give expected costs.",
+          "a": "A router predicts up front which model to use; a cascade always tries the small model and escalates if a check fails. With $a$ the share served by the small model, the costs are router $a\\,c_s + (1-a)\\,c_\\ell$ and cascade $c_s + (1-a)\\,c_\\ell$.\n\nFor 2,000 input and 400 output tokens, $c_s = \\$0.00036$ and $c_\\ell = \\$0.0036$. At $a = 0.7$: router \\$0.001332, cascade \\$0.001440, against \\$0.0036 for all-large (a 60% saving for the cascade). The router is cheaper and has better tail latency; the cascade wastes the small call on escalations and its escalated 30% take 0.4 + 1.5 s. Use routers for interactive routes, cascades where a good verifier exists and latency is relaxed."
+        },
+        {
+          "level": "mid",
+          "q": "How do you design per-tenant quotas so one team cannot starve the others?",
+          "a": "Use token buckets measured in LLM tokens, not requests, because cost scales with tokens. A bucket has capacity $B_i$ (burst) and refill rate $r_i$ (sustained), so usage in any window satisfies $U_i(T) \\le B_i + r_iT$.\n\nOn top of per-tenant limits, share the contended global capacity with weighted fair sharing: tenant $i$ gets $f_i = \\frac{w_i}{\\sum_j w_j}C$ and unused share is redistributed by weight. With capacity 400,000 tokens/min and weights 5, 3, 2 the guaranteed shares are 200,000, 120,000 and 80,000. Add priority classes so interactive traffic beats batch, and return 429 with a Retry-After header rather than queueing without bound. Estimate the input tokens before admission and reconcile with actual usage afterwards."
+        },
+        {
+          "level": "mid",
+          "q": "What should a semantic cache key include, and what can go wrong?",
+          "a": "For exact caching hash the tenant, route, model version, prompt version, sampling parameters and messages: $k = H(\\text{tenant}\\,\\|\\,\\text{route}\\,\\|\\,\\text{model}\\,\\|\\,\\text{prompt version}\\,\\|\\,\\text{params}\\,\\|\\,\\text{messages})$. Omitting the tenant risks leaking one team's data to another; omitting versions serves stale answers after upgrades; omitting parameters returns temperature-0 answers to callers who wanted variety.\n\nFor semantic caching embed only the last user message, scope the vector index by tenant, and use a conservative similarity threshold, since false hits return a wrong answer confidently. Savings are \\$S = hR\\bar c - R_{look}c_{look}\\$: a 13% hit rate on \\$26,640/day saves about \\$3,463, less \\$37 of embedding cost. Make it opt-in per route."
+        },
+        {
+          "level": "senior",
+          "q": "How would you attribute cost to tenants, including shared costs such as fixed GPU clusters and the gateway itself?",
+          "a": "Tag every request with tenant, route and model at the gateway and compute direct cost from token counts including cached-token discounts: $c = \\frac{t_{in} - t_{cached}}{10^6}p_{in} + \\frac{t_{cached}}{10^6}p_{cached} + \\frac{t_{out}}{10^6}p_{out}$. For 2,000 input tokens with 1,200 cached and 400 output, that is \\$0.00252 versus \\$0.0036 uncached.\n\nAllocate shared costs by a driver: $a_i = \\frac{u_i}{\\sum_j u_j}C_{shared}$. With \\$30,000 of shared cost and token shares of 60%, 30% and 10%, tenants pay \\$18,000, \\$9,000 and \\$3,000. Choose the key by what drives the cost (tokens, peak reservation or request count). Use showback first, chargeback when budgets are trusted, and publish unit costs so teams can optimise."
+        },
+        {
+          "level": "senior",
+          "q": "Should the platform self-host the small model or buy it from an API?",
+          "a": "Compare cost at the real traffic shape. Small-model output at 70% of 8B output tokens a day is 64,815 tokens/s on average and 194,444 at peak. If one GPU sustains 1,500 tokens/s and you plan 70% utilisation, you need $194{,}444/(1{,}500\\times0.7) \\approx 186$ GPUs, costing $186 \\times \\$2.50 \\times 730 = \\$339{,}450$ a month. The API bills \\$151,200 for the same tokens at the hypothetical price.\n\nSelf-hosting loses because you pay for peak capacity all day. It wins when prices are higher, traffic is flat or there is a large batch workload to fill valleys, when data may not leave the network, or when you need fine-tuned models. A common design is a hybrid: self-host a base load, burst to the API."
+        },
+        {
+          "level": "senior",
+          "q": "What availability can the platform promise if it adds a second provider, and where is the weak link?",
+          "a": "Providers are in parallel, so $A_{parallel} = 1 - \\prod(1-A_i)$. Providers at 99.5% and 99.0% with automatic fallback give $1 - 0.005 \\times 0.01 = 99.995\\%$. The gateway sits in series: $0.9995 \\times 0.99995 \\approx 99.945\\%$, about 24 minutes of failure per 30-day month, nearly all of it the gateway's 21.6 minutes.\n\nSo after one fallback the gateway is the weak link: run it multi-zone, stateless, with graceful degradation (cache and quota stores failing open or closed by policy). Independence is optimistic: shared cloud regions and your own bad prompt releases break both providers. Alert with SLO burn rates; one hour at burn rate 14.4 consumes 2% of a monthly error budget."
+        },
+        {
+          "level": "senior",
+          "q": "The gateway adds latency to every call. How do you keep the overhead small, and what do you measure?",
+          "a": "Give the gateway a latency budget and itemise it: auth 1 ms, quota check 2 ms, exact cache 3 ms, semantic embedding 15 ms, vector lookup 5 ms, routing 1 ms: $O = 27$ ms on a semantic-cache miss, 6.75% of a 400 ms TTFT, but only 7 ms without the semantic cache. The semantic lookup is the expensive line item, so make it opt-in per route or run it in parallel with a speculative model call on latency-critical routes.\n\nKeep auth and quota state in local memory with asynchronous refresh, avoid synchronous logging on the request path (buffer and ship asynchronously), reuse connections to providers, and stream tokens through without buffering. Measure gateway overhead as its own metric (total minus upstream time) at p50 and p99."
+        }
+      ]
+    }
+  ]
+}

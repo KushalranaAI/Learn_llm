@@ -1,0 +1,20 @@
+{
+  "title": "Fallbacks and Graceful Degradation",
+  "summary": "Providers go down, slow down and rate-limit you. This lesson turns that into numbers (availability, timeouts, hedged tails) and into design patterns: fallback providers, circuit breakers and degraded modes that keep a feature useful when the best path is gone.",
+  "objectives": [
+    "Convert an availability percentage into minutes of downtime and combine serial dependencies",
+    "Compute the availability of a primary plus fallback, including the effect of correlated outages",
+    "Choose a timeout from a latency distribution and reason about retry amplification",
+    "Explain how hedged requests cut tail latency and what they cost",
+    "Design a circuit breaker and a ladder of degraded modes"
+  ],
+  "prerequisites": "You should be comfortable with probabilities of independent events, with percentiles such as p50 and p99 ([Measuring Inference](/learn/inference-and-serving/measuring-inference)), and with the cost model from [Choosing and Routing Models](/learn/production-systems/model-routing). Retries and backoff were introduced for agents in [When Steps Fail](/learn/agents/failures-and-recovery).",
+  "sims": ["fallback-availability"],
+  "labs": [],
+  "sandbox": ["provider-outage"],
+  "sources": [
+    { "title": "The Tail at Scale", "authors": "Dean and Barroso", "year": 2013, "note": "Hedged and tied requests as a way to cut tail latency" },
+    { "title": "Site Reliability Engineering", "authors": "Beyer, Jones, Petoff and Murphy (eds.)", "year": 2016, "note": "Chapters on handling overload, cascading failures and service level objectives" },
+    { "title": "Release It! (2nd edition)", "authors": "Michael Nygard", "year": 2018, "note": "Circuit breaker, timeout and bulkhead patterns" }
+  ]
+}

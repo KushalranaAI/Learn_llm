@@ -1,0 +1,21 @@
+{
+  "title": "Attention: How Tokens Read Their Context",
+  "summary": "Attention lets every token look back at the others and pull in what it needs. It is a soft lookup: queries are compared with keys, the scores become weights by softmax, and the output is a weighted average of values. This lesson works it through by hand, then adds the causal mask, multiple heads and the cost.",
+  "objectives": [
+    "Explain queries, keys and values as three learned projections of the same token vectors",
+    "Compute scaled dot-product attention softmax(QKᵀ/√d_k)V by hand for a three-token example",
+    "Explain why scores are divided by √d_k using the variance of a dot product",
+    "Apply a causal mask and explain why a language model needs it",
+    "Describe multi-head attention, count its parameters and estimate the n² cost of attention"
+  ],
+  "prerequisites": "You should be comfortable with dot products and cosine similarity ([Embeddings](/learn/model-foundations/embeddings)) and with matrix multiplication as a stack of dot products. Softmax is introduced here; it reappears in [Sampling](/learn/model-foundations/sampling).",
+  "sims": ["attention-heatmap"],
+  "labs": ["attention-by-hand"],
+  "sandbox": [],
+  "sources": [
+    { "title": "Attention Is All You Need", "authors": "Vaswani et al.", "year": 2017, "note": "Section 3.2: scaled dot-product and multi-head attention, including the √d_k argument" },
+    { "title": "Neural Machine Translation by Jointly Learning to Align and Translate", "authors": "Bahdanau, Cho and Bengio", "year": 2015, "note": "The attention idea before transformers" },
+    { "title": "FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness", "authors": "Dao et al.", "year": 2022, "note": "Computing exact attention without materialising the n × n score matrix" },
+    { "title": "GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints", "authors": "Ainslie et al.", "year": 2023, "note": "Sharing key/value heads across query heads" }
+  ]
+}

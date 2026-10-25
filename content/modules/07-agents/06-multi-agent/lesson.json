@@ -1,0 +1,21 @@
+{
+  "title": "Multi-Agent Systems: When More Agents Help",
+  "summary": "Splitting work across several agents can cut latency and keep each context small, but it adds coordination cost and new ways to fail. This lesson quantifies when it pays, where errors spread, and how to design handoffs.",
+  "objectives": [
+    "After this lesson you can describe the common multi-agent shapes: orchestrator with sub-agents, pipeline, peer review and debate",
+    "Compute the latency speedup and the token effect of running specialists in parallel with isolated contexts",
+    "Count communication channels for hub-and-spoke versus fully connected designs",
+    "Estimate how handoff loss and unverified outputs compound error across agents",
+    "Decide, with an expected-value comparison, whether a multi-agent design is worth its extra cost"
+  ],
+  "prerequisites": "Workflow patterns and compounding reliability from [/learn/agents/workflows-vs-agents](/learn/agents/workflows-vs-agents), context growth from [/learn/agents/agent-loop](/learn/agents/agent-loop), and state and memory from [/learn/agents/memory-and-state](/learn/agents/memory-and-state).",
+  "sims": ["agent-reliability"],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation", "authors": "Wu et al.", "year": 2023, "note": "Conversation between several LLM agents as a programming model" },
+    { "title": "Improving Factuality and Reasoning in Language Models through Multiagent Debate", "authors": "Du et al.", "year": 2023, "note": "Several model instances debating to refine an answer" },
+    { "title": "Building Effective Agents", "authors": "Schluntz and Zhang (Anthropic)", "year": 2024, "note": "Orchestrator-workers and when to add complexity" },
+    { "title": "The Mythical Man-Month", "authors": "Frederick P. Brooks Jr.", "year": 1975, "note": "Communication overhead grows as teams grow: the n(n-1)/2 channels argument" }
+  ]
+}

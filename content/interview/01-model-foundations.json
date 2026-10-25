@@ -1,0 +1,461 @@
+{
+  "module": "model-foundations",
+  "sections": [
+    {
+      "slug": "how-networks-learn",
+      "title": "How a Network Learns: Loss and Gradient Descent",
+      "lesson": "how-networks-learn",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What is a parameter in a neural network, and how many does a dense layer have?",
+          "a": "A **parameter** is a number the training process is allowed to change: a weight or a bias. A dense layer that maps $k$ inputs to $m$ outputs computes $\\mathbf{y} = \\sigma(W\\mathbf{x} + \\mathbf{b})$, where $W$ is an $m \\times k$ matrix and $\\mathbf{b}$ has length $m$. So it has $mk + m$ parameters.\n\nExample: a layer from 768 inputs to 3072 outputs (the size of the first MLP matrix in GPT-2 small) has $768 \\times 3072 = 2{,}359{,}296$ weights plus $3072$ biases, about 2.36 million parameters. Parameter counts matter in practice because memory scales with them: at 2 bytes per parameter in 16-bit precision, a 7-billion-parameter model needs about 14 GB just for its weights, before any activations or caches."
+        },
+        {
+          "level": "junior",
+          "q": "What does a loss function do, and how do mean squared error and cross-entropy differ?",
+          "a": "A **loss** turns \"how wrong is the model?\" into one number that training can minimise. Lower is better and the gradient of the loss tells each parameter which way to move.\n\n**Mean squared error** suits continuous targets: $\\text{MSE} = \\frac{1}{N}\\sum_i (\\hat y_i - y_i)^2$. Predicting 3 when the answer is 5 costs $(3-5)^2 = 4$.\n\n**Cross-entropy** suits classification, where the model outputs a probability for each class. For one example it is $-\\ln p_{\\text{correct}}$. If the model gives the right class probability 0.25, the loss is $-\\ln 0.25 \\approx 1.386$; at 0.9 it is about 0.105; at 0.01 it is 4.6. It punishes confident wrong answers hard. Language models are trained with cross-entropy over the vocabulary: every next token is a classification problem with tens of thousands of classes."
+        },
+        {
+          "level": "junior",
+          "q": "Explain one step of gradient descent with a number.",
+          "a": "Gradient descent moves each parameter a small step against the slope of the loss: $w \\leftarrow w - \\eta \\, \\frac{\\partial L}{\\partial w}$, where $\\eta$ is the **learning rate**.\n\nTake $L(w) = (w - 3)^2$, whose minimum is at $w = 3$. The slope is $L'(w) = 2(w-3)$. Start at $w = 0$ with $\\eta = 0.1$: the slope is $-6$, so $w \\leftarrow 0 - 0.1 \\times (-6) = 0.6$. The loss drops from 9 to $(0.6-3)^2 = 5.76$. Each step multiplies the distance to the minimum by $(1 - 2\\eta) = 0.8$, so it converges geometrically.\n\nThe sign matters: the gradient points uphill, so we subtract it. Real training does exactly this for billions of parameters at once, with the gradient estimated on a mini-batch rather than the full dataset."
+        },
+        {
+          "level": "mid",
+          "q": "What happens if the learning rate is too small or too large? How would you tell from a loss curve?",
+          "a": "On the quadratic $L = (w-3)^2$, the update gives distance-to-minimum multiplied by $(1 - 2\\eta)$ each step. With $\\eta = 0.01$ the factor is 0.98: progress is real but painfully slow. With $\\eta = 0.5$ it is 0, one step lands on the minimum. With $\\eta = 0.9$ the factor is $-0.8$: the parameter overshoots and oscillates but still converges. Above $\\eta = 1$ the factor exceeds 1 in magnitude and the loss **diverges**.\n\nOn a loss curve: too small looks like a nearly straight, slow decline; too large looks like a jagged curve that plateaus high, or spikes and goes to NaN. In practice you sweep the learning rate on a log scale (for example $10^{-5}$ to $10^{-2}$), use warmup to avoid early blow-ups, and decay it later so the model can settle into a minimum."
+        },
+        {
+          "level": "mid",
+          "q": "Walk through backpropagation on a tiny two-layer network.",
+          "a": "Backpropagation is the chain rule applied from the loss backwards, reusing intermediate values from the forward pass.\n\nTake $h = \\text{ReLU}(w_1 x)$, $\\hat y = w_2 h$, $L = (\\hat y - y)^2$ with $x = 1$, $w_1 = 2$, $w_2 = 0.5$, $y = 2$.\n\nForward: $h = 2$, $\\hat y = 1$, $L = 1$.\n\nBackward: $\\partial L/\\partial \\hat y = 2(\\hat y - y) = -2$. Then $\\partial L/\\partial w_2 = -2 \\cdot h = -4$. Passing back through $w_2$: $\\partial L/\\partial h = -2 \\cdot w_2 = -1$. ReLU passes the gradient because its input was positive: $\\partial L/\\partial (w_1 x) = -1$. Finally $\\partial L/\\partial w_1 = -1 \\cdot x = -1$.\n\nEach layer only needs the gradient arriving from above and its own cached inputs. That is why the backward pass costs roughly twice the forward pass, not exponentially more."
+        },
+        {
+          "level": "mid",
+          "q": "Why can a single linear layer not solve XOR, and what fixes it?",
+          "a": "XOR outputs 1 for inputs (0,1) and (1,0), and 0 for (0,0) and (1,1). A single neuron draws one straight line $w_1 x_1 + w_2 x_2 + b = 0$. To put (0,1) and (1,0) on the positive side we need $w_2 + b > 0$ and $w_1 + b > 0$; to put (0,0) and (1,1) on the negative side we need $b < 0$ and $w_1 + w_2 + b < 0$. Adding the first two gives $w_1 + w_2 + 2b > 0$, so $w_1 + w_2 + b > -b > 0$, a contradiction.\n\nThe fix is a **hidden layer with a non-linear activation**. Two hidden units can compute roughly \"OR\" and \"AND\", and the output computes \"OR and not AND\". Without the non-linearity, stacked linear layers collapse into one linear map and the problem stays unsolvable. This is the smallest example of why depth plus non-linearity gives expressive power."
+        },
+        {
+          "level": "mid",
+          "q": "What is the difference between an epoch, a batch and a step, and why use mini-batches?",
+          "a": "A **batch** (mini-batch) is the subset of examples used to compute one gradient estimate. A **step** is one parameter update from one batch. An **epoch** is one full pass over the training set. With 10,000 examples and batch size 100, one epoch is 100 steps.\n\nMini-batches are a compromise. Full-batch gradients are exact but expensive and give one update per pass. Batch size 1 gives many cheap but very noisy updates and uses hardware poorly. Mini-batches of tens to thousands of examples fill the GPU's parallel units, and the noise in the gradient estimate shrinks roughly as $1/\\sqrt{B}$.\n\nLLM pretraining usually counts tokens rather than epochs: a batch may hold millions of tokens, and large models often see most data only about once, so the epoch is a less useful unit there than in small supervised problems."
+        },
+        {
+          "level": "senior",
+          "q": "Your training loss keeps falling but validation loss started rising after epoch 5. What is happening and what do you do?",
+          "a": "This is **overfitting**: the model is memorising training-set specifics that do not generalise. The gap between training and validation loss is the signal.\n\nActions, roughly in order:\n\n1. **Early stopping**: keep the checkpoint with the best validation loss (epoch 5 here) rather than the last one.\n2. **More or more varied data**, which is usually the strongest fix.\n3. **Regularisation**: weight decay, dropout, data augmentation.\n4. **A smaller model or fewer epochs** if the data cannot grow.\n\nAlso check the boring causes before concluding overfitting: a validation set drawn from a different distribution, leakage that makes training artificially easy, or a learning rate that was never decayed. For fine-tuning LLMs on small datasets this pattern appears quickly, often within 2 to 3 epochs, which is why such runs commonly use 1 to 3 epochs and monitor held-out loss every few hundred steps."
+        },
+        {
+          "level": "senior",
+          "q": "Loss goes to NaN a few thousand steps into a run. How do you debug it?",
+          "a": "NaN means some value overflowed or an invalid operation occurred, and gradient descent then spreads it to every parameter.\n\nDebugging order:\n\n- **Look at what preceded it.** A loss spike or exploding gradient norm a few steps before NaN points to the learning rate. Lower it, add or lengthen warmup, and add **gradient clipping** (for example clip the global norm to 1.0).\n- **Check numerics.** Computing softmax or cross-entropy without subtracting the max, taking $\\ln 0$, or dividing by a zero variance in normalisation all produce inf/NaN. In fp16, values above about 65,504 overflow; bf16 has the fp32 range and is more forgiving, so mixed-precision settings are a common suspect.\n- **Check the data.** One corrupt batch (empty sequence, extreme values) can do it; log the batch indices and replay.\n- **Bisect.** Resume from the last good checkpoint with anomaly detection on to find the first op producing NaN."
+        },
+        {
+          "level": "senior",
+          "q": "How does the tiny network from this lesson relate to training an LLM? What actually changes at scale?",
+          "a": "The core loop is identical: a parameterised function, a loss (cross-entropy on the next token), gradients by backpropagation, and gradient-descent updates.\n\nWhat changes is engineering, not principle:\n\n- **Architecture**: the function is a transformer, with embeddings, attention and MLP blocks instead of two dense layers.\n- **Data and labels**: the labels come free from text itself, each token's target is the next token, so trillions of training examples exist.\n- **Optimiser**: Adam-style optimisers with warmup and decay, rather than plain gradient descent.\n- **Scale**: billions of parameters means weights, gradients and optimiser state no longer fit on one GPU, so training is sharded across many GPUs with mixed precision.\n- **Stability tricks**: normalisation layers, residual connections, gradient clipping.\n\nA useful sanity number: a model with $N$ parameters trained on $D$ tokens costs roughly $6ND$ floating-point operations, which is how training budgets are planned."
+        }
+      ]
+    },
+    {
+      "slug": "tokenization",
+      "title": "Tokenization: From Text to Token IDs",
+      "lesson": "tokenization",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What is a token, and why do LLMs not work on characters or whole words?",
+          "a": "A **token** is a unit of text from a fixed vocabulary, each with an integer ID. Models read and write sequences of these IDs.\n\nCharacters give a tiny vocabulary but very long sequences, and attention cost grows with sequence length, roughly $n^2$. Whole words give short sequences but an enormous vocabulary that still misses new words, typos, names and code identifiers.\n\n**Subword** tokenizers sit in between. Frequent words become one token; rare words are split into pieces; any string can still be encoded, usually down to bytes, so nothing is out of vocabulary. Vocabularies are typically tens of thousands to a couple of hundred thousand entries; GPT-2 uses 50,257. A common rule of thumb for English with such tokenizers is about 4 characters, or about three quarters of a word, per token."
+        },
+        {
+          "level": "junior",
+          "q": "How does byte-pair encoding (BPE) build its vocabulary?",
+          "a": "BPE starts from a base alphabet (characters or bytes) and repeatedly merges the most frequent adjacent pair.\n\nExample corpus: \"low low lower\". Start with characters. Count adjacent pairs: \"l o\" appears 3 times, \"o w\" 3 times, \"w e\" once, \"e r\" once. Merge the most frequent, say \"l o\" → \"lo\". Recount: \"lo w\" now appears 3 times, so merge it into \"low\". The corpus is now \"low\", \"low\", \"low e r\": 5 tokens instead of 11 characters (ignoring spaces).\n\nEach merge adds one vocabulary entry and is recorded in order. Encoding new text replays the merges in the same order. The number of merges is chosen up front and sets the vocabulary size: base alphabet plus number of merges, plus any special tokens."
+        },
+        {
+          "level": "mid",
+          "q": "What is compression ratio for a tokenizer and why does it matter for cost?",
+          "a": "Compression ratio is how much text each token carries, usually measured as characters (or bytes) per token. If a 4,000-character English document encodes to 1,000 tokens, the ratio is 4 characters per token.\n\nIt matters because almost everything is priced and limited in tokens: API bills, context windows, latency (decoding is roughly a fixed time per output token) and KV-cache memory. A tokenizer with half the compression on some text means twice the cost and half the usable context for that text.\n\nRatios vary a lot by content. English prose compresses well with tokenizers trained mostly on English. Code with unusual whitespace, numbers, and languages that were underrepresented in the tokenizer's training data can need two or more times as many tokens for the same meaning. Always measure on your real traffic with the model's own tokenizer rather than using a words-to-tokens rule of thumb."
+        },
+        {
+          "level": "mid",
+          "q": "Why do LLMs struggle to count letters in a word or reverse a string?",
+          "a": "The model never sees letters directly. \"strawberry\" may arrive as two or three token IDs, and the ID for a chunk like \"berry\" carries no explicit list of its characters. The model must have *learned* the spelling of each token from training data, which it does only imperfectly.\n\nSo character-level tasks require it to recall spellings and then reason over them, all inside a representation designed for chunks. Errors follow naturally.\n\nRelated artefacts: numbers are split inconsistently (\"1234\" may be one token, \"12345\" two), which hurts arithmetic; the same word with and without a leading space is a different token; capitalised and lowercase forms differ. Practical fixes are to have the model spell the word out first (one character per token), or to hand the task to a tool such as a code interpreter."
+        },
+        {
+          "level": "mid",
+          "q": "What are special tokens and what goes wrong if you handle them incorrectly?",
+          "a": "**Special tokens** are reserved IDs with structural meaning rather than text meaning: beginning and end of sequence, padding, and in chat models the markers that delimit system, user and assistant turns.\n\nCommon mistakes:\n\n- **Wrong chat template.** Fine-tuned chat models expect an exact format. Feeding raw text or another model's template quietly degrades quality, causing rambling, role confusion, or failing to stop.\n- **Missing end-of-sequence handling.** If generation never sees or never checks the stop token, the model keeps going.\n- **Injection via text.** If user text containing the literal string of a special token is tokenized as the special ID, a user can forge turn boundaries. Tokenizers should encode user text with special-token parsing disabled.\n- **Padding mistakes.** Pad tokens must be masked from attention and from the loss, otherwise the model learns from or attends to filler."
+        },
+        {
+          "level": "mid",
+          "q": "How do you estimate monthly token cost for a feature?",
+          "a": "Cost per request is input tokens times input price plus output tokens times output price. Output tokens are usually priced several times higher than input tokens.\n\nExample with illustrative prices of \\$3 per million input tokens and \\$15 per million output: a request with a 2,000-token prompt and a 300-token answer costs $2000 \\times 3/10^6 + 300 \\times 15/10^6 = 0.006 + 0.0045 = \\$0.0105$. At 50,000 requests per day for 30 days that is $0.0105 \\times 1.5\\text{M} \\approx \\$15{,}750$ per month.\n\nMeasure token counts with the actual tokenizer on real samples, because system prompts, retrieved documents and conversation history often dominate input. The biggest levers are usually trimming the prompt, caching a shared prefix, capping output length, and routing easy requests to a cheaper model."
+        },
+        {
+          "level": "junior",
+          "q": "Why is the same text a different number of tokens on different models?",
+          "a": "Each model family trains its own tokenizer on its own data with its own vocabulary size, so the merges differ. A larger vocabulary generally gives more characters per token, because more frequent multi-character chunks get their own ID, at the cost of a bigger embedding table and output layer ($V \\times d$ parameters each, if not shared).\n\nConsequences: token limits and prices are not comparable across providers without re-tokenizing; a prompt that fits one model's context may overflow another's; and token-count estimates from one tokenizer can be off by 10 to 30 percent or more on another, especially for code and non-English text. When comparing cost across providers, tokenize a representative sample with each provider's tokenizer and compare dollars per request, not price per token."
+        },
+        {
+          "level": "senior",
+          "q": "Your product serves users in English and in a language with poor tokenizer coverage. The second group's costs are 2.5x higher per message. What can you do?",
+          "a": "First confirm the cause: tokenize matched samples from both groups with the model's tokenizer. If the second language averages 2.5x the tokens for equivalent content, the tokenizer is the reason and it also means those users get effectively 2.5x less context and slower responses.\n\nOptions:\n\n- **Evaluate other models** whose tokenizers have larger, more multilingual vocabularies. Measure tokens per message and quality on that language, not just English benchmarks.\n- **Shrink what is billed in tokens**: compress system prompts (keep them in the compact language if quality holds, and test it), cache shared prefixes, and limit retrieved context.\n- **Price and budget per language**, so rate limits and quotas do not silently penalise one group.\n- Fine-tuning a new tokenizer is rarely practical for an API user; for a self-hosted model, extending the vocabulary requires training the new embeddings and is a substantial project."
+        },
+        {
+          "level": "senior",
+          "q": "A model handles a JSON field name correctly in testing but fails in production when the field appears after a newline with different indentation. What might be going on?",
+          "a": "Tokenization is context-sensitive at boundaries. The same text can produce different token sequences depending on what precedes it: a word with a leading space, a tab, or a newline is often a different token from the bare word, and runs of whitespace may merge into one token or split into several.\n\nSo in testing the field name may have been one familiar token, while in production, after a newline and unusual indentation, it splits into rarer pieces the model associates less strongly with the schema. Debug by printing the token IDs for both inputs and diffing them.\n\nFixes: normalise whitespace and indentation before sending, keep prompts and few-shot examples formatted exactly like production inputs, and for structured output use constrained decoding or a schema-enforcing API so the field names are forced rather than predicted."
+        },
+        {
+          "level": "senior",
+          "q": "Would you choose a vocabulary of 32k or 256k tokens for a new model? Discuss the trade-off.",
+          "a": "Larger vocabularies compress text better, especially multilingual text and code, so sequences are shorter. Shorter sequences mean less attention compute, a smaller KV cache, more content per context window and fewer decode steps per answer.\n\nThe costs: the embedding and output matrices grow as $V \\times d$. At $d = 4096$, going from 32k to 256k raises each matrix from about 131M to about 1.05B parameters. For a small model that is a large fraction of the budget. The final softmax over $V$ entries also costs more each step, and rare tokens get few training examples, so their embeddings are poorly learned.\n\nFor a large multilingual model the shorter sequences usually win, which is why recent model families have moved to vocabularies above 100k. For a small, single-language or edge model, a smaller vocabulary keeps more parameters for the transformer layers. Decide by measuring tokens per byte on your target data mix."
+        }
+      ]
+    },
+    {
+      "slug": "embeddings",
+      "title": "Embeddings: Meaning as Geometry",
+      "lesson": "embeddings",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What is an embedding?",
+          "a": "An **embedding** is a vector of real numbers that represents an item, such as a token, a sentence or a document, so that similar items have nearby vectors.\n\nIn an LLM, the first layer is an embedding table of shape $V \\times d$: token ID $i$ selects row $i$, a vector of $d$ numbers ($d = 768$ in GPT-2 small, $4096$ in Llama-2-7B). These rows are parameters, learned during training like any weight; nobody assigns meanings by hand.\n\nSeparate **embedding models** map whole texts to one vector, often 384 to a few thousand dimensions, and are used for search, clustering and retrieval-augmented generation. Both rely on the same idea: geometry stands in for meaning, so \"how similar are these?\" becomes \"how close are these vectors?\"."
+        },
+        {
+          "level": "junior",
+          "q": "Compute the cosine similarity of $a = (1, 2, 2)$ and $b = (2, 0, 1)$.",
+          "a": "Cosine similarity is the dot product divided by the product of lengths:\n\n$$\\cos\\theta = \\frac{a \\cdot b}{\\|a\\|\\,\\|b\\|}$$\n\nDot product: $1 \\cdot 2 + 2 \\cdot 0 + 2 \\cdot 1 = 4$. Lengths: $\\|a\\| = \\sqrt{1+4+4} = 3$, $\\|b\\| = \\sqrt{4+0+1} = \\sqrt 5 \\approx 2.236$. So $\\cos\\theta = 4 / (3 \\times 2.236) \\approx 0.596$.\n\nIt ranges from $-1$ (opposite) through $0$ (orthogonal, unrelated) to $1$ (same direction). It ignores length, which is useful when vector magnitude reflects something like frequency or text length rather than meaning. If vectors are normalised to length 1 first, cosine similarity equals the plain dot product, which is why many vector databases normalise once at insert time."
+        },
+        {
+          "level": "mid",
+          "q": "When would you use dot product instead of cosine similarity?",
+          "a": "Cosine similarity measures only direction. The dot product $a \\cdot b = \\|a\\|\\|b\\|\\cos\\theta$ also rewards magnitude.\n\nUse cosine (or normalise and use dot product, which is equivalent) when length is noise: for example when longer documents produce larger vectors that should not automatically rank higher.\n\nUse the raw dot product when the model was trained with it and magnitude carries signal, such as some retrieval models where vector length encodes confidence or popularity. Inside transformers, attention uses raw dot products $q \\cdot k$, scaled by $1/\\sqrt{d_h}$.\n\nThe practical rule: use the similarity the embedding model was trained with, which its documentation states. Mixing them up, such as dot product on unnormalised vectors from a cosine-trained model, can noticeably hurt retrieval quality while still looking plausible."
+        },
+        {
+          "level": "mid",
+          "q": "Explain the analogy king − man + woman ≈ queen. What does it show and what are its limits?",
+          "a": "In some trained word-embedding spaces, the difference between related pairs is roughly a constant direction. \"king − man\" points along something like a royalty direction stripped of gender; adding \"woman\" lands near \"queen\". You find the answer by searching for the nearest vector to $v_{king} - v_{man} + v_{woman}$, excluding the input words.\n\nIt shows that embeddings can encode relationships as directions, not just similarity as distance.\n\nLimits: it works for some relations far better than others; the nearest-neighbour result often is one of the input words unless they are excluded; and it is a property of certain static word-embedding methods more than a guarantee. It also exposes bias: the same arithmetic reproduces stereotypes present in training text. Contextual LLM embeddings change with the surrounding sentence, so a word does not have one fixed vector at all."
+        },
+        {
+          "level": "mid",
+          "q": "How do contextual embeddings inside an LLM differ from the token embedding table?",
+          "a": "The **embedding table** gives every occurrence of a token the same starting vector: \"bank\" in \"river bank\" and \"bank account\" begins identical.\n\nEach transformer layer then mixes in information from other tokens through attention and transforms it through an MLP. After a few layers, the vector at the \"bank\" position reflects its context, so the two uses diverge. These **contextual representations**, also called hidden states, are what the model actually reasons with.\n\nPosition is also added somewhere: either by adding a learned or fixed position vector to the token embedding (as in GPT-2) or by rotating query and key vectors by position (rotary embeddings, used by Llama models). Sentence embedding models typically pool the final hidden states, for example by averaging, into one vector per text."
+        },
+        {
+          "level": "mid",
+          "q": "Why are embedding vectors high-dimensional, and what is surprising about high-dimensional geometry?",
+          "a": "More dimensions give room to encode many independent features at once: topic, syntax, sentiment, language and so on. A model with $d = 4096$ has 4096 coordinates per token.\n\nHigh-dimensional geometry is unintuitive. Random vectors are nearly orthogonal: for two random unit vectors in $d$ dimensions, the cosine similarity concentrates around 0 with a spread of about $1/\\sqrt d$, roughly $0.016$ at $d = 4096$. So a cosine of 0.3 can be meaningfully high, and absolute similarity values are not comparable across models.\n\nAlso, a space can hold far more nearly-orthogonal directions than it has dimensions, which is one explanation for how models pack many features into limited width. And nearest-neighbour search gets harder as dimension grows, which is why vector databases use approximate indexes."
+        },
+        {
+          "level": "junior",
+          "q": "How many parameters does the token embedding table of GPT-2 small hold?",
+          "a": "The table has one row per vocabulary entry and one column per model dimension: $V \\times d = 50{,}257 \\times 768 = 38{,}597{,}376$, about 38.6 million parameters.\n\nThat is roughly 31 percent of GPT-2 small's 124 million parameters. GPT-2 also has a learned position table of $1024 \\times 768 \\approx 0.79$ million. GPT-2 **ties** its input embedding and output projection, so the same matrix converts IDs to vectors at the start and vectors to vocabulary logits at the end, and these 38.6M are counted once.\n\nThe share shrinks for large models, because the transformer layers grow as $d^2$ while the embedding grows as $d$: in Llama-2-7B, the $32{,}000 \\times 4096$ table is about 131M parameters, under 2 percent of the total."
+        },
+        {
+          "level": "senior",
+          "q": "Retrieval quality dropped after you upgraded the embedding model, but you only re-embedded new documents. Why?",
+          "a": "Vectors from different embedding models live in different spaces. Even with the same dimension, coordinate 17 in model A means nothing in model B, so comparing a new-model query vector with old-model document vectors gives essentially arbitrary similarities. Old documents now rank randomly against new queries.\n\nThe fix is to **re-embed the whole corpus** with the new model and switch atomically: build a new index in parallel, backfill, run an offline evaluation (recall@k on a labelled query set) comparing old and new, then flip traffic and keep the old index for rollback.\n\nPrevent recurrence by storing the embedding model name and version with every vector and having the query path refuse to compare across versions. Budget the re-embedding cost up front: tokens across the corpus times the embedding price, plus index rebuild time."
+        },
+        {
+          "level": "senior",
+          "q": "Similarity scores from your embedding search are all between 0.75 and 0.9, so a 0.8 threshold lets junk through. How do you set thresholds properly?",
+          "a": "Many embedding models produce an **anisotropic** space: all vectors occupy a narrow cone, so even unrelated texts score fairly high cosine similarity. Absolute values are model-specific and a fixed threshold copied from elsewhere is meaningless.\n\nCalibrate empirically:\n\n1. Build a labelled set of query and document pairs, both relevant and irrelevant, from your real data.\n2. Plot the score distributions for each class and pick the threshold that hits your target precision or recall.\n3. Re-calibrate whenever the model, chunking or domain changes.\n\nOften better than a hard threshold: rank by score and take the top $k$, then apply a **reranker** (a cross-encoder that reads query and document together) whose scores are better calibrated. Normalising vectors and centring (subtracting the mean embedding) can also spread scores, but always confirm with the labelled evaluation."
+        },
+        {
+          "level": "senior",
+          "q": "Your semantic search fails on queries containing product codes like 'XK-4471-B'. Why, and what do you do?",
+          "a": "Embedding models capture general meaning. An identifier like \"XK-4471-B\" has little semantic content; it tokenizes into several arbitrary pieces, and its vector lands near other codes with similar fragments rather than near the exact product. Two codes differing by one digit can have almost identical embeddings.\n\nExact-match signals are what you need here. Use **hybrid retrieval**: run a lexical search such as BM25 (or an exact field filter) alongside the embedding search and merge the result lists, for example with reciprocal rank fusion. You can also detect identifier patterns with a regex and route those queries to a direct lookup.\n\nEvaluate by building a test set of identifier queries specifically; average retrieval metrics on natural-language queries will hide this failure."
+        }
+      ]
+    },
+    {
+      "slug": "attention",
+      "title": "Attention: How Tokens Read Their Context",
+      "lesson": "attention",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "In one paragraph, what does attention do?",
+          "a": "Attention lets each token build its new representation as a weighted average of information from other tokens. Each token emits a **query** (\"what am I looking for?\"), a **key** (\"what do I contain?\") and a **value** (\"what I pass on if chosen\"). A token's query is compared with every key by dot product; the scores are scaled and turned into weights by softmax; the output is the weighted sum of values:\n\n$$\\text{Attention}(Q,K,V) = \\text{softmax}\\!\\left(\\frac{QK^\\top}{\\sqrt{d_h}}\\right)V$$\n\nSo in \"The cat sat because it was tired\", the position of \"it\" can put most of its weight on \"cat\" and pull in that information. Because the weights are computed from the data, the routing changes with every input, unlike a fixed layer."
+        },
+        {
+          "level": "mid",
+          "q": "Why divide by $\\sqrt{d_h}$ in scaled dot-product attention?",
+          "a": "If query and key components are roughly independent with mean 0 and variance 1, their dot product $q \\cdot k = \\sum_{i=1}^{d_h} q_i k_i$ has variance $d_h$, so its standard deviation is $\\sqrt{d_h}$. With $d_h = 64$, typical scores are around $\\pm 8$; with $d_h = 128$, around $\\pm 11$.\n\nSoftmax of such large numbers is nearly one-hot: one key gets almost all the weight, and the gradients through the other entries become tiny, which makes training slow and unstable.\n\nDividing by $\\sqrt{d_h}$ restores unit variance regardless of head size, so softmax starts in a regime where several positions get meaningful weight and gradients flow. It acts like a fixed temperature for attention; some architectures learn or adjust that scale, but the default is $1/\\sqrt{d_h}$."
+        },
+        {
+          "level": "mid",
+          "q": "Work a 2-token attention example by hand.",
+          "a": "One query against two keys, $d_h = 4$ so $\\sqrt{d_h} = 2$. Let $q = (1, 0, 1, 0)$, $k_1 = (1, 0, 1, 0)$, $k_2 = (0, 1, 0, 1)$, and values $v_1 = (10, 0)$, $v_2 = (0, 10)$.\n\nScores: $q \\cdot k_1 = 2$, $q \\cdot k_2 = 0$. Scaled: $1$ and $0$.\n\nSoftmax: $e^1 = 2.718$, $e^0 = 1$, sum $3.718$, weights $0.731$ and $0.269$.\n\nOutput: $0.731 \\times (10, 0) + 0.269 \\times (0, 10) = (7.31, 2.69)$.\n\nThe query matched key 1, so the output is mostly value 1 but still blends in some of value 2. Notice the weights always sum to 1, so attention outputs a convex combination of values, never something outside their range."
+        },
+        {
+          "level": "junior",
+          "q": "What is the causal mask and why do decoder LLMs need it?",
+          "a": "A decoder LLM is trained to predict token $t+1$ from tokens $1..t$. During training the whole sequence is processed at once for efficiency, so without a constraint, position $t$ could simply attend to token $t+1$ and copy the answer.\n\nThe **causal mask** prevents that: before softmax, every score where the key position is later than the query position is set to $-\\infty$. Since $e^{-\\infty} = 0$, those positions get zero weight. In matrix form the allowed entries form a lower triangle.\n\nExample: for 3 tokens, token 1 attends only to itself, token 2 to tokens 1 and 2, token 3 to all three. The same mask makes generation consistent: at inference the future does not exist yet, so the model is evaluated exactly as it was trained."
+        },
+        {
+          "level": "mid",
+          "q": "What is multi-head attention and how are the dimensions split?",
+          "a": "Instead of one attention with width $d$, the model runs $h$ heads in parallel, each with head dimension $d_h = d/h$. Each head has its own projections to queries, keys and values, so it can learn a different pattern: one tracks the previous token, another links pronouns to nouns, another follows syntax.\n\nOutputs of all heads are concatenated back to width $d$ and mixed by an output projection $W_O$.\n\nNumbers: GPT-2 small has $d = 768$ and $h = 12$, so $d_h = 64$. Llama-2-7B has $d = 4096$ and $h = 32$, so $d_h = 128$. The total parameter count is the same as a single wide head, $4d^2$ for the Q, K, V and O projections, but the model gains several independent attention patterns at no extra cost."
+        },
+        {
+          "level": "mid",
+          "q": "Why does attention cost grow quadratically with sequence length?",
+          "a": "Every query is compared with every key. For $n$ tokens, $QK^\\top$ is an $n \\times n$ score matrix per head. Computing it costs about $n^2 d_h$ multiply-adds per head, so $n^2 d$ per layer across heads, and applying weights to values costs the same again.\n\nDoubling the context from 4k to 8k tokens quadruples this part of the work. At short lengths the MLP and projection matrices (proportional to $n d^2$) dominate; attention's $n^2 d$ term takes over once $n$ approaches and exceeds $d$-scale lengths, which is why long context is expensive.\n\nMemory used to grow quadratically too, from storing the score matrix, but fused kernels such as FlashAttention compute softmax in tiles without materialising it, so memory becomes linear in $n$ even though compute stays quadratic."
+        },
+        {
+          "level": "junior",
+          "q": "What do the Q, K and V projections look like as matrices?",
+          "a": "Each layer has learned matrices $W_Q$, $W_K$, $W_V$, each of shape $d \\times d$ in standard multi-head attention. For a sequence of $n$ token vectors stacked into $X$ of shape $n \\times d$, the model computes $Q = XW_Q$, $K = XW_K$, $V = XW_V$, each $n \\times d$, and then reshapes them into $h$ heads of width $d_h$.\n\nThe output projection $W_O$, also $d \\times d$, maps concatenated head outputs back. So attention has $4d^2$ weights per layer (plus biases if used). For GPT-2 small: $4 \\times 768^2 = 2{,}359{,}296$ per layer, about 28.3M over 12 layers. The same input vector plays three roles because it passes through three different learned matrices."
+        },
+        {
+          "level": "senior",
+          "q": "An attention visualisation shows many heads putting most weight on the first token. Is the model broken?",
+          "a": "Usually not. This is the well-known **attention sink** pattern. Softmax forces each head's weights to sum to 1, so a head with nothing useful to read for a given query still has to put the weight somewhere. Models learn to park it on an early position, often the first token, whose value vector carries little information, effectively making the head a no-op.\n\nPractical consequences matter more than the picture:\n\n- If you implement a sliding-window or truncated KV cache, evicting the first tokens can sharply degrade quality; keeping a few initial \"sink\" tokens fixes it.\n- Attention weights are not explanations. High weight on a token does not prove the model relied on it; ablation or attribution methods are more trustworthy for interpretability claims.\n\nTreat it as a bug only if quality metrics are also off."
+        },
+        {
+          "level": "senior",
+          "q": "Grouped-query attention is used in many recent models. What problem does it solve and what does it trade off?",
+          "a": "During generation, each layer caches keys and values for every past token. With full multi-head attention, cache size per token is $2 \\cdot L \\cdot h \\cdot d_h \\cdot$ bytes. For Llama-2-7B ($L = 32$, $h = 32$, $d_h = 128$, fp16) that is 524,288 bytes, 0.5 MiB per token, so a 4096-token sequence needs 2 GiB.\n\n**Grouped-query attention** keeps all query heads but shares each key/value head across a group. Llama-3-8B uses 32 query heads and 8 KV heads, cutting the cache by 4x to 128 KiB per token. Decode is memory-bandwidth bound, so less KV to read means faster tokens and more concurrent sequences per GPU.\n\nTrade-off: fewer distinct key/value patterns can slightly reduce quality; multi-query attention (one KV head) saves the most but loses more. GQA with a moderate number of groups is the usual compromise."
+        },
+        {
+          "level": "senior",
+          "q": "A colleague proposes removing the causal mask at inference to let the model 'see more context'. What do you say?",
+          "a": "It would not help and would likely break things. At inference with a KV cache, future tokens do not exist yet, so for generated tokens there is nothing to unmask. The only effect would be on the prompt during prefill: prompt tokens could attend to later prompt tokens.\n\nThat changes the computation into one the model never saw in training. Every hidden state would be out of distribution, and quality would degrade unpredictably. It would also break the KV cache logic, since earlier positions' keys and values would need recomputing whenever later tokens arrive.\n\nBidirectional attention is legitimate in encoder models such as BERT, which are trained that way and used for classification and embeddings. If the goal is better use of context, the right levers are prompt structure, retrieval quality, putting key facts near the question, or a model trained for longer context."
+        }
+      ]
+    },
+    {
+      "slug": "transformer-block",
+      "title": "The Transformer Block, Layer by Layer",
+      "lesson": "transformer-block",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What are the parts of a transformer block?",
+          "a": "A decoder block in a modern LLM has two sub-layers, each wrapped in a residual connection with normalisation:\n\n1. **Attention**: $x \\leftarrow x + \\text{Attn}(\\text{Norm}(x))$. Tokens exchange information.\n2. **MLP (feed-forward)**: $x \\leftarrow x + \\text{MLP}(\\text{Norm}(x))$. Each token's vector is transformed independently, typically expanding to about $4d$ and back with a non-linearity.\n\nThis \"pre-norm\" layout, normalising before each sub-layer, trains more stably at depth than the original post-norm design. The model stacks $L$ identical blocks (12 in GPT-2 small, 32 in Llama-2-7B), with token embeddings at the start and a final norm plus output projection to vocabulary logits at the end."
+        },
+        {
+          "level": "mid",
+          "q": "Derive the approximate parameter count $12Ld^2 + Vd$ and check it on GPT-2 small.",
+          "a": "Per block, attention has four $d \\times d$ matrices (Q, K, V, O): $4d^2$. The MLP expands to $4d$ and back: $d \\cdot 4d + 4d \\cdot d = 8d^2$. Total about $12d^2$ per block, ignoring biases and norm parameters, which are tiny. Over $L$ blocks: $12Ld^2$. Add the embedding table, $Vd$ (shared with the output layer if tied).\n\nGPT-2 small: $L = 12$, $d = 768$, $V = 50{,}257$. Then $12 \\times 12 \\times 768^2 = 84{,}934{,}656$ and $50{,}257 \\times 768 = 38{,}597{,}376$, totalling about 123.5M. Adding the $1024 \\times 768$ position table (0.79M) and biases gives the reported 124M. The formula is a quick way to sanity-check any model card."
+        },
+        {
+          "level": "mid",
+          "q": "Llama-2-7B has $d = 4096$, 32 layers and an MLP hidden size of 11,008. Where do its parameters come from?",
+          "a": "Llama uses a **SwiGLU** MLP with three matrices (gate, up, down) instead of two, each $d \\times 11{,}008$. That is $3 \\times 4096 \\times 11{,}008 = 135{,}266{,}304$ per layer. Attention is $4 \\times 4096^2 = 67{,}108{,}864$ per layer. Together about 202.4M per layer, so 32 layers give about 6.48B.\n\nEmbeddings: vocabulary 32,000, so $32{,}000 \\times 4096 = 131$M. Llama-2 does not tie input and output embeddings, so count it twice: 262M. Total about 6.74B, which matches the \"7B\" label.\n\nThe hidden size 11,008 is roughly $\\frac{2}{3} \\times 4d$ rounded up: three matrices at about $\\frac{8}{3}d$ keep the MLP at roughly the same $8d^2$ budget as a classic two-matrix $4d$ MLP. The quick $12Ld^2 + Vd$ estimate gives 6.57B, within about 3 percent."
+        },
+        {
+          "level": "junior",
+          "q": "What do residual connections do and why are they essential?",
+          "a": "A residual connection adds a sub-layer's input to its output: $x_{\\text{out}} = x + F(x)$. Each layer learns a correction to the running representation rather than replacing it.\n\nTwo benefits. First, gradients: the derivative of $x + F(x)$ with respect to $x$ is $1 + F'(x)$, so there is always a direct path back through the identity term, and gradients reach early layers even through dozens of blocks. Without it, deep stacks are very hard to train.\n\nSecond, it creates the **residual stream**: a shared vector per token that every block reads from and writes into, which makes it easy for layers to add information without destroying what earlier layers computed. A newly initialised block with $F(x) \\approx 0$ is close to the identity, so adding depth does not start by wrecking the signal."
+        },
+        {
+          "level": "mid",
+          "q": "What does layer normalisation (or RMSNorm) do in a transformer?",
+          "a": "Normalisation rescales each token's vector to a standard size before it enters a sub-layer, preventing activations from drifting to very large or small values as depth grows.\n\n**LayerNorm** subtracts the mean of the vector's $d$ components and divides by their standard deviation, then applies learned scale and shift. Example: $x = (2, 4, 6)$ has mean 4 and standard deviation $\\sqrt{8/3} \\approx 1.633$, giving $(-1.225, 0, 1.225)$.\n\n**RMSNorm**, used in Llama models, skips the mean: $x / \\sqrt{\\frac{1}{d}\\sum x_i^2 + \\epsilon}$, times a learned scale. For the same $x$, RMS $= \\sqrt{56/3} \\approx 4.32$, giving about $(0.463, 0.926, 1.389)$. It is slightly cheaper and works as well in practice. Each norm adds only $d$ or $2d$ parameters, negligible in the total count."
+        },
+        {
+          "level": "mid",
+          "q": "Roughly how many FLOPs does a forward pass cost per token?",
+          "a": "Each parameter in a matrix multiply contributes one multiply and one add per token, so a forward pass costs about $2N$ floating-point operations per token for a model with $N$ parameters (excluding the attention score computation, which adds a term proportional to context length).\n\nFor a 7B model: about $1.4 \\times 10^{10}$ FLOPs per token. Generating 1,000 tokens is about $1.4 \\times 10^{13}$ FLOPs, trivial for a GPU rated in hundreds of teraFLOPs. Yet decoding is far slower than that suggests, because each new token requires reading all 14 GB of weights from memory: decode is **memory-bandwidth bound**, not compute bound.\n\nTraining costs about three times the forward pass (forward plus a backward pass of about twice the cost), giving the familiar $6N$ FLOPs per training token."
+        },
+        {
+          "level": "junior",
+          "q": "What is the final layer of an LLM and what does it output?",
+          "a": "After the last block and a final normalisation, the model has one $d$-dimensional vector per position. The **output projection** (often called the LM head or unembedding), a $d \\times V$ matrix, turns each vector into $V$ **logits**, one raw score per vocabulary token. For GPT-2 small that is 50,257 scores per position.\n\nSoftmax converts logits into a probability distribution over the next token. During training, cross-entropy compares that distribution with the actual next token at every position at once. During generation, only the last position's distribution is used to sample the next token.\n\nMany models tie the LM head to the input embedding table, saving $Vd$ parameters; others keep them separate."
+        },
+        {
+          "level": "senior",
+          "q": "You need a model of about 1B parameters. Would you make it wide and shallow or narrow and deep? What else constrains the shape?",
+          "a": "Parameters scale as about $12Ld^2$, so many shapes fit 1B: $L = 16, d = 2048$ gives about 0.81B; $L = 24, d = 1792$ about 0.92B; $L = 48, d = 1280$ about 0.94B (plus embeddings).\n\nConsiderations:\n\n- **Quality**: within a reasonable aspect-ratio range, loss depends mostly on total parameters and data, not shape. Extremes in either direction underperform.\n- **Latency**: layers run sequentially, so deeper models have more sequential steps per token, which hurts decode latency; wider layers parallelise better on GPUs.\n- **Hardware efficiency**: keep $d$, $d_h$ and MLP sizes multiples of 64 or 128 so matrix units are fully used; head dimension 64 or 128 is standard.\n- **KV cache**: cache per token scales with $L \\cdot h_{kv} \\cdot d_h$, so choose GQA and depth with serving memory in mind.\n- **Embedding share**: at small scale, $Vd$ is a large fraction; a 128k vocabulary at $d = 2048$ is already 262M."
+        },
+        {
+          "level": "senior",
+          "q": "A model card claims 7B parameters with $d = 4096$, 48 layers and a standard 4x MLP. Is that consistent?",
+          "a": "Check with $12Ld^2$: $12 \\times 48 \\times 4096^2 = 9{,}663{,}676{,}416$, about 9.7B before embeddings. With a 32k vocabulary add at least 0.13B. That is well above 7B, so something is off.\n\nPossible explanations to ask about: the MLP may be smaller than $4d$ (for example a SwiGLU MLP with a reduced hidden size), attention may use GQA, which shrinks the K and V projections (with 8 KV heads out of 32, K and V each become $d \\times d/4$, saving $1.5d^2$ per layer), or the layer count or width is misreported.\n\nEven with GQA: per layer $2d^2 + 2 \\times d^2/4 + 8d^2 = 10.5d^2$, giving 48 layers $\\times$ 10.5 $\\times 4096^2 \\approx 8.46$B. Still too large. The quick formula catches inconsistent specifications in seconds; resolve it from the actual config file rather than the marketing summary."
+        },
+        {
+          "level": "senior",
+          "q": "Why do LLM training runs use pre-norm and careful initialisation, and what failure do they prevent?",
+          "a": "In a deep residual network, every block adds its output to the residual stream. If each addition has variance comparable to the stream, the stream's magnitude grows with depth, and gradient magnitudes vary wildly between layers. The original post-norm transformer (normalising after the residual add) needed long learning-rate warmup and was fragile at depth.\n\n**Pre-norm** normalises the input to each sub-layer but leaves the residual path itself an unnormalised identity, giving a clean gradient highway from loss to embeddings. This lets dozens of layers train with standard schedules.\n\n**Initialisation** complements it: output projections are often scaled down with depth (for example by about $1/\\sqrt{2L}$) so each block starts with a small contribution and the stream stays controlled. The failures prevented are early loss spikes, divergence and layers that never learn. Even so, large runs still use warmup and gradient clipping as safety nets."
+        }
+      ]
+    },
+    {
+      "slug": "sampling",
+      "title": "Next-Token Prediction and Sampling",
+      "lesson": "sampling",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "How does an LLM turn logits into a next token?",
+          "a": "The model outputs one **logit** per vocabulary token. **Softmax** turns them into probabilities: $p_i = e^{z_i} / \\sum_j e^{z_j}$. Then a decoding rule picks a token.\n\nExample with three tokens and logits $(2, 1, 0)$: $e^2 = 7.389$, $e^1 = 2.718$, $e^0 = 1$, sum $11.107$, so probabilities $(0.665, 0.245, 0.090)$.\n\n**Greedy decoding** always takes the highest, here token 1. **Sampling** draws randomly according to the probabilities, so token 2 is chosen about a quarter of the time. The chosen token is appended to the input and the process repeats, one token per step, until a stop token or a length limit."
+        },
+        {
+          "level": "mid",
+          "q": "What does temperature do? Compute it for logits $(2, 1, 0)$ at $T = 0.5$ and $T = 2$.",
+          "a": "Temperature divides logits before softmax: $p_i = e^{z_i/T} / \\sum_j e^{z_j/T}$.\n\nAt $T = 0.5$ the logits become $(4, 2, 0)$: $e^4 = 54.60$, $e^2 = 7.389$, $e^0 = 1$, sum $62.99$, probabilities $(0.867, 0.117, 0.016)$. The top token dominates more.\n\nAt $T = 2$ the logits become $(1, 0.5, 0)$: $2.718, 1.649, 1$, sum $5.367$, probabilities $(0.506, 0.307, 0.186)$. The distribution flattens.\n\nAs $T \\to 0$, sampling approaches greedy decoding; as $T \\to \\infty$, it approaches uniform. Temperature never changes the **ranking** of tokens, only how sharply probability concentrates. Low temperature suits extraction and code; moderate temperature suits open-ended writing. Very high temperature produces incoherent text because low-quality tail tokens get real probability."
+        },
+        {
+          "level": "mid",
+          "q": "Explain top-k and top-p (nucleus) sampling and when each misbehaves.",
+          "a": "Both cut off the unreliable tail before sampling, then renormalise.\n\n**Top-k** keeps the $k$ most likely tokens. With $k = 2$ and probabilities $(0.665, 0.245, 0.090)$, it keeps the first two and renormalises: $(0.731, 0.269)$.\n\n**Top-p** keeps the smallest set whose cumulative probability reaches $p$. With $p = 0.9$: $0.665 < 0.9$, $0.665 + 0.245 = 0.910 \\ge 0.9$, so it also keeps two tokens here.\n\nTheir difference shows when confidence changes. When the model is sure (one token at 0.98), top-k with $k = 50$ still admits 49 junk tokens sharing 0.02, while top-p keeps one. When the model is uncertain over hundreds of reasonable options, top-k with small $k$ cuts good ones, while top-p adapts. That adaptivity is why top-p is a common default, usually combined with temperature."
+        },
+        {
+          "level": "mid",
+          "q": "What is entropy of a next-token distribution and what does it tell you?",
+          "a": "Entropy measures uncertainty: $H(p) = -\\sum_i p_i \\log_2 p_i$ bits.\n\nFor $(0.665, 0.245, 0.090)$: $-(0.665 \\log_2 0.665 + 0.245 \\log_2 0.245 + 0.090 \\log_2 0.090) \\approx 0.391 + 0.497 + 0.313 = 1.20$ bits. A uniform distribution over 3 tokens has $\\log_2 3 = 1.585$ bits, the maximum; a certain prediction has 0. Over GPT-2's vocabulary, the maximum is $\\log_2 50{,}257 \\approx 15.6$ bits.\n\nPractically, low entropy means the model is confident about the next token (completing \"United States of\"), high entropy means many continuations are plausible. Lowering temperature reduces entropy. Entropy per token is a useful signal for spotting where a model is unsure, though confidence is not the same as correctness."
+        },
+        {
+          "level": "junior",
+          "q": "What is perplexity?",
+          "a": "Perplexity is the exponential of the average negative log-probability the model assigns to the actual tokens:\n\n$$\\text{PPL} = \\exp\\left(-\\frac{1}{n}\\sum_{t=1}^{n} \\ln p(x_t \\mid x_{<t})\\right)$$\n\nThe inner average is exactly the cross-entropy training loss in nats. A loss of 2.0 gives perplexity $e^{2} \\approx 7.39$: on average the model is as uncertain as if choosing uniformly among about 7.4 tokens. A model that assigned probability 0.25 to every correct token would have perplexity 4.\n\nLower is better. It is only comparable between models that share a tokenizer and are evaluated on the same text, since different tokenizations change both the number of tokens and what each prediction means."
+        },
+        {
+          "level": "mid",
+          "q": "Why work with log-probabilities instead of probabilities?",
+          "a": "The probability of a whole sequence is a product of per-token probabilities. Multiplying hundreds of numbers below 1 underflows floating point quickly: 200 tokens at average probability 0.1 gives $10^{-200}$, smaller than fp32 can represent. Logs turn products into sums: $\\ln p(\\text{seq}) = \\sum_t \\ln p(x_t)$, which stays well-behaved.\n\nLogs also make the training objective natural: cross-entropy is the negative mean log-probability, and its gradient with respect to logits is simply $p - \\text{onehot}$.\n\nPractically, APIs often expose per-token **logprobs**. Engineers use them to score candidate answers, detect low-confidence spans, compute perplexity, and build classifiers from the probability of label tokens. Compare sequences of different lengths with the average log-probability, otherwise longer answers are always penalised."
+        },
+        {
+          "level": "junior",
+          "q": "Does setting temperature to 0 make outputs fully deterministic?",
+          "a": "Temperature 0 means greedy decoding: always choose the highest-probability token. In principle that is deterministic.\n\nIn practice outputs can still vary. Floating-point arithmetic on GPUs is not associative, and the order of operations depends on batch composition and kernel choices, so logits can differ in the last bits between runs. When two tokens are nearly tied, that tiny difference flips the choice, and the rest of the generation diverges from there. Serving systems that batch your request with others' make this more common.\n\nSo treat temperature 0 as \"much more repeatable\", not guaranteed identical. If you need exact reproducibility, cache outputs, use a fixed seed where supported and accept it may still drift across infrastructure changes, and write tests that check properties of outputs rather than exact strings."
+        },
+        {
+          "level": "senior",
+          "q": "A code-generation feature produces correct code at temperature 0 but users complain it sometimes loops, repeating the same lines. What do you do?",
+          "a": "Greedy decoding can fall into **repetition loops**: once a line repeats, the repeated context makes repeating again even more likely, a self-reinforcing cycle.\n\nOptions, roughly in order:\n\n- **Raise temperature slightly** (for example 0.2 to 0.4) with top-p around 0.95. This usually breaks loops while keeping code precise.\n- **Repetition or frequency penalties**: subtract a small amount from logits of tokens already generated. Use cautiously for code, which legitimately repeats identifiers and brackets.\n- **Stop conditions and length caps** so a loop cannot run forever, plus loop detection (repeated n-grams) that truncates and retries.\n- **Fix the input**: loops often start when the prompt is ambiguous or truncated, or when the context is near the window limit.\n- **Sample several candidates** and pick one that compiles or passes tests, which also improves correctness.\n\nMeasure with a test suite: loop rate and pass rate at each setting."
+        },
+        {
+          "level": "senior",
+          "q": "You want a classifier with calibrated confidence from an LLM. How would you use log-probs, and what pitfalls exist?",
+          "a": "Prompt the model to answer with a single label token, then read the log-probabilities of each candidate label at that position and renormalise over just those labels: $p(\\text{label}_i) = e^{\\ell_i} / \\sum_j e^{\\ell_j}$. This gives a probability without sampling, and you can threshold it.\n\nPitfalls:\n\n- **Tokenization**: labels must be single tokens, or you must sum log-probs over each label's tokens. \" Yes\" with a leading space differs from \"Yes\".\n- **Calibration**: instruction-tuned models are often overconfident. Measure on a labelled set with a reliability diagram or expected calibration error, then fit temperature scaling on a held-out split.\n- **Prompt sensitivity**: label order, wording and few-shot examples shift probabilities. Fix them and re-calibrate on any change.\n- **API limits**: some APIs return only the top few logprobs, so a label may be missing; constrain the output to the label set."
+        },
+        {
+          "level": "senior",
+          "q": "Product wants 'more creative' responses. Someone sets temperature to 1.6. What do you predict, and what would you do instead?",
+          "a": "At high temperature the tail of the vocabulary, thousands of individually unlikely tokens, collectively gains a lot of probability. For logits $(2, 1, 0)$, $T = 1.6$ already moves the top token from 0.665 to about 0.55, and with a 100k-token vocabulary the tail mass grows much faster. You get typos, invented words, topic drift, and errors that compound because each odd token becomes context for the next.\n\nBetter approaches:\n\n- Keep temperature around 0.7 to 1.0 with **top-p** (0.9 to 0.95) to truncate the tail, so diversity comes from plausible options.\n- Get creativity from the **prompt**: ask for unusual angles, give a persona or constraints.\n- **Generate several candidates** and select or let users choose.\n- Define \"creative\" with an evaluation (human ratings, diversity across samples plus a coherence check) and tune against it rather than by feel."
+        }
+      ]
+    },
+    {
+      "slug": "context-and-kv-cache",
+      "title": "Context Windows, Prefill and the KV Cache",
+      "lesson": "context-and-kv-cache",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What is a context window?",
+          "a": "The **context window** is the maximum number of tokens the model can consider at once: prompt plus everything generated so far. Anything beyond it must be truncated, summarised or left out.\n\nIt exists because the model was trained with sequences up to a certain length, positional encodings are tuned to that range, and memory and compute grow with length: attention compute is quadratic in $n$, and the KV cache grows linearly.\n\nPractical consequences: conversation history eventually has to be trimmed or summarised; input and output share the budget, so a 4,096-token window with a 3,800-token prompt leaves only 296 tokens for the answer; and a bigger window does not guarantee the model uses all of it well. Recall of facts placed in the middle of long contexts is often worse than at the beginning or end."
+        },
+        {
+          "level": "mid",
+          "q": "Explain prefill versus decode and why they perform so differently.",
+          "a": "**Prefill** processes the whole prompt in one forward pass. All $n$ prompt tokens go through each weight matrix together, so each weight read from memory is reused $n$ times. It is **compute bound**: a 2,000-token prompt on a big GPU can take a fraction of a second and determines time to first token.\n\n**Decode** generates one token at a time. Each step must read every weight (about 14 GB for a 7B model in fp16) plus the KV cache to produce a single token, doing only about 2 FLOPs per parameter. It is **memory-bandwidth bound**. On a GPU with about 2 TB/s of bandwidth, reading 14 GB takes about 7 ms, so a single sequence decodes at most around 140 tokens per second.\n\nThat is why serving systems batch many sequences together during decode: one weight read then serves the whole batch."
+        },
+        {
+          "level": "mid",
+          "q": "Derive the KV-cache size formula and compute it for Llama-2-7B.",
+          "a": "At each layer, each past token stores a key and a value vector for each KV head. One vector has $d_h$ numbers. So bytes per token are\n\n$$2 \\cdot L \\cdot h_{kv} \\cdot d_h \\cdot b$$\n\nwhere 2 counts K and V, $L$ is layers, $h_{kv}$ KV heads, and $b$ bytes per number. Multiply by sequence length $n$ and batch $B$ for the total.\n\nLlama-2-7B: $L = 32$, $h_{kv} = 32$, $d_h = 128$, fp16 so $b = 2$. Per token: $2 \\times 32 \\times 32 \\times 128 \\times 2 = 524{,}288$ bytes, 0.5 MiB. At $n = 4096$: 2 GiB per sequence. A batch of 16 such sequences: 32 GiB, more than double the roughly 13.5 GB of weights. At serving scale, the KV cache, not the weights, often limits how many users fit on a GPU."
+        },
+        {
+          "level": "mid",
+          "q": "How much does grouped-query attention save for Llama-3-8B compared with full multi-head attention?",
+          "a": "Llama-3-8B has 32 layers, 32 query heads, 8 KV heads and $d_h = 128$. In fp16:\n\n- With GQA: $2 \\times 32 \\times 8 \\times 128 \\times 2 = 131{,}072$ bytes, 128 KiB per token.\n- If it had 32 KV heads: 512 KiB per token.\n\nSo GQA cuts the cache by $32/8 = 4\\times$. At its 8,192-token context, one sequence needs 1 GiB instead of 4 GiB. On a GPU with, say, 40 GB left after weights, that is roughly 40 versus 10 full-length concurrent sequences.\n\nBecause decode reads the whole cache every step, a 4x smaller cache also cuts the memory traffic per token for long sequences, improving speed. The quality cost of sharing KV heads has been small enough that GQA is standard in many recent open models."
+        },
+        {
+          "level": "junior",
+          "q": "Why does a KV cache speed up generation?",
+          "a": "Without a cache, generating token $t+1$ would rerun the model over all $t$ previous tokens, recomputing their keys and values at every layer, even though those never change (the causal mask means past tokens cannot see the future). Generating $n$ tokens would cost on the order of $n^2$ token-passes.\n\nWith a **KV cache**, each step computes Q, K and V for only the newest token, appends its K and V to the cache, and attends over the stored keys and values. Each step processes one token through the weights, so total weight work is linear in $n$; only the attention over the cache grows with length.\n\nThe price is memory: the cache grows by $2 \\cdot L \\cdot h_{kv} \\cdot d_h \\cdot b$ bytes per token per sequence, which becomes the main constraint at long context and large batch."
+        },
+        {
+          "level": "mid",
+          "q": "Why might a model with a 128k context window still miss a fact in the middle of a long prompt?",
+          "a": "A large window means the model *accepts* that many tokens, not that it attends to all of them equally well. Studies of long-context use have repeatedly found a \"lost in the middle\" pattern: retrieval accuracy is highest when the relevant fact is near the beginning or end of the context and drops when it is buried in the middle, and it degrades further as total length grows.\n\nCauses include training data where important content is usually near the start or end, positional encodings stretched beyond typical training lengths, and attention spreading thin across many competing tokens.\n\nPractical responses: retrieve less but more relevant context; place the most important material and the question near the end (or start); repeat key instructions at the end; and measure with your own needle-in-a-haystack style tests at your real lengths rather than trusting the advertised window."
+        },
+        {
+          "level": "senior",
+          "q": "Your 13B-class chat service runs out of GPU memory under load even though weights use only 60% of the GPU. Diagnose and fix.",
+          "a": "The remaining 40 percent must hold activations and, mostly, the KV cache. Under load, many concurrent sequences with long histories grow the cache until it overflows. For example, a model with 40 layers, 40 KV heads and $d_h = 128$ in fp16 uses $2 \\times 40 \\times 40 \\times 128 \\times 2 = 819{,}200$ bytes, about 0.78 MiB per token, so 20 users at 2,000 tokens need about 31 GiB.\n\nFixes:\n\n- **Paged KV allocation** (as in vLLM) to avoid fragmentation and over-reservation for maximum length.\n- **Admission control**: cap concurrent sequences and total cached tokens, queueing the rest instead of crashing.\n- **Shorter contexts**: trim or summarise history, cap output length.\n- **KV quantization** to 8-bit, halving the cache, after checking quality.\n- **A GQA model** or more GPUs with tensor parallelism to spread the cache.\n\nMonitor KV-cache utilisation as a first-class metric."
+        },
+        {
+          "level": "senior",
+          "q": "Two requests share an identical 3,000-token system prompt. How can serving exploit that, and what are the caveats?",
+          "a": "Keys and values for a prefix depend only on that prefix, because of the causal mask. So the KV cache computed for the shared 3,000-token system prompt can be stored once and reused by every request starting with exactly those tokens. This is **prefix caching**.\n\nBenefits: prefill for those 3,000 tokens is skipped, cutting time to first token substantially, and memory is shared rather than duplicated per request. Many API providers also discount cached input tokens.\n\nCaveats:\n\n- The match is on exact token IDs from the very start. Putting a timestamp or user name at the top of the prompt breaks it; put variable content after the stable prefix.\n- Caches are evicted under memory pressure, so hit rates vary with traffic.\n- In multi-tenant systems, timing differences from cache hits can leak whether another tenant used a prefix, so isolate caches per tenant when that matters."
+        },
+        {
+          "level": "senior",
+          "q": "Would you rather serve long prompts with short answers or short prompts with long answers on the same hardware? Explain the cost structure.",
+          "a": "They stress different resources.\n\n**Long prompt, short answer** (for example 8,000 in, 200 out) is dominated by prefill. Prefill is compute bound but efficient: tokens are processed in parallel at high GPU utilisation. Time to first token grows with prompt length, and the KV cache for 8,000 tokens occupies memory for the whole short decode.\n\n**Short prompt, long answer** (200 in, 2,000 out) is dominated by decode: 2,000 sequential steps, each memory-bandwidth bound. Per-token cost is higher, which is why APIs price output tokens several times above input tokens.\n\nOn the same hardware, prefill-heavy traffic usually yields more tokens per GPU-second; decode-heavy traffic needs large batches to be efficient. Production systems often separate or interleave the two phases (chunked prefill, or even prefill and decode on different GPU pools) so long prefills do not stall other users' decoding."
+        },
+        {
+          "level": "junior",
+          "q": "How many tokens of KV cache fit in 24 GB for Llama-3-8B in fp16, after loading weights?",
+          "a": "Weights: about 8B parameters at 2 bytes, roughly 16 GB. That leaves about 8 GB (in practice a bit less, for activations and framework overhead).\n\nKV cache per token for Llama-3-8B: $2 \\times 32 \\times 8 \\times 128 \\times 2 = 131{,}072$ bytes = 128 KiB.\n\nTokens that fit: $8 \\times 2^{30} / 2^{17} = 65{,}536$ tokens, if the full 8 GiB were available. That could be 8 sequences at the 8,192-token context, or 32 at 2,048. Realistically, reserve 10 to 20 percent for activations and fragmentation, giving around 50,000 to 55,000 tokens.\n\nWith a full multi-head model of the same shape (32 KV heads), only about a quarter as many would fit, which shows why GQA matters on smaller GPUs."
+        }
+      ]
+    },
+    {
+      "slug": "limits",
+      "title": "Hallucination and the Limits of Next-Token Prediction",
+      "lesson": "limits",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What is a hallucination, and why do LLMs produce them?",
+          "a": "A **hallucination** is fluent output that is false or unsupported: an invented citation, a wrong date, a function that does not exist.\n\nThe cause is the training objective. The model learns to produce text that is *probable* given its context, not text that is *verified*. A plausible-looking reference is high probability whether or not that paper exists. When the model lacks the fact, nothing forces it to say so; the most likely continuation of \"The paper that introduced X is\" is a confident-sounding title.\n\nRare facts are worst: something seen a handful of times in training is stored weakly, while the general pattern of how such facts look is strong. Sampling adds risk, because even a 5 percent chance of a wrong token at a key position will eventually be drawn."
+        },
+        {
+          "level": "mid",
+          "q": "Explain hallucination in terms of next-token probabilities with a number.",
+          "a": "Suppose the question is a birth year the model only weakly knows. Its distribution over the first year token might be: 1952 at 0.35, 1954 at 0.30, 1950 at 0.20, others 0.15. If the true answer is 1952, sampling at temperature 1 gives the right answer only 35 percent of the time, and even greedy decoding is right only because the top choice happens to be correct.\n\nCrucially, the output text is equally confident in all cases: \"She was born in 1954.\" The uncertainty lives in the probabilities, not in the words.\n\nThat suggests a mitigation: inspect the distribution. High entropy or a low top probability at fact-bearing tokens flags likely errors. Sampling several answers and checking agreement does the same thing without log-prob access: if 5 samples give 3 different years, do not trust any of them."
+        },
+        {
+          "level": "mid",
+          "q": "What does calibration mean for an LLM, and how do you measure it?",
+          "a": "A model is **calibrated** if its stated or implied confidence matches its accuracy: among all answers it gives with probability 0.8, about 80 percent should be correct.\n\nMeasure it by collecting many questions with known answers, recording the model's confidence (token probability of the answer, or a verbalised confidence), grouping into bins, and comparing average confidence with accuracy in each bin. The **expected calibration error** is the weighted average gap. Example: if answers in the 0.9 bin are correct only 70 percent of the time, the model is overconfident there by 20 points.\n\nPretrained models are often reasonably calibrated on their token probabilities; instruction tuning and preference tuning tend to make them more overconfident. For production, recalibrate on your own data, for example with temperature scaling, before using confidence to route or abstain."
+        },
+        {
+          "level": "junior",
+          "q": "What is grounding and how does it reduce hallucination?",
+          "a": "**Grounding** means giving the model the source material in its context and asking it to answer from that material, rather than from what it memorised. Retrieval-augmented generation is the common form: search a document store, put the relevant passages in the prompt, and instruct the model to use only them and cite them.\n\nIt helps because copying or paraphrasing a fact that is present in the context is a much easier, higher-probability task than recalling a rare fact from parameters. It also makes answers checkable: each claim can point to a passage.\n\nIt does not eliminate errors. If retrieval returns the wrong passage, the model may confidently use it; it can still blend in memorised content; and it may answer anyway when the context lacks the answer, unless instructed and tested to say it does not know."
+        },
+        {
+          "level": "mid",
+          "q": "Why are LLMs unreliable at exact arithmetic and how do production systems handle it?",
+          "a": "Arithmetic requires an exact algorithm, while the model produces digits as next-token predictions. Numbers are split into tokens unevenly, so place values do not line up consistently, and carrying across many digits must happen inside a fixed number of layers per token. Models do well on small or common calculations seen often in training and become unreliable on long multiplications, where a single wrong digit-token ruins the answer.\n\nChain-of-thought (writing intermediate steps) helps, because each step is a smaller prediction and the written steps act as working memory. But the reliable solution is **tool use**: have the model write an expression or code and let a calculator or interpreter compute it, then report the result.\n\nThe general lesson: use the model for language and planning, and delegate exact computation, lookups and state to deterministic systems."
+        },
+        {
+          "level": "mid",
+          "q": "What is the knowledge cutoff and how should applications deal with it?",
+          "a": "A model knows only what was in its training data, collected up to some date, its **knowledge cutoff**. Facts after that date are unknown, and facts near the cutoff are thinly represented. The model may not reliably know its own cutoff, and it may confidently describe an outdated state of the world, such as the \"latest\" version of a library.\n\nApplication strategies:\n\n- Put the current date in the system prompt so the model can reason about time.\n- Ground answers on fresh data via retrieval or tools (search, APIs, databases) for anything time-sensitive: prices, news, versions, policies.\n- Instruct the model to say when a question depends on recent information it may not have, and test that behaviour.\n- When choosing models, check the stated cutoff against how fast your domain changes."
+        },
+        {
+          "level": "senior",
+          "q": "Design a way to make a question-answering assistant abstain rather than hallucinate. How do you know it works?",
+          "a": "Combine several signals, since none is reliable alone:\n\n1. **Grounding with an explicit out**: answer only from retrieved passages; if they do not contain the answer, reply with a fixed \"not found\" response. Include few-shot examples of abstaining.\n2. **Retrieval confidence**: if the top reranker score is below a calibrated threshold, abstain before generating.\n3. **Answer verification**: a second check (a model or rules) confirms each claim is supported by a cited passage.\n4. **Self-consistency**: sample 3 to 5 answers; abstain when they disagree.\n\nMeasure with a labelled set that includes answerable and deliberately unanswerable questions. Track correct-answer rate, wrong-answer rate and abstention rate. The goal is cutting wrong answers without abstaining on too many answerable questions; plot this trade-off as you vary thresholds and pick an operating point with the product owner, since wrong answers and refusals have different costs."
+        },
+        {
+          "level": "senior",
+          "q": "A legal-research assistant cited a court case that does not exist. Walk through root cause analysis and fixes.",
+          "a": "Start with the trace: was the case in the retrieved passages? Three branches:\n\n- **Not retrieved, model invented it**: the model answered from parametric memory, where a plausible case name and citation format is high probability. Fix with strict grounding: citations must reference retrieved document IDs, and post-generation validation checks every citation against the database; unmatched ones are removed or the answer is blocked.\n- **Retrieved but garbled**: the model mixed details of two cases. Fix with quote-level citations (exact spans), plus a verification step comparing claims with the cited text.\n- **Retrieval missed the relevant case** and the model filled the gap. Improve retrieval (hybrid search for case names and numbers, reranking) and require abstention when nothing relevant is found.\n\nThen add the incident to a regression suite, monitor citation-validation failures as a metric, and keep the UI showing sources so users can verify."
+        },
+        {
+          "level": "senior",
+          "q": "Does a larger model or more training data solve hallucination? Argue both sides.",
+          "a": "**Partly yes.** Larger models trained on more data store more facts and store them more reliably, so questions that were \"rare\" for a small model become well-known. Benchmarks of factual question answering generally improve with scale, and calibration of token probabilities can improve too.\n\n**Fundamentally no.** The objective still rewards plausible text, not verified text. There is always a long tail of facts too rare to memorise, information after the cutoff, and private data the model never saw. On these, a larger model can be *more* convincingly wrong, because its fluency is higher. Fine-tuning that rewards confident, helpful-sounding answers can also discourage saying \"I don't know\".\n\nEngineering conclusion: scale reduces the rate, but systems that need correctness need grounding, tools for exact operations, verification and abstention, measured on an evaluation set that reflects the tail of real user questions."
+        },
+        {
+          "level": "junior",
+          "q": "Why does an LLM sometimes give different answers to the same factual question?",
+          "a": "At non-zero temperature, each token is sampled from a distribution. If the model is uncertain about a fact, for example probability 0.5 on one name and 0.3 on another, different runs pick different tokens, and the rest of the answer is then built around that choice. Small changes in prompt wording also shift the probabilities.\n\nThis variability is useful as a signal: consistent answers across several samples suggest the model reliably knows the fact; inconsistent answers indicate a guess. Lowering temperature makes the answer more repeatable but not more correct; it simply always picks the top choice, which may be wrong.\n\nFor factual applications, ground the answer in retrieved sources and use low temperature, so consistency comes from the evidence rather than from luck."
+        }
+      ]
+    }
+  ]
+}

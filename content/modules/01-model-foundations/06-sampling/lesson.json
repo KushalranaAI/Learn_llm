@@ -1,0 +1,21 @@
+{
+  "title": "Next-Token Prediction and Sampling",
+  "summary": "A language model outputs a score for every token in its vocabulary. Softmax turns those scores into probabilities, and a sampler (greedy, temperature, top-k, top-p) decides which token is actually written. The same probabilities give you entropy, log-probs and perplexity.",
+  "objectives": [
+    "Turn a vector of logits into probabilities with softmax, with and without temperature",
+    "Apply greedy decoding, top-k and top-p (nucleus) filtering to a small distribution by hand",
+    "Compute the entropy of a next-token distribution and explain what it says about the model's certainty",
+    "Compute log-probabilities and perplexity for a sequence and interpret them",
+    "Choose sampler settings for extraction, chat and creative tasks and explain the trade-offs"
+  ],
+  "prerequisites": "You should know that a transformer turns a sequence of tokens into one vector per position ([The Transformer Block](/learn/model-foundations/transformer-block)) and what a token is ([Tokenization](/learn/model-foundations/tokenization)). The softmax function was introduced with cross-entropy loss in [How a Network Learns](/learn/model-foundations/how-networks-learn).",
+  "sims": ["sampling"],
+  "labs": ["tune-the-sampler"],
+  "sandbox": [],
+  "sources": [
+    { "title": "The Curious Case of Neural Text Degeneration", "authors": "Holtzman, Buys, Du, Forbes and Choi", "year": 2020, "note": "Introduces nucleus (top-p) sampling and shows why greedy and beam search produce repetitive text" },
+    { "title": "Hierarchical Neural Story Generation", "authors": "Fan, Lewis and Dauphin", "year": 2018, "note": "Popularised top-k sampling for open-ended generation" },
+    { "title": "A Mathematical Theory of Communication", "authors": "Claude Shannon", "year": 1948, "note": "The definition of entropy used here" },
+    { "title": "Language Models are Unsupervised Multitask Learners", "authors": "Radford et al.", "year": 2019, "note": "GPT-2: next-token prediction as the single training objective" }
+  ]
+}

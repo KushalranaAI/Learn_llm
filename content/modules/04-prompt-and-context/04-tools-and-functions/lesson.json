@@ -1,0 +1,20 @@
+{
+  "title": "Tool Definitions and Function Calling",
+  "summary": "Tool calling lets a model request actions in a structured way: you describe functions as schemas, the model emits a call, your code runs it and returns the result as more context. This lesson covers the schema, the loop, what the definitions cost, and how reliability multiplies down a chain of calls.",
+  "objectives": [
+    "Write a tool definition as a JSON Schema and explain what the model actually sees",
+    "Trace the tool-call loop and compute its token cost and latency over several rounds",
+    "Estimate how tool count affects the cost of definitions and the chance of choosing the right tool",
+    "Compute end-to-end success for a chain of calls from selection and argument accuracy, and the effect of validate-and-retry",
+    "Treat tool results as untrusted context and keep them small and well-formed"
+  ],
+  "prerequisites": "You should understand structured outputs and JSON Schema from [Few-Shot Examples and Structured Outputs](/learn/prompt-and-context/few-shot-and-structured) and the idea of a growing prompt from [Anatomy of a Prompt](/learn/prompt-and-context/prompt-anatomy). Agents, which build whole systems from this loop, come in module 7.",
+  "sims": [],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "Toolformer: Language Models Can Teach Themselves to Use Tools", "authors": "Schick et al.", "year": 2023, "note": "Models learning when and how to call external APIs" },
+    { "title": "ReAct: Synergizing Reasoning and Acting in Language Models", "authors": "Yao et al.", "year": 2022, "note": "Interleaving reasoning with tool actions and observations" },
+    { "title": "JSON Schema specification", "authors": "JSON Schema organization", "year": 2020, "note": "The vocabulary used to describe argument types, enums and required fields" }
+  ]
+}

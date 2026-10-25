@@ -1,0 +1,21 @@
+{
+  "title": "Design an Internal LLM Platform (Gateway, Routing, Cost)",
+  "summary": "Many teams, many models, one bill. Design the shared layer every LLM call in a company passes through: a gateway that authenticates, routes, rate-limits, caches, observes and attributes cost per tenant, without becoming the outage that takes everyone down.",
+  "objectives": [
+    "Size an internal LLM platform from request volume: QPS, tokens per day, monthly spend, concurrent streams and log storage",
+    "Design a gateway request path and keep its added latency within a budget of tens of milliseconds",
+    "Compute the expected cost and quality of routing and cascades, and set per-tenant quotas with token buckets and fair sharing",
+    "Decide what to cache, how to key it so tenants never see each other's data, and what it actually saves",
+    "Attribute direct and shared costs to tenants, and design for provider and gateway failures"
+  ],
+  "prerequisites": "Work through [A Framework for LLM System Design](/learn/llm-system-design/design-framework) first: this case walks the same steps. The deep dives lean on [Choosing and Routing Models](/learn/production-systems/model-routing), [Fallbacks and Graceful Degradation](/learn/production-systems/fallbacks), [Budgets, Rate Limits and Usage Controls](/learn/production-systems/budgets-and-rate-limits), [Observability and Incident Analysis](/learn/production-systems/observability) and [Caching Repeated Work](/learn/inference-and-serving/caching).",
+  "sims": ["model-cascade"],
+  "labs": [],
+  "sandbox": ["llm-gateway"],
+  "sources": [
+    { "title": "Site Reliability Engineering: How Google Runs Production Systems", "authors": "Beyer, Jones, Petoff and Murphy (eds.)", "year": 2016, "note": "Chapters on service level objectives, handling overload and addressing cascading failures" },
+    { "title": "The Site Reliability Workbook", "authors": "Beyer, Murphy, Rensin, Kawahara and Thorne (eds.)", "year": 2018, "note": "Chapter 5: alerting on SLOs with error-budget burn rates" },
+    { "title": "FrugalGPT: How to Use Large Language Models While Reducing Cost and Improving Performance", "authors": "Chen, Zaharia and Zou", "year": 2023, "note": "LLM cascades that escalate to stronger models only when needed" },
+    { "title": "Analysis and Simulation of a Fair Queueing Algorithm", "authors": "Demers, Keshav and Shenker", "year": 1989, "note": "Max-min fair sharing of a contended resource" }
+  ]
+}

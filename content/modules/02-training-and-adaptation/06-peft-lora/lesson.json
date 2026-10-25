@@ -1,0 +1,22 @@
+{
+  "title": "Parameter-Efficient Fine-Tuning: LoRA and QLoRA",
+  "summary": "Full fine-tuning needs about 16 bytes of GPU memory per parameter. LoRA freezes the model and learns a low-rank update ΔW = BA for chosen matrices, training well under 1% of the parameters; QLoRA also stores the frozen base in 4-bit NF4. This lesson does the parameter and memory arithmetic and covers choosing rank, targets and how adapters are merged and served.",
+  "objectives": [
+    "Explain why a fine-tuning update can be low-rank and write the LoRA reparameterisation W' = W + (α/r)BA",
+    "Count trainable parameters as r(d_in + d_out) per adapted matrix and for a whole model",
+    "Compute training memory for full fine-tuning, LoRA and QLoRA for a 7B model",
+    "Describe NF4 quantisation with block-wise scales and double quantisation, and the 4.127 bits per weight it costs",
+    "Choose rank, alpha, target matrices and learning rate, and merge or serve adapters"
+  ],
+  "prerequisites": "You should know the 16-bytes-per-parameter accounting of training ([Training at Scale](/learn/training-and-adaptation/training-at-scale)), what SFT does ([Instruction Tuning](/learn/training-and-adaptation/instruction-tuning)), and the matrices in a transformer block ([The Transformer Block](/learn/model-foundations/transformer-block)). Matrix rank is explained briefly where used.",
+  "sims": ["lora-params"],
+  "labs": ["lora-budget"],
+  "sandbox": [],
+  "sources": [
+    { "title": "LoRA: Low-Rank Adaptation of Large Language Models", "authors": "Hu et al.", "year": 2021, "note": "The ΔW = BA reparameterisation, initialisation, α/r scaling and adaptation of W_q and W_v" },
+    { "title": "QLoRA: Efficient Finetuning of Quantized LLMs", "authors": "Dettmers, Pagnoni, Holtzman and Zettlemoyer", "year": 2023, "note": "NF4, double quantisation, paged optimisers; a 65B model fine-tuned on a single 48 GB GPU" },
+    { "title": "Intrinsic Dimensionality Explains the Effectiveness of Language Model Fine-Tuning", "authors": "Aghajanyan, Gupta and Zettlemoyer", "year": 2020, "note": "Fine-tuning can succeed in a very low-dimensional subspace of the parameters" },
+    { "title": "Parameter-Efficient Transfer Learning for NLP", "authors": "Houlsby et al.", "year": 2019, "note": "Adapter layers, the earlier approach to parameter-efficient tuning" },
+    { "title": "LoRA Learns Less and Forgets Less", "authors": "Biderman et al.", "year": 2024, "note": "Compares LoRA with full fine-tuning on code and maths: less learning, less forgetting" }
+  ]
+}

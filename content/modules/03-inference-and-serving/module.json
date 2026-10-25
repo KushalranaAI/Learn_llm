@@ -1,0 +1,1 @@
+{ "title": "Inference and Serving", "summary": "Where the time and money go when a model answers, and how to spend less of both: latency metrics, the roofline, batching, quantization, caching, speculative decoding and capacity planning.", "icon": "cpu", "cover": "llm-batching" }

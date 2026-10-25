@@ -1,0 +1,122 @@
+[
+ {
+  "term": "Model cascade",
+  "slug": "model-cascade",
+  "def": "A setup that sends each request to a cheap model first and escalates to a larger one only when a check says the cheap answer is not good enough.",
+  "lesson": "production-systems/model-routing"
+ },
+ {
+  "term": "Pareto frontier",
+  "slug": "pareto-frontier",
+  "def": "The set of options that no other option beats on every axis at once; when choosing a model you only consider those on the frontier of quality, cost and latency.",
+  "lesson": "production-systems/model-routing"
+ },
+ {
+  "term": "Model router",
+  "slug": "model-router",
+  "def": "A component that reads a request before any model call and picks which model should answer it, usually from a predicted-difficulty score and a threshold.",
+  "lesson": "production-systems/model-routing"
+ },
+ {
+  "term": "Availability (nines)",
+  "slug": "availability-nines",
+  "def": "The fraction of requests or time that a service works, often quoted in nines: 99.9% allows about 43.2 minutes of downtime in a 30-day month.",
+  "lesson": "production-systems/fallbacks"
+ },
+ {
+  "term": "Correlated failure",
+  "slug": "correlated-failure",
+  "def": "When two supposedly independent components tend to fail together because of a shared cause, which makes a fallback far less protective than the independent calculation suggests.",
+  "lesson": "production-systems/fallbacks"
+ },
+ {
+  "term": "Hedged request",
+  "slug": "hedged-request",
+  "def": "Sending a second copy of a slow request after a short delay and using whichever answer returns first, trading a little extra load for a much shorter tail latency.",
+  "lesson": "production-systems/fallbacks"
+ },
+ {
+  "term": "Circuit breaker",
+  "slug": "circuit-breaker",
+  "def": "A guard that stops calling a failing dependency after the error rate passes a threshold, failing fast or using a fallback, then probes carefully to see if it has recovered.",
+  "lesson": "production-systems/fallbacks"
+ },
+ {
+  "term": "Graceful degradation",
+  "slug": "graceful-degradation",
+  "def": "Designing a ladder of worse-but-working modes (fallback model, cache, non-LLM path, honest error) so that a failure reduces quality instead of stopping the feature.",
+  "lesson": "production-systems/fallbacks"
+ },
+ {
+  "term": "Token bucket",
+  "slug": "token-bucket",
+  "def": "A rate limiter with a capacity b and a refill rate r: each request spends permits, so at most b + rT requests are admitted in any window of length T.",
+  "lesson": "production-systems/budgets-and-rate-limits"
+ },
+ {
+  "term": "Noisy neighbour",
+  "slug": "noisy-neighbour",
+  "def": "A tenant whose heavy usage consumes shared capacity and degrades service for others, prevented with per-tenant quotas.",
+  "lesson": "production-systems/budgets-and-rate-limits"
+ },
+ {
+  "term": "Max-min fairness",
+  "slug": "max-min-fairness",
+  "def": "An allocation rule that gives everyone an equal share, lets those who need less take only what they need, and redistributes the surplus among those who want more.",
+  "lesson": "production-systems/budgets-and-rate-limits"
+ },
+ {
+  "term": "Burn rate",
+  "slug": "burn-rate",
+  "def": "How fast a budget is being consumed relative to plan: observed spend or error rate divided by the allowed rate, where 1 means exactly on track.",
+  "lesson": "production-systems/observability"
+ },
+ {
+  "term": "Error budget",
+  "slug": "error-budget",
+  "def": "The amount of failure an SLO allows over a period, for example 43.2 minutes a month at 99.9%, used to decide whether to ship changes or fix reliability.",
+  "lesson": "production-systems/observability"
+ },
+ {
+  "term": "Latency percentile",
+  "slug": "latency-percentile",
+  "def": "The latency below which a given share of requests fall, for example p95 is the value that 95% of requests beat; it describes the slow tail that averages hide.",
+  "lesson": "production-systems/observability"
+ },
+ {
+  "term": "Critical path",
+  "slug": "critical-path",
+  "def": "The chain of steps in a request that determines its total time when some steps run in parallel; speeding up anything off it changes nothing.",
+  "lesson": "production-systems/observability"
+ },
+ {
+  "term": "Postmortem",
+  "slug": "postmortem",
+  "def": "A blameless written review of an incident with impact, timeline, causes and owned action items, aimed at fixing the system rather than blaming people.",
+  "lesson": "production-systems/observability"
+ },
+ {
+  "term": "Shadow traffic",
+  "slug": "shadow-traffic",
+  "def": "Copying real requests to a candidate version and discarding its output so that cost, latency and answer differences can be measured with no user impact.",
+  "lesson": "production-systems/rollouts"
+ },
+ {
+  "term": "Canary release",
+  "slug": "canary-release",
+  "def": "Serving a new version to a small share of real traffic first; with failure rate p, n canary requests catch it with probability 1 - (1 - p)^n.",
+  "lesson": "production-systems/rollouts"
+ },
+ {
+  "term": "PII redaction",
+  "slug": "pii-redaction",
+  "def": "Replacing personal data in text with typed placeholders before it is logged or sent onward; because recall is never perfect, some leakage remains and must be contained by access control and retention.",
+  "lesson": "production-systems/guardrails"
+ },
+ {
+  "term": "Fail closed",
+  "slug": "fail-closed",
+  "def": "Refusing or degrading when a safety check cannot run, instead of proceeding without it; the right choice when a missed harm costs far more than a blocked good request.",
+  "lesson": "production-systems/guardrails"
+ }
+]

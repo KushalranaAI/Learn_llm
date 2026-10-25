@@ -1,0 +1,116 @@
+[
+  {
+    "term": "TTFT (time to first token)",
+    "slug": "ttft",
+    "def": "The time from sending a request until the first output token arrives: network, queueing and prefill. It governs how quickly a response seems to start.",
+    "lesson": "inference-and-serving/measuring-inference"
+  },
+  {
+    "term": "TPOT (time per output token)",
+    "slug": "tpot",
+    "def": "The average gap between output tokens after the first, set by the decode step time. End-to-end latency is TTFT plus (output tokens minus one) times TPOT.",
+    "lesson": "inference-and-serving/measuring-inference"
+  },
+  {
+    "term": "Goodput",
+    "slug": "goodput",
+    "def": "The rate of completed requests that meet the latency objective (for example TTFT and TPOT targets). Unlike raw throughput, it falls when overloading makes requests too slow.",
+    "lesson": "inference-and-serving/measuring-inference"
+  },
+  {
+    "term": "Memory-bound",
+    "slug": "memory-bound",
+    "def": "A workload whose speed is limited by how fast data can be read from memory rather than by arithmetic. Batch-1 decode is memory-bound.",
+    "lesson": "inference-and-serving/memory-and-compute"
+  },
+  {
+    "term": "Arithmetic intensity",
+    "slug": "arithmetic-intensity",
+    "def": "FLOPs performed per byte moved to or from memory. It decides whether an operation is limited by memory bandwidth or by compute.",
+    "lesson": "inference-and-serving/memory-and-compute"
+  },
+  {
+    "term": "Roofline model",
+    "slug": "roofline-model",
+    "def": "A chart and formula, attainable FLOP/s = min(peak compute, intensity times bandwidth), that shows which hardware limit binds a workload.",
+    "lesson": "inference-and-serving/memory-and-compute"
+  },
+  {
+    "term": "Continuous batching",
+    "slug": "continuous-batching",
+    "def": "Scheduling at every decode step: finished sequences leave and waiting requests join immediately, keeping the batch full and cutting queue time.",
+    "lesson": "inference-and-serving/batching"
+  },
+  {
+    "term": "PagedAttention",
+    "slug": "paged-attention",
+    "def": "Storing the KV cache in fixed-size blocks mapped by a block table, which nearly eliminates fragmentation and allows sharing of common prefixes.",
+    "lesson": "inference-and-serving/batching"
+  },
+  {
+    "term": "Little's law",
+    "slug": "littles-law",
+    "def": "In a stable system the average number of items in it equals arrival rate times average time in the system (L = lambda W). It links request rate, latency and concurrency.",
+    "lesson": "inference-and-serving/batching"
+  },
+  {
+    "term": "Quantization",
+    "slug": "quantization",
+    "def": "Storing weights (or activations, or the KV cache) in fewer bits, with scales to map back to real values, to save memory and bandwidth at some cost in accuracy.",
+    "lesson": "inference-and-serving/quantization"
+  },
+  {
+    "term": "GPTQ",
+    "slug": "gptq",
+    "def": "A post-training quantization method that rounds a layer's weights column by column and adjusts the remaining ones to cancel the output error, using calibration data.",
+    "lesson": "inference-and-serving/quantization"
+  },
+  {
+    "term": "AWQ",
+    "slug": "awq",
+    "def": "Activation-aware weight quantization: it scales up the few weight channels that meet large activations before rounding so their relative error is smaller.",
+    "lesson": "inference-and-serving/quantization"
+  },
+  {
+    "term": "Prefix caching",
+    "slug": "prefix-caching",
+    "def": "Reusing the stored KV cache of an identical prompt prefix so the server skips its prefill. It saves compute and TTFT but not decode time.",
+    "lesson": "inference-and-serving/caching"
+  },
+  {
+    "term": "Semantic cache",
+    "slug": "semantic-cache",
+    "def": "A cache that returns a stored answer when a new query's embedding is similar enough to a cached one. It saves a model call but risks false hits.",
+    "lesson": "inference-and-serving/caching"
+  },
+  {
+    "term": "Speculative decoding",
+    "slug": "speculative-decoding",
+    "def": "A cheap draft model proposes several tokens that the target model verifies in one pass, giving several tokens per pass with the target's exact output distribution.",
+    "lesson": "inference-and-serving/speculative-and-parallel"
+  },
+  {
+    "term": "Acceptance rate",
+    "slug": "acceptance-rate",
+    "def": "The probability that a drafted token is accepted by the target model in speculative decoding. It sets the expected tokens per pass, (1 - a^(k+1)) / (1 - a).",
+    "lesson": "inference-and-serving/speculative-and-parallel"
+  },
+  {
+    "term": "Tensor parallelism",
+    "slug": "tensor-parallelism",
+    "def": "Splitting each weight matrix across GPUs, with two all-reduces per transformer layer to combine partial results. It reduces per-token latency but needs fast links.",
+    "lesson": "inference-and-serving/speculative-and-parallel"
+  },
+  {
+    "term": "Pipeline parallelism",
+    "slug": "pipeline-parallelism",
+    "def": "Assigning consecutive layers to different GPUs and passing activations between them. It needs little communication but does not lower per-token latency and has idle bubbles.",
+    "lesson": "inference-and-serving/speculative-and-parallel"
+  },
+  {
+    "term": "Target utilisation",
+    "slug": "target-utilisation",
+    "def": "The fraction of a replica's saturated throughput you plan to run at peak, kept below 100% to leave headroom for bursts and latency.",
+    "lesson": "inference-and-serving/capacity-and-cost"
+  }
+]

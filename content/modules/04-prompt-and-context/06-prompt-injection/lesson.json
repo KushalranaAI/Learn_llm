@@ -1,0 +1,22 @@
+{
+  "title": "Prompt Injection and Trust Boundaries",
+  "summary": "A model cannot reliably tell instructions from data, so text from an attacker can steer it. This lesson quantifies attack success, separates direct from indirect injection, and builds defence in depth around trust boundaries, least privilege and layered checks, because no prompt-only defence is complete.",
+  "objectives": [
+    "Explain why prompt injection exists in terms of the single token sequence a model reads",
+    "Measure attack success rate with a confidence interval and compute the chance an attacker succeeds in N attempts",
+    "Distinguish direct from indirect injection and estimate exposure from the rate of poisoned content",
+    "Draw trust boundaries and apply least privilege so that a successful injection has bounded impact",
+    "Combine layered defences and reason about residual risk, including correlation between layers",
+    "Tune a guardrail classifier threshold when attacks are rare, using precision, recall and costs"
+  ],
+  "prerequisites": "You should know how a prompt is rendered into one token sequence and about the instruction hierarchy ([Anatomy of a Prompt](/learn/prompt-and-context/prompt-anatomy)), tool calling ([Tool Definitions and Function Calling](/learn/prompt-and-context/tools-and-functions)), and basic probability of independent events. Precision and recall are explained as they appear.",
+  "sims": ["guardrail-threshold"],
+  "labs": ["stop-the-injection"],
+  "sandbox": ["guarded-assistant"],
+  "sources": [
+    { "title": "Not what you've signed up for: Compromising Real-World LLM-Integrated Applications with Indirect Prompt Injection", "authors": "Greshake et al.", "year": 2023, "note": "Indirect injection through retrieved content and tools" },
+    { "title": "Ignore Previous Prompt: Attack Techniques For Language Models", "authors": "Perez and Ribeiro", "year": 2022, "note": "Early systematic study of goal hijacking and prompt leaking" },
+    { "title": "The Instruction Hierarchy: Training LLMs to Prioritize Privileged Instructions", "authors": "Wallace et al.", "year": 2024, "note": "Training models to rank instructions by privilege" },
+    { "title": "OWASP Top 10 for Large Language Model Applications", "authors": "OWASP", "year": 2023, "note": "Prompt injection listed among the top risks, with mitigation guidance" }
+  ]
+}

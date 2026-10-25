@@ -1,0 +1,122 @@
+[
+  {
+    "term": "Pretraining",
+    "slug": "pretraining",
+    "def": "Training a model from scratch on a very large text corpus to predict the next token, which gives it general language knowledge before any adaptation.",
+    "lesson": "training-and-adaptation/pretraining-data"
+  },
+  {
+    "term": "Data mixture",
+    "slug": "data-mixture",
+    "def": "The weights saying what fraction of training tokens come from each source (web, code, books and so on); small valuable sources are often seen several times.",
+    "lesson": "training-and-adaptation/pretraining-data"
+  },
+  {
+    "term": "Deduplication",
+    "slug": "deduplication",
+    "def": "Removing exact and near-duplicate documents from training data, often with MinHash and Jaccard similarity, to save compute and reduce memorisation.",
+    "lesson": "training-and-adaptation/pretraining-data"
+  },
+  {
+    "term": "Scaling law",
+    "slug": "scaling-law",
+    "def": "A fitted power-law relationship that predicts loss from parameters, tokens or compute, used to plan training runs before spending the compute.",
+    "lesson": "training-and-adaptation/scaling-laws"
+  },
+  {
+    "term": "Compute-optimal training",
+    "slug": "compute-optimal",
+    "def": "Choosing parameters $N$ and tokens $D$ to minimise loss for a fixed compute budget $C \\approx 6ND$; the Chinchilla result is roughly 20 tokens per parameter.",
+    "lesson": "training-and-adaptation/scaling-laws"
+  },
+  {
+    "term": "Mixed-precision training",
+    "slug": "mixed-precision",
+    "def": "Computing in 16-bit formats such as BF16 while keeping FP32 master weights and optimizer states, which saves memory and time without losing small updates.",
+    "lesson": "training-and-adaptation/training-at-scale"
+  },
+  {
+    "term": "ZeRO sharding",
+    "slug": "zero-sharding",
+    "def": "Splitting optimizer states (stage 1), gradients (stage 2) and parameters (stage 3) across data-parallel GPUs so each stores only its share; FSDP is the PyTorch counterpart.",
+    "lesson": "training-and-adaptation/training-at-scale"
+  },
+  {
+    "term": "Activation checkpointing",
+    "slug": "activation-checkpointing",
+    "def": "Storing only some activations and recomputing the rest during the backward pass, trading about 33% more compute for a large cut in activation memory.",
+    "lesson": "training-and-adaptation/training-at-scale"
+  },
+  {
+    "term": "Model parallelism",
+    "slug": "model-parallelism",
+    "def": "Splitting one model's computation across GPUs, either inside each layer (tensor parallelism) or by groups of layers (pipeline parallelism).",
+    "lesson": "training-and-adaptation/training-at-scale"
+  },
+  {
+    "term": "Learning-rate schedule",
+    "slug": "learning-rate-schedule",
+    "def": "How the learning rate changes during training; the usual choice is a linear warmup to a peak followed by a cosine decay to a small floor.",
+    "lesson": "training-and-adaptation/training-at-scale"
+  },
+  {
+    "term": "Supervised fine-tuning (SFT)",
+    "slug": "supervised-fine-tuning",
+    "def": "Training a pretrained model on prompt-response pairs with next-token loss on the response, which teaches it to follow instructions in a chat format.",
+    "lesson": "training-and-adaptation/instruction-tuning"
+  },
+  {
+    "term": "Loss masking",
+    "slug": "loss-masking",
+    "def": "Excluding prompt tokens from the loss during SFT so that only the response tokens, including the end-of-turn token, produce gradients.",
+    "lesson": "training-and-adaptation/instruction-tuning"
+  },
+  {
+    "term": "Reward model",
+    "slug": "reward-model",
+    "def": "A network that scores a response with one scalar, trained on preference pairs with the Bradley-Terry loss $-\\log\\sigma(r_w - r_l)$.",
+    "lesson": "training-and-adaptation/preference-tuning"
+  },
+  {
+    "term": "RLHF",
+    "slug": "rlhf",
+    "def": "Reinforcement learning from human feedback: optimising a policy against a learned reward model while a KL penalty keeps it close to a reference model.",
+    "lesson": "training-and-adaptation/preference-tuning"
+  },
+  {
+    "term": "Direct Preference Optimization (DPO)",
+    "slug": "dpo",
+    "def": "A loss that trains directly on chosen and rejected pairs, $-\\log\\sigma(\\beta[\\Delta_w - \\Delta_l])$, equivalent to the KL-regularised RLHF objective without a reward model or RL loop.",
+    "lesson": "training-and-adaptation/preference-tuning"
+  },
+  {
+    "term": "LoRA",
+    "slug": "lora",
+    "def": "Low-rank adaptation: freeze a weight matrix $W_0$ and learn $\\Delta W = \\frac{\\alpha}{r}BA$, adding only $r(d_{\\text{in}} + d_{\\text{out}})$ trainable parameters per matrix.",
+    "lesson": "training-and-adaptation/peft-lora"
+  },
+  {
+    "term": "QLoRA",
+    "slug": "qlora",
+    "def": "LoRA on top of a frozen base quantised to 4-bit NF4 with double-quantised block scales, about 4.127 bits per weight, so large models fine-tune on small GPUs.",
+    "lesson": "training-and-adaptation/peft-lora"
+  },
+  {
+    "term": "Knowledge distillation",
+    "slug": "knowledge-distillation",
+    "def": "Training a small student to match a larger teacher's temperature-softened output distribution with a $T^2$-scaled KL loss, or to imitate text the teacher generated.",
+    "lesson": "training-and-adaptation/distillation"
+  },
+  {
+    "term": "Patch embedding",
+    "slug": "patch-embedding",
+    "def": "The first layer of a vision transformer: each $P \\times P$ image patch is flattened and linearly projected into a token, giving $HW/P^2$ tokens per image.",
+    "lesson": "training-and-adaptation/multimodal"
+  },
+  {
+    "term": "Contrastive loss",
+    "slug": "contrastive-loss",
+    "def": "The CLIP-style loss that pulls matching image-text pairs together and pushes mismatched pairs apart, as cross-entropy over the rows and columns of a similarity matrix.",
+    "lesson": "training-and-adaptation/multimodal"
+  }
+]

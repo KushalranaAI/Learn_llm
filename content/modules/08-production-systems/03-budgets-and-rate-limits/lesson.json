@@ -1,0 +1,19 @@
+{
+  "title": "Budgets, Rate Limits and Usage Controls",
+  "summary": "LLM spend scales with usage, and usage can spike or run away. This lesson covers the token bucket, provider rate limits, per-tenant quotas, cost forecasting and the alerts and kill switches that keep a bill predictable.",
+  "objectives": [
+    "Simulate a token bucket by hand and state the maximum admitted in any window as b + rT",
+    "Budget requests against requests-per-minute and tokens-per-minute limits and handle 429 responses",
+    "Allocate shared capacity fairly across tenants with weights and max-min fairness",
+    "Forecast monthly spend from usage, token distributions and growth",
+    "Set spend alerts from burn rate and design kill switches for runaway loops"
+  ],
+  "prerequisites": "You should know how to cost a request from token counts ([Choosing and Routing Models](/learn/production-systems/model-routing)) and what a 429 response and backoff are ([Fallbacks and Graceful Degradation](/learn/production-systems/fallbacks)).",
+  "sims": ["token-bucket"],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "Site Reliability Engineering", "authors": "Beyer, Jones, Petoff and Murphy (eds.)", "year": 2016, "note": "Chapters on handling overload and per-client resource limits" },
+    { "title": "Analysis of the increase and decrease algorithms for congestion avoidance", "authors": "Chiu and Jain", "year": 1989, "note": "Classic treatment of fairness in sharing a limited resource" }
+  ]
+}

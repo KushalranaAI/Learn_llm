@@ -1,0 +1,21 @@
+{
+  "title": "A Framework for LLM System Design",
+  "summary": "A reusable eight-step method for any LLM design question: clarify, estimate, sketch, deep-dive, evaluate, protect, break and trade off. One running example carries real numbers through every step.",
+  "objectives": [
+    "Apply an eight-step framework to an open-ended LLM design prompt and pace it inside 45 minutes",
+    "Turn users and behaviour into QPS, peak QPS, tokens per day and a monthly API bill",
+    "Size a self-hosted deployment: GPUs, KV-cache memory via Little's law, and embedding storage",
+    "Choose deep dives (retrieval, model choice, serving, caching) and justify them with numbers",
+    "Write an evaluation, safety and failure-mode plan, and present trade-offs as explicit choices"
+  ],
+  "prerequisites": "Comfort with the earlier modules helps, in particular [Measuring Inference](/learn/inference-and-serving/measuring-inference), [Capacity Planning and Cost per Request](/learn/inference-and-serving/capacity-and-cost), [How RAG Works](/learn/retrieval-and-rag/rag-architecture) and [Choosing and Routing Models](/learn/production-systems/model-routing). All prices in this module are hypothetical.",
+  "sims": ["token-cost", "gpu-capacity", "kv-cache-memory", "rag-pipeline", "guardrail-threshold", "model-cascade"],
+  "labs": ["capacity-plan"],
+  "sandbox": ["llm-gateway"],
+  "sources": [
+    { "title": "Designing Data-Intensive Applications", "authors": "Martin Kleppmann", "year": 2017, "note": "Chapter 1: reliability, scalability, and describing load and performance" },
+    { "title": "Site Reliability Engineering: How Google Runs Production Systems", "authors": "Beyer, Jones, Petoff and Murphy (eds.)", "year": 2016, "note": "Chapter 4: service level objectives and error budgets" },
+    { "title": "Efficient Memory Management for Large Language Model Serving with PagedAttention", "authors": "Kwon et al.", "year": 2023, "note": "Why KV-cache memory limits concurrency" },
+    { "title": "Queueing Systems, Volume 1: Theory", "authors": "Leonard Kleinrock", "year": 1975, "note": "Little's law" }
+  ]
+}

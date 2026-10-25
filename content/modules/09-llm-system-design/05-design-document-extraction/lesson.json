@@ -1,0 +1,21 @@
+{
+  "title": "Design a Document-Extraction Pipeline",
+  "summary": "Turn a million invoices and contracts a month into validated structured records. The design is a batch pipeline: OCR or vision, schema-constrained output, field-level confidence, cross-field validation and a human-review queue sized by the maths of review rate and error cost.",
+  "objectives": [
+    "Size a batch extraction system from documents per month: pages, tokens, cost, and throughput expressed as documents per second",
+    "Draw the pipeline and trace one document from upload to a validated record",
+    "Explain how schema-constrained decoding guarantees valid structure and what it does not guarantee",
+    "Combine field confidence, calibration and cross-field validators to decide what needs a human",
+    "Compute review rate, reviewer headcount, cost per document and the confidence threshold implied by error cost"
+  ],
+  "prerequisites": "Work through [A Framework for LLM System Design](/learn/llm-system-design/design-framework) first. It helps to know [few-shot examples and structured outputs](/learn/prompt-and-context/few-shot-and-structured) and [scoring against references](/learn/evaluation/reference-scoring).",
+  "sims": ["constrained-decoding"],
+  "labs": [],
+  "sandbox": ["doc-extraction"],
+  "sources": [
+    { "title": "Probabilistic Outputs for Support Vector Machines and Comparisons to Regularized Likelihood Methods", "authors": "John Platt", "year": 1999, "note": "Platt scaling, the classic way to calibrate scores into probabilities" },
+    { "title": "On Calibration of Modern Neural Networks", "authors": "Guo, Pleiss, Sun and Weinberger", "year": 2017, "note": "Expected calibration error and temperature scaling" },
+    { "title": "Introduction to Information Retrieval", "authors": "Manning, Raghavan and Schutze", "year": 2008, "note": "Chapter 8: precision, recall and F-measure used for field-level scoring" },
+    { "title": "Designing Data-Intensive Applications", "authors": "Martin Kleppmann", "year": 2017, "note": "Chapters on batch processing and idempotent pipelines" }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "title": "Design Content Moderation at Scale",
+  "summary": "A moderation system for 50 million posts a day. The hard part is not the model, it is arithmetic: rare violations, base rates, tiered models that keep cost down, and human reviewers and appeals that keep errors honest.",
+  "objectives": [
+    "Convert daily post volume into QPS, tokens, and the cost of classifying everything with a large versus a small model",
+    "Use Bayes' rule to compute precision at a given base rate, and explain why a good classifier still floods reviewers",
+    "Design a tiered cascade and compute its expected cost per item from pass-through fractions",
+    "Map score bands to actions (allow, demote, review, remove) and use appeals to estimate false-removal rates",
+    "Plan evaluation with labeler agreement, stratified audits and drift monitoring, and defend the trade-offs"
+  ],
+  "prerequisites": "Work through [A Framework for LLM System Design](/learn/llm-system-design/design-framework) first. It helps to know [guardrails and safe deployment](/learn/production-systems/guardrails) and [routing and cascades](/learn/production-systems/model-routing).",
+  "sims": ["guardrail-threshold"],
+  "labs": [],
+  "sandbox": ["guarded-assistant"],
+  "sources": [
+    { "title": "Measuring Nominal Scale Agreement Among Many Raters", "authors": "Joseph L. Fleiss", "year": 1971, "note": "Chance-corrected agreement between labelers (the kappa family)" },
+    { "title": "FrugalGPT: How to Use Large Language Models While Reducing Cost and Improving Performance", "authors": "Chen, Zaharia and Zou", "year": 2023, "note": "Cascading cheap and expensive models" },
+    { "title": "Pattern Recognition and Machine Learning", "authors": "Christopher M. Bishop", "year": 2006, "note": "Section 1.5: decision theory, minimising expected loss with unequal error costs" }
+  ]
+}
