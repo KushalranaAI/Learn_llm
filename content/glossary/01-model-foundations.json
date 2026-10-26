@@ -1,5 +1,41 @@
 [
   {
+    "term": "Large language model (LLM)",
+    "slug": "large-language-model",
+    "def": "A neural network, usually a transformer with billions of parameters, trained on huge amounts of text to predict the next token. Chat assistants are LLMs with extra fine-tuning.",
+    "lesson": "model-foundations/what-is-an-llm"
+  },
+  {
+    "term": "Next-token prediction",
+    "slug": "next-token-prediction",
+    "def": "The task an LLM is trained on and runs: given the text so far, give every possible next token a probability. Generation repeats it one token at a time.",
+    "lesson": "model-foundations/what-is-an-llm"
+  },
+  {
+    "term": "Transformer",
+    "slug": "transformer",
+    "def": "The neural network architecture behind modern LLMs (2017): stacked blocks of attention and MLP layers that process all tokens in parallel.",
+    "lesson": "model-foundations/what-is-an-llm"
+  },
+  {
+    "term": "Softmax",
+    "slug": "softmax",
+    "def": "The function $p_i = e^{z_i} / \\sum_j e^{z_j}$ that turns raw scores (logits) into probabilities that are positive and add up to 1.",
+    "lesson": "model-foundations/what-is-an-llm"
+  },
+  {
+    "term": "Base model",
+    "slug": "base-model",
+    "def": "A model after pretraining only. It continues text well but does not reliably follow instructions until it is fine-tuned.",
+    "lesson": "model-foundations/what-is-an-llm"
+  },
+  {
+    "term": "Grounding",
+    "slug": "grounding",
+    "def": "Giving a model the facts it needs in its context, such as retrieved documents or tool results, so its answer rests on real sources rather than on what merely sounds likely.",
+    "lesson": "model-foundations/what-is-an-llm"
+  },
+  {
     "term": "Parameter",
     "slug": "parameter",
     "def": "A number inside a model that training adjusts, such as a weight or a bias. Model size is quoted as a parameter count.",

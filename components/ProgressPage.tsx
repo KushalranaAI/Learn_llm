@@ -12,7 +12,7 @@ export default function ProgressPage({ outline, totals }: { outline: Outline; to
   const [msg, setMsg] = useState("");
   const file = useRef<HTMLInputElement>(null);
   useEffect(() => setMounted(true), []);
-  if (!mounted) return <div className="card empty">Loading your progress…</div>;
+  if (!mounted) return <div className="page mid"><div className="card empty">Loading your progress…</div></div>;
 
   const topics = outline.flatMap((m) => m.lessons.flatMap((l) => l.topics.map((t) => `${m.slug}/${l.slug}/${t.slug}`)));
   const done = topics.filter((id) => p.done[id]).length;
@@ -41,8 +41,8 @@ export default function ProgressPage({ outline, totals }: { outline: Outline; to
   };
 
   return (
-    <div className="stack">
-      <header className="card">
+    <div className="page mid stack">
+      <header className="page-head">
         <span className="eyebrow"><Icon name="chart" size={14} /> My progress</span>
         <h1 style={{ marginTop: 8 }}>{done ? `${Math.round((done / Math.max(1, topics.length)) * 100)}% of the course` : "Your journey starts here"}</h1>
         <p className="lead">Everything is saved in this browser only. Export a backup to move it to another device.</p>

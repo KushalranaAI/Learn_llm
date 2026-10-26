@@ -2,6 +2,53 @@
   "module": "model-foundations",
   "sections": [
     {
+      "slug": "what-is-an-llm",
+      "title": "What Is an LLM?",
+      "lesson": "what-is-an-llm",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What is a large language model, in one or two sentences?",
+          "a": "A **large language model** is a neural network, almost always a transformer, trained on a very large amount of text to predict the next token. At each step it outputs a probability distribution $P(x_{t+1} \\mid x_1,\\dots,x_t)$ over its vocabulary (typically 30,000 to 200,000 tokens); generation repeatedly samples a token, appends it and runs again.\n\n\"Large\" refers to the parameter count (billions) and the training data (trillions of tokens). Everything else an assistant does (answering, coding, following instructions) is built on top of that one next-token objective."
+        },
+        {
+          "level": "junior",
+          "q": "What is a token, and why do LLMs work with tokens rather than words or characters?",
+          "a": "A **token** is the unit the model reads and writes: a whole common word, a piece of a rarer word, or a punctuation mark. A tokenizer maps text to integer IDs from a fixed vocabulary.\n\nWhole words would need an enormous vocabulary and could not handle new words; single characters would make sequences 4 to 5 times longer, and attention cost grows with sequence length. Subword tokens are the compromise. In English one token is roughly 3/4 of a word, so 1,000 tokens is about 750 words. A side effect: the model does not directly see letters, which is why counting characters is unreliable."
+        },
+        {
+          "level": "mid",
+          "q": "Walk through what happens inside a transformer when it predicts the next token.",
+          "a": "1. **Tokenize** the text into $n$ token IDs.\n2. **Embed**: each ID selects a learned vector of size $d$, giving an $n \\times d$ matrix (plus position information).\n3. **$L$ blocks**, each with **attention** (every token mixes in information from earlier tokens, weighted by relevance) and an **MLP** (each token's vector is transformed independently), with residual connections and normalisation. The shape stays $n \\times d$.\n4. The **last token's** final vector is multiplied by the output matrix to give one **logit** per vocabulary token.\n5. **Softmax** turns logits into probabilities; a decoding rule (greedy, temperature, top-p) picks the token.\n\nThe token is appended and the loop repeats; a KV cache avoids recomputing earlier tokens."
+        },
+        {
+          "level": "mid",
+          "q": "Explain temperature. What happens at T = 0 and at T = 2?",
+          "a": "Temperature divides the logits before softmax: $p_i = e^{z_i/T} / \\sum_j e^{z_j/T}$.\n\n- $T < 1$ stretches the gaps between logits, so the top token gets more mass. As $T \\to 0$ it becomes **greedy**: always the top token, deterministic.\n- $T > 1$ shrinks the gaps, flattening the distribution, so unlikely tokens are drawn more often.\n\nExample: logits 6.0 and 2.3 differ by 3.7. At $T=1$ the ratio of their probabilities is $e^{3.7} \\approx 40$; at $T=2$ it is $e^{1.85} \\approx 6.4$. Low temperature suits extraction, code and factual answers; higher suits brainstorming. On a factual prompt, higher temperature mostly adds wrong answers."
+        },
+        {
+          "level": "mid",
+          "q": "How is a chat assistant made from a base model?",
+          "a": "Three training stages, then deployment:\n\n1. **Pretraining**: next-token prediction on roughly $10^{12}$ to $10^{13}$ tokens of web, books and code. The **base model** continues text but does not reliably follow instructions.\n2. **Supervised fine-tuning (SFT)**: the same loss on instruction → answer examples (tens to hundreds of thousands), usually only on the answer tokens.\n3. **Preference tuning**: people (or models) compare two answers; **RLHF** trains a reward model and optimises against it, **DPO** optimises the preference directly.\n\nDeployment adds a system prompt, safety filters and monitoring without changing weights. The later stages use far less data but change behaviour the most: in the InstructGPT paper, people preferred a 1.3B tuned model over the 175B GPT-3."
+        },
+        {
+          "level": "senior",
+          "q": "A stakeholder says: \"The model is so big it must know our product catalogue.\" How do you respond, and what do you build?",
+          "a": "Size does not give a model information it never saw. The catalogue is private and changes, so the model can only produce **plausible-sounding** details: invented product codes, prices or features, delivered fluently.\n\nBuild **grounding**: retrieve the relevant catalogue entries (keyword or embedding search) and put them in the prompt, instruct the model to answer only from them and to say when the answer is not there, and cite the entry used. For live data such as stock levels or prices, give it a **tool** (an API call) instead. Then evaluate on real questions, checking answers against the catalogue and tracking the rate of unsupported claims. Fine-tuning on the catalogue is the wrong tool for facts that change weekly."
+        },
+        {
+          "level": "senior",
+          "q": "Why are LLMs unreliable at exact arithmetic and counting letters, and how would you design around it?",
+          "a": "Two reasons. First, numbers and words are split into **tokens**, so the model does not see individual digits or letters consistently (a word like \"strawberry\" may be two or three tokens). Second, it produces answers one token at a time by likelihood, not by running an exact algorithm: if each of 4 answer tokens is right with probability 0.95, the whole number is right only $0.95^4 \\approx 81\\%$ of the time.\n\nDesign: let the model decide *what* to compute and hand the computation to a **tool** (a calculator, a code interpreter, a database query). Validate tool outputs, and test long numbers and edge cases specifically in evaluations. Step-by-step reasoning helps but does not make it exact."
+        },
+        {
+          "level": "senior",
+          "q": "Parameter counts went from 117M (GPT-1, 2018) to 175B (GPT-3, 2020). What drove this, and why did the race in headline size slow afterwards?",
+          "a": "Growth factor: $1.75\\times10^{11} / 1.17\\times10^{8} \\approx 1{,}500\\times$ in two years. It was driven by the transformer's parallel training, more GPU compute, and the observation that loss falls predictably as parameters, data and compute grow (scaling laws), plus new abilities such as in-context learning in GPT-3.\n\nAfterwards the focus shifted. Compute-optimal training (Chinchilla, 2022) showed many models were under-trained: for a fixed budget, a smaller model on more tokens does better. Inference cost scales with parameters, so smaller models that are cheap to serve won (LLaMA-13B rivalled GPT-3 on many benchmarks). Alignment and data quality improved usefulness more per dollar than size. And many labs stopped publishing parameter counts."
+        }
+      ]
+    },
+    {
       "slug": "how-networks-learn",
       "title": "How a Network Learns: Loss and Gradient Descent",
       "lesson": "how-networks-learn",

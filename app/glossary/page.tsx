@@ -15,8 +15,8 @@ export default function GlossaryPage() {
     return modules.find((x) => x.slug === m)?.lessons.find((x) => x.slug === l)?.title ?? null;
   };
   return (
-    <div className="stack">
-      <header className="card">
+    <div className="page mid stack">
+      <header className="page-head">
         <span className="eyebrow"><Icon name="book" size={14} /> Glossary</span>
         <h1 style={{ marginTop: 8 }}>{terms.length} terms, in plain language</h1>
         <p className="lead">Every term the course uses, with a link to the lesson that explains it properly.</p>

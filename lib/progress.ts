@@ -1,6 +1,7 @@
 "use client";
 // Everything the learner has done, kept in their own browser: finished topics, daily activity, quick-check results,
 // the spaced-review queue, interview answers they know, labs passed. Export/import makes it portable.
+import { type Grade, type InterviewPlan, type IvCard, scheduleCard } from "./interview";
 import { jsonStore, useStore } from "./localstore";
 
 export type QuizData = { q: string; options: string[]; answer: number; explain?: string };
@@ -31,9 +32,13 @@ export type Progress = {
   known: Record<string, number>; // interview question id -> marked known at
   labs: Record<string, { step: number; passed?: number }>;
   simsTried: Record<string, number>;
+  /** interview question id -> spaced-repetition schedule (optional so older saved progress still loads) */
+  iv?: Record<string, IvCard>;
+  /** the learner's interview revision plan */
+  plan?: InterviewPlan | null;
 };
 
-const EMPTY: Progress = { done: {}, visited: {}, last: null, days: {}, checks: {}, reviews: {}, known: {}, labs: {}, simsTried: {} };
+const EMPTY: Progress = { done: {}, visited: {}, last: null, days: {}, checks: {}, reviews: {}, known: {}, labs: {}, simsTried: {}, iv: {}, plan: null };
 
 export const progressStore = jsonStore<Progress>("llm100-progress", EMPTY);
 export const useProgress = () => useStore(progressStore);
@@ -104,6 +109,46 @@ export function setLabStep(slug: string, step: number, passed?: boolean) {
 
 export function markSimTried(id: string) {
   progressStore.set((p) => (p.simsTried[id] ? p : { ...p, simsTried: { ...p.simsTried, [id]: Date.now() } }));
+}
+
+/** Grade an interview card (1 Again, 2 Hard, 3 Good, 4 Easy) and schedule its next appearance. */
+export function gradeInterview(id: string, grade: Grade, score?: number) {
+  progressStore.set((p) => bump({ ...p, iv: { ...(p.iv ?? {}), [id]: scheduleCard(p.iv?.[id], grade, Date.now(), score) } }));
+}
+
+/** Record a mock-interview score (0..1). Weak answers (< 0.6) become due now so Practice picks them up. */
+export function recordMockScore(id: string, score: number) {
+  progressStore.set((p) => {
+    const prev = p.iv?.[id];
+    const card: IvCard = { box: score < 0.6 ? 0 : prev?.box ?? 0, due: score < 0.6 ? Date.now() : prev?.due ?? Date.now(), reps: (prev?.reps ?? 0) + 1, lastScore: score };
+    return { ...p, iv: { ...(p.iv ?? {}), [id]: card } };
+  });
+}
+
+/** Make these questions due now (e.g. "practise these again"). */
+export function queueInterview(ids: string[]) {
+  progressStore.set((p) => {
+    const iv = { ...(p.iv ?? {}) };
+    const now = Date.now();
+    for (const id of ids) iv[id] = { ...(iv[id] ?? { box: 0, reps: 0 }), due: now };
+    return { ...p, iv };
+  });
+}
+
+export function savePlan(plan: InterviewPlan | null) {
+  progressStore.set((p) => ({ ...p, plan }));
+}
+
+/** Tick or untick one plan item (`${day}:${item}`). */
+export function togglePlanItem(key: string, on: boolean) {
+  progressStore.set((p) => {
+    if (!p.plan) return p;
+    const checked = { ...p.plan.checked };
+    if (on) checked[key] = Date.now();
+    else delete checked[key];
+    const next = { ...p, plan: { ...p.plan, checked } };
+    return on ? bump(next) : next;
+  });
 }
 
 export const dueReviews = (p: Progress, now = Date.now()) => Object.values(p.reviews).filter((r) => r.due <= now).sort((a, b) => a.due - b.due);

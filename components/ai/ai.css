@@ -1,0 +1,136 @@
+/* AI tutor, settings and "Explain with AI": built on the app's System Learn tokens (globals.css). AI accents use --ai. */
+
+/* ---------- top-bar chip (System Learn's .ai-chip) ---------- */
+.ai-chip { display: flex; align-items: center; gap: 6px; height: 32px; font-size: 0.82rem; font-weight: 500; color: var(--muted); padding: 0 11px; border-radius: 99px; border: 1px solid var(--line); white-space: nowrap; }
+.ai-chip:hover { color: var(--text); border-color: var(--line-2); }
+.ai-chip.on { color: var(--ai); border-color: color-mix(in srgb, var(--ai) 35%, transparent); background: color-mix(in srgb, var(--ai) 9%, transparent); }
+.ai-chip.locked { color: var(--warm); border-color: color-mix(in srgb, var(--warm) 40%, transparent); background: color-mix(in srgb, var(--warm) 7%, transparent); }
+.ai-chip.active { border-color: var(--line-2); color: var(--text); }
+@media (max-width: 1180px) { .ai-chip .ai-chip-label { display: none; } .ai-chip { padding: 0 9px; } }
+
+/* ---------- floating launcher ---------- */
+.ai-launch-group { position: fixed; right: 20px; bottom: 20px; z-index: 40; display: flex; align-items: center; gap: 8px; }
+.ai-launch-explain { background: var(--panel); box-shadow: var(--shadow); height: 34px; }
+.ai-launcher { display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 16px 0 14px; border-radius: 99px; border: 1px solid var(--line-2); background: var(--panel); color: var(--text-2); font-weight: 600; font-size: 0.86rem; cursor: pointer; box-shadow: var(--shadow-lg); transition: transform 0.15s var(--ease), border-color 0.15s, color 0.15s; }
+.ai-launcher:hover { transform: translateY(-1px); color: var(--text); border-color: var(--faint); }
+.ai-launcher.on { color: var(--ai); border-color: color-mix(in srgb, var(--ai) 45%, transparent); }
+.ai-launcher.on:hover { color: var(--text); }
+@media (max-width: 720px) { .ai-launcher span { display: none; } .ai-launcher { width: 44px; padding: 0; justify-content: center; } }
+@media print { .ai-launcher, .ai-panel, .ai-selection { display: none !important; } }
+
+/* ---------- side panel ---------- */
+.ai-panel {
+  position: fixed; top: 56px; right: 0; bottom: 0; z-index: 45; width: min(var(--ai-w, 420px), 100vw);
+  display: flex; flex-direction: column; background: var(--bg-2); border-left: 1px solid var(--line); box-shadow: var(--shadow-lg);
+  animation: ai-in 0.18s var(--ease) both;
+}
+@keyframes ai-in { from { transform: translateX(16px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .ai-panel { animation: none; } }
+.ai-resize { position: absolute; left: -4px; top: 0; bottom: 0; width: 8px; cursor: col-resize; z-index: 2; }
+.ai-resize:hover, .ai-resize:focus-visible { background: color-mix(in srgb, var(--ai) 30%, transparent); box-shadow: none; border-radius: 0; }
+body.ai-resizing { cursor: col-resize; user-select: none; }
+.ai-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 10px 10px 16px; border-bottom: 1px solid var(--line); flex: none; }
+.ai-title { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.ai-title > div { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.ai-title-icon { display: grid; place-items: center; width: 30px; height: 30px; border-radius: var(--r-sm); background: color-mix(in srgb, var(--ai) 14%, transparent); color: var(--ai); flex: none; }
+.ai-model { border: 0; background: none; padding: 0; color: var(--muted); font-size: 0.76rem; cursor: pointer; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 240px; }
+.ai-model:hover { color: var(--text); }
+.ai-head-actions { display: flex; gap: 2px; }
+.ai-head-actions .icon-btn.on { background: var(--panel-2); color: var(--ai); }
+.ai-body { flex: 1; overflow-y: auto; padding: 16px; min-height: 0; }
+.ai-messages { display: flex; flex-direction: column; gap: 14px; }
+
+.ai-empty, .ai-unlock { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; }
+.ai-empty h3, .ai-unlock h3 { margin: 0; }
+.ai-empty p, .ai-unlock p { margin: 0; }
+.ai-unlock .ai-field { text-align: left; }
+.ai-empty-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 12px; background: color-mix(in srgb, var(--ai) 14%, transparent); color: var(--ai); }
+
+.ai-intro h3 { margin-bottom: 4px; }
+.ai-suggestions { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+.ai-suggestion { display: flex; align-items: center; gap: 8px; text-align: left; padding: 9px 12px; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--panel); color: var(--text-2); font-size: 0.86rem; cursor: pointer; }
+.ai-suggestion:hover { border-color: var(--line-2); color: var(--text); background: var(--panel-2); }
+.ai-suggestion svg { color: var(--ai); flex: none; }
+
+.ai-msg.user { align-self: flex-end; max-width: 88%; }
+.ai-bubble { background: var(--panel-2); border: 1px solid var(--line); border-radius: 14px 14px 4px 14px; padding: 9px 13px; white-space: pre-wrap; font-size: 0.9rem; overflow-wrap: anywhere; }
+.ai-quote { margin: 0 0 6px; padding: 4px 0 4px 10px; border-left: 2px solid var(--ai); color: var(--muted); font-size: 0.8rem; white-space: pre-wrap; }
+.ai-answer { min-width: 0; }
+.ai-answer .prose { font-size: 0.92rem; }
+.ai-answer .prose > :first-child { margin-top: 0; }
+.ai-answer .prose > :last-child { margin-bottom: 0; }
+.ai-answer .prose pre { overflow-x: auto; background: var(--code-bg); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 10px 12px; font-size: 0.82rem; }
+.ai-answer .prose table { display: block; overflow-x: auto; }
+.ai-answer .katex-display { overflow-x: auto; overflow-y: hidden; }
+.ai-msg-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.ai-typing { display: inline-flex; gap: 4px; padding: 6px 0; }
+.ai-typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--ai); animation: ai-blink 1s infinite ease-in-out; }
+.ai-typing i:nth-child(2) { animation-delay: 0.15s; }
+.ai-typing i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes ai-blink { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
+
+.ai-composer { flex: none; border-top: 1px solid var(--line); padding: 10px 12px 10px; display: flex; flex-direction: column; gap: 6px; background: var(--bg-2); }
+.ai-composer-row { display: flex; align-items: flex-end; gap: 8px; }
+.ai-composer textarea { flex: 1; resize: none; min-height: 38px; max-height: 160px; font-size: 0.9rem; line-height: 1.45; padding: 8px 11px; }
+.ai-round { width: 38px; height: 38px; padding: 0; border-radius: 50%; flex: none; }
+.ai-composer-foot { display: flex; justify-content: space-between; gap: 8px; font-size: 0.72rem; }
+.ai-composer-foot span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; text-align: right; }
+.ai-quote-bar { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 10px; border-radius: var(--r-sm); background: color-mix(in srgb, var(--ai) 8%, transparent); border: 1px solid color-mix(in srgb, var(--ai) 25%, transparent); font-size: 0.8rem; color: var(--text-2); }
+.ai-quote-bar span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ai-quote-bar svg { color: var(--ai); flex: none; }
+.ai-quote-bar .icon-btn { width: 24px; height: 24px; }
+@media (max-width: 720px) { .ai-panel { width: 100vw; } .ai-composer-foot span:first-child { display: none; } }
+
+/* ---------- notices, fields, choices (settings) ---------- */
+.ai-notice { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--panel); color: var(--text-2); margin-top: 10px; }
+.ai-notice > svg { flex: none; margin-top: 2px; }
+.ai-notice.ok { border-color: var(--accent-line); background: var(--accent-soft); }
+.ai-notice.ok > svg { color: var(--accent-strong); }
+.ai-notice.bad { border-color: color-mix(in srgb, var(--bad) 35%, transparent); background: color-mix(in srgb, var(--bad) 8%, transparent); }
+.ai-notice.bad > svg { color: var(--bad); }
+.ai-notice.info > svg, .ai-notice.busy > svg, .ai-notice.idle > svg { color: var(--info); }
+.ai-notice code, .ai-settings code { font-size: 0.82em; padding: 1px 5px; border-radius: 5px; background: var(--panel-2); border: 1px solid var(--line); }
+
+.ai-settings { display: flex; flex-direction: column; gap: 22px; }
+.ai-section h3 { margin-bottom: 8px; }
+.ai-section > p { margin-bottom: 10px; }
+.ai-field { display: flex; flex-direction: column; gap: 5px; margin: 12px 0; font-size: 0.84rem; font-weight: 550; color: var(--text-2); width: 100%; }
+.ai-field input, .ai-field select { width: 100%; font-weight: 400; }
+.ai-field small { font-weight: 400; font-size: 0.78rem; }
+.ai-field-label { display: flex; justify-content: space-between; gap: 8px; }
+.ai-field-link { display: inline-flex; align-items: center; gap: 4px; color: var(--accent-strong); font-weight: 500; font-size: 0.8rem; }
+.ai-field-link:hover { text-decoration: underline; }
+.ai-input-row { display: flex; gap: 6px; align-items: center; }
+.ai-input-row input { flex: 1; font-family: var(--font-mono), ui-monospace, monospace; }
+.ai-provider-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+.ai-provider, .ai-choice-opt { display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 11px 13px; border-radius: var(--r); border: 1px solid var(--line); background: var(--panel); color: var(--text); cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+.ai-provider:hover, .ai-choice-opt:hover { border-color: var(--line-2); background: var(--panel-2); }
+.ai-provider.selected, .ai-choice-opt.selected { border-color: var(--accent); box-shadow: var(--ring); background: var(--panel-2); }
+.ai-provider-top { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+.ai-choice { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; margin-bottom: 4px; }
+.ai-passphrase { margin-top: 10px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); }
+.ai-switch-row { display: flex; gap: 12px; align-items: flex-start; }
+.ai-switch-row .switch { margin-top: 2px; }
+.ai-block { display: block; margin-top: 2px; }
+.ai-danger { color: var(--bad); }
+.ai-danger:hover { border-color: var(--bad); }
+.chip-btn.on { color: var(--accent-strong); border-color: var(--accent-line); background: var(--accent-soft); }
+
+/* ---------- /ai page ---------- */
+.ai-page-status { display: inline-flex; align-items: center; gap: 6px; }
+.ai-page-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; align-items: start; }
+.ai-page-aside { position: sticky; top: 80px; display: flex; flex-direction: column; gap: 14px; }
+.ai-page-aside ul { margin: 0; padding-left: 18px; color: var(--text-2); font-size: 0.86rem; }
+.ai-page-aside li + li { margin-top: 6px; }
+@media (max-width: 980px) { .ai-page-grid { grid-template-columns: minmax(0, 1fr); } .ai-page-aside { position: static; } }
+
+/* ---------- "Explain with AI" ---------- */
+.ai-explain { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.ai-explain-btn { color: var(--ai); border-color: color-mix(in srgb, var(--ai) 35%, transparent); }
+.ai-explain-btn:hover { color: var(--text); border-color: var(--ai); background: color-mix(in srgb, var(--ai) 10%, transparent); }
+
+/* ---------- selection toolbar ---------- */
+.selection-ask { position: fixed; z-index: 60; transform: translate(-50%, -100%); display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: var(--panel-3); border: 1px solid var(--line-2); box-shadow: var(--shadow-lg); }
+.selection-ask button { display: inline-flex; align-items: center; gap: 5px; border: 0; background: transparent; color: var(--text); font-size: 0.8rem; font-weight: 550; padding: 5px 9px; border-radius: 7px; cursor: pointer; }
+.selection-ask button:hover { background: color-mix(in srgb, var(--ai) 16%, transparent); }
+.selection-ask button svg { color: var(--ai); }

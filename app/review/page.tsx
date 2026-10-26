@@ -26,8 +26,8 @@ export default function ReviewPage() {
   if (session && i < session.length) {
     const item = session[i];
     return (
-      <div className="stack" style={{ maxWidth: 820 }}>
-        <div className="topic-progress">
+      <div className="page narrow stack">
+        <div className="card tight">
           <div className="row">
             <span>Review session</span>
             <span className="mono muted">{i + 1} / {session.length}</span>
@@ -65,6 +65,7 @@ export default function ReviewPage() {
   }
 
   return (
+    <div className="page">
     <div className="grid-main">
       <div className="stack">
         <header className="card">
@@ -109,6 +110,7 @@ export default function ReviewPage() {
           </div>
         </section>
       </aside>
+    </div>
     </div>
   );
 }

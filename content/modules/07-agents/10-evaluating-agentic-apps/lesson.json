@@ -1,0 +1,26 @@
+{
+  "title": "Evaluating Agentic Applications End to End",
+  "summary": "How to build the evaluation for your own agent: define success per task as a checkable outcome, score trajectories and tool calls, test against simulated users in resettable environments, use judges over traces where rules cannot decide, measure reliability and cost per successful task, and assemble it all into a plan that gates releases and watches production.",
+  "objectives": [
+    "After this lesson you can write task specifications whose success is an objective check on the environment's final state",
+    "Score a trajectory with tool-call precision, recall and F1 plus ordering and policy constraints",
+    "Design a simulated user and a resettable sandbox, and estimate how simulator error affects measured success",
+    "Use and calibrate a judge over agent traces for criteria that rules cannot check",
+    "Combine pass^k, cost per successful task and safety metrics into a complete agent evaluation plan"
+  ],
+  "prerequisites": "Traces, trajectory metrics and pass^k from [/learn/agents/traces-and-evaluation](/learn/agents/traces-and-evaluation), agent benchmarks from [/learn/agents/agent-benchmarks](/learn/agents/agent-benchmarks), and judge calibration from [/learn/evaluation/eval-driven-development](/learn/evaluation/eval-driven-development).",
+  "sims": ["agent-trajectory", "pass-at-k", "judge-agreement", "agent-reliability"],
+  "labs": ["evaluate-an-agent"],
+  "sandbox": ["agent-eval-harness"],
+  "sources": [
+    { "title": "Demystifying evals for AI agents", "authors": "Anthropic Engineering", "year": 2026, "note": "Tasks, trials, graders, transcripts, outcomes; grade outcomes not paths; isolated trials", "url": "https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents" },
+    { "title": "τ-bench: A Benchmark for Tool-Agent-User Interaction in Real-World Domains", "authors": "Yao et al.", "year": 2024, "note": "Simulated users and database-state grading; pass^k", "url": "https://arxiv.org/abs/2406.12045" },
+    { "title": "τ²-Bench: Evaluating Conversational Agents in a Dual-Control Environment", "authors": "Barres et al.", "year": 2025, "note": "User simulator with its own tools", "url": "https://arxiv.org/abs/2506.07982" },
+    { "title": "Agent-as-a-Judge: Evaluate Agents with Agents", "authors": "Zhuge et al.", "year": 2024, "note": "Agentic judges over workspaces and trajectories", "url": "https://arxiv.org/abs/2410.10934" },
+    { "title": "Ragas: agent and tool-use metrics", "authors": "Ragas", "year": 2026, "note": "Tool call accuracy, tool call F1, agent goal accuracy", "url": "https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/" },
+    { "title": "AgentDojo", "authors": "Debenedetti et al.", "year": 2024, "note": "Utility and attack success for tool-using agents", "url": "https://arxiv.org/abs/2406.13352" },
+    { "title": "AI Agents That Matter", "authors": "Kapoor et al.", "year": 2024, "note": "Cost-aware agent evaluation", "url": "https://arxiv.org/abs/2407.01502" },
+    { "title": "Inspect", "authors": "UK AI Security Institute", "year": 2026, "note": "Agent evals with sandboxed tools", "url": "https://inspect.aisi.org.uk/" },
+    { "title": "AI Evals: Everything You Need to Know (FAQ)", "authors": "Hamel Husain and Shreya Shankar", "year": 2026, "note": "Error analysis on traces; judges per failure mode", "url": "https://hamel.dev/blog/posts/evals-faq/" }
+  ]
+}

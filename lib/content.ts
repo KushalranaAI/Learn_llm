@@ -203,7 +203,11 @@ export function getOutline() {
       slug: l.slug,
       order: l.order,
       title: l.title,
+      summary: l.summary,
       minutes: l.minutes,
+      sims: l.sims.length,
+      labs: l.labs.length,
+      sandbox: l.sandbox.length,
       topics: l.topics.map((t) => ({ slug: t.slug, title: t.title, minutes: t.minutes, checks: t.checks })),
     })),
   }));

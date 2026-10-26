@@ -12,14 +12,14 @@ const PAD = 34; // horizontal padding + border of the frame
 
 const THEMES = {
   light: {
-    background: "#ffffff", mainBkg: "#fbefe4", primaryColor: "#fbefe4", primaryTextColor: "#1b1915", primaryBorderColor: "#d97b34",
-    secondaryColor: "#e6f2ea", tertiaryColor: "#f3f1ec", lineColor: "#7a7368", textColor: "#1b1915", nodeBorder: "#d97b34",
-    edgeLabelBackground: "#ffffff", clusterBkg: "#f7f5f0", clusterBorder: "#d8d2c6", titleColor: "#1b1915",
+    background: "#ffffff", mainBkg: "#e7f7f0", primaryColor: "#e7f7f0", primaryTextColor: "#11151c", primaryBorderColor: "#059669",
+    secondaryColor: "#e4f1fb", tertiaryColor: "#f1f3f7", lineColor: "#636c7e", textColor: "#11151c", nodeBorder: "#059669",
+    edgeLabelBackground: "#ffffff", clusterBkg: "#f4f6f9", clusterBorder: "#cfd6e1", titleColor: "#11151c",
   },
   dark: {
-    background: "#1c1c1e", mainBkg: "#2d2620", primaryColor: "#2d2620", primaryTextColor: "#f2efe9", primaryBorderColor: "#e8a15f",
-    secondaryColor: "#1f3027", tertiaryColor: "#242426", lineColor: "#a29a8e", textColor: "#f2efe9", nodeBorder: "#e8a15f",
-    edgeLabelBackground: "#1c1c1e", clusterBkg: "#242426", clusterBorder: "#3a3a3d", titleColor: "#f2efe9",
+    background: "#0f1218", mainBkg: "#10261f", primaryColor: "#10261f", primaryTextColor: "#e8ebf2", primaryBorderColor: "#34d399",
+    secondaryColor: "#12263a", tertiaryColor: "#141821", lineColor: "#828aa0", textColor: "#e8ebf2", nodeBorder: "#34d399",
+    edgeLabelBackground: "#0f1218", clusterBkg: "#141821", clusterBorder: "#2e3546", titleColor: "#e8ebf2",
   },
 } as const;
 

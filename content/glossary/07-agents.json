@@ -118,5 +118,47 @@
     "slug": "sandbox",
     "def": "An isolated environment, with restricted filesystem, network, CPU and memory, in which untrusted or model-written code runs.",
     "lesson": "agents/bounded-autonomy"
+  },
+  {
+    "term": "SWE-bench",
+    "slug": "swe-bench",
+    "def": "An agent benchmark of real GitHub issues where a patch counts as resolving the issue only if the fix's fail-to-pass and pass-to-pass tests all pass.",
+    "lesson": "agents/agent-benchmarks"
+  },
+  {
+    "term": "Agent scaffold",
+    "slug": "agent-scaffold",
+    "def": "The code around a model that makes it an agent (loop, tools, prompts, context management); agent results measure model and scaffold together.",
+    "lesson": "agents/agent-benchmarks"
+  },
+  {
+    "term": "Time horizon",
+    "slug": "time-horizon",
+    "def": "The length of task, measured in skilled-human time, that a model completes with a given success rate (usually 50%).",
+    "lesson": "agents/agent-benchmarks"
+  },
+  {
+    "term": "User simulator",
+    "slug": "user-simulator",
+    "def": "A language model that plays the user in an agent evaluation, with a persona and a hidden goal, so conversational tasks can be repeated.",
+    "lesson": "agents/evaluating-agentic-apps"
+  },
+  {
+    "term": "Outcome grading",
+    "slug": "outcome-grading",
+    "def": "Judging an agent trial by the final state of its environment, such as database rows or passing tests, rather than by its words or exact steps.",
+    "lesson": "agents/evaluating-agentic-apps"
+  },
+  {
+    "term": "Tool-call F1",
+    "slug": "tool-call-f1",
+    "def": "The harmonic mean of precision and recall of an agent's tool calls matched against the calls a correct solution needs.",
+    "lesson": "agents/evaluating-agentic-apps"
+  },
+  {
+    "term": "Cost per successful task",
+    "slug": "cost-per-successful-task",
+    "def": "Total spend on an agent's attempts divided by the number of tasks it completed successfully.",
+    "lesson": "agents/evaluating-agentic-apps"
   }
 ]

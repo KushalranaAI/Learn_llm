@@ -11,8 +11,8 @@ export default function LabsPage() {
   const modules = getModules();
   const groups = modules.map((m) => ({ m, labs: LABS.filter((l) => l.module === m.slug) })).filter((g) => g.labs.length);
   return (
-    <div className="stack">
-      <header className="card">
+    <div className="page mid stack">
+      <header className="page-head">
         <span className="eyebrow"><Icon name="beaker" size={14} /> Labs</span>
         <h1 style={{ marginTop: 8 }}>{LABS.length ? `${LABS.length} hands-on labs` : "Hands-on labs"}</h1>
         <p className="lead">

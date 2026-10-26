@@ -1,0 +1,31 @@
+{
+  "title": "Benchmarks and Leaderboards: Reading Public Numbers Critically",
+  "summary": "Public benchmarks and arenas are how models get compared before you ever run them. This lesson explains what a benchmark score actually measures, why scores saturate and get contaminated, how arena ratings are computed from pairwise votes, and how to turn public numbers into a shortlist you then test yourself.",
+  "objectives": [
+    "After this lesson you can describe a benchmark as task + metric + protocol and compute the error bar on a published score",
+    "Explain saturation and contamination, estimate how contamination inflates a score, and name the main detection methods",
+    "Fit a Bradley-Terry rating gap by hand from win counts and convert rating gaps into win probabilities",
+    "Read a leaderboard with confidence intervals, rank uncertainty and cost, instead of the rank alone",
+    "Decide which public results to trust for your own use case and design the private evaluation that settles the choice"
+  ],
+  "prerequisites": "Error bars and paired comparisons from [/learn/evaluation/comparing-systems](/learn/evaluation/comparing-systems), and LLM judges and their biases from [/learn/evaluation/llm-as-judge](/learn/evaluation/llm-as-judge). pass@k is introduced in [/learn/agents/traces-and-evaluation](/learn/agents/traces-and-evaluation).",
+  "sims": ["benchmark-contamination", "arena-elo", "ab-significance"],
+  "labs": ["build-an-eval-suite"],
+  "sandbox": [],
+  "sources": [
+    { "title": "Measuring Massive Multitask Language Understanding", "authors": "Hendrycks et al.", "year": 2020, "note": "MMLU: 57 subjects", "url": "https://arxiv.org/abs/2009.03300" },
+    { "title": "Are We Done with MMLU?", "authors": "Gema et al.", "year": 2024, "note": "About 6.5% of MMLU questions flawed; MMLU-Redux", "url": "https://arxiv.org/abs/2406.04127" },
+    { "title": "MMLU-Pro: A More Robust and Challenging Multi-Task Language Understanding Benchmark", "authors": "Wang et al.", "year": 2024, "note": "Ten options, lower prompt sensitivity", "url": "https://arxiv.org/abs/2406.01574" },
+    { "title": "GPQA: A Graduate-Level Google-Proof Q&A Benchmark", "authors": "Rein et al.", "year": 2023, "note": "448 expert-written questions; expert vs non-expert accuracy", "url": "https://arxiv.org/abs/2311.12022" },
+    { "title": "Humanity's Last Exam", "authors": "Phan et al. (Center for AI Safety and Scale AI)", "year": 2025, "note": "2,500 closed-ended expert questions", "url": "https://arxiv.org/abs/2501.14249" },
+    { "title": "LiveCodeBench: Holistic and Contamination Free Evaluation of Large Language Models for Code", "authors": "Jain et al.", "year": 2024, "note": "Time-windowed fresh problems", "url": "https://arxiv.org/abs/2403.07974" },
+    { "title": "A Careful Examination of Large Language Model Performance on Grade School Arithmetic", "authors": "Zhang et al.", "year": 2024, "note": "GSM1k: fresh-set comparison reveals overfitting", "url": "https://arxiv.org/abs/2405.00332" },
+    { "title": "Proving Test Set Contamination in Black Box Language Models", "authors": "Oren et al.", "year": 2023, "note": "Exchangeability (ordering) test", "url": "https://arxiv.org/abs/2310.17623" },
+    { "title": "Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference", "authors": "Chiang et al.", "year": 2024, "note": "Pairwise crowdsourced evaluation", "url": "https://arxiv.org/abs/2403.04132" },
+    { "title": "Chatbot Arena: New models and Elo system update", "authors": "LMSYS", "year": 2023, "note": "Switch from online Elo to Bradley-Terry with bootstrap intervals", "url": "https://lmsys.org/blog/2023-12-07-leaderboard/" },
+    { "title": "Does style matter? Disentangling style and substance in Chatbot Arena", "authors": "LMSYS", "year": 2024, "note": "Style control covariates", "url": "https://lmsys.org/blog/2024-08-29-style-control/" },
+    { "title": "The Leaderboard Illusion", "authors": "Singh et al.", "year": 2025, "note": "Private variant testing and unequal data access on arenas", "url": "https://arxiv.org/abs/2504.20879" },
+    { "title": "Holistic Evaluation of Language Models", "authors": "Liang et al.", "year": 2022, "note": "HELM: many scenarios x seven metrics", "url": "https://arxiv.org/abs/2211.09110" },
+    { "title": "A statistical approach to model evaluations", "authors": "Anthropic (E. Miller)", "year": 2024, "note": "Standard errors, clustering, paired differences, power", "url": "https://www.anthropic.com/research/statistical-approach-to-model-evals" }
+  ]
+}

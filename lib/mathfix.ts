@@ -1,6 +1,6 @@
 // Course text writes currency as `\$` and sometimes puts one inside maths, e.g. `$1.5 \times 1.16 \approx \$1.74$`.
 // The markdown maths parser has no escapes inside a maths span: it closes the span at that `$`, cutting the formula off.
-// This pass rewrites a `\$` that sits *inside* a maths span to KaTeX's `\mathdollar`, and leaves `\$` in prose alone
+// This pass rewrites a `\$` that sits *inside* a maths span to KaTeX's `\char36`, and leaves `\$` in prose alone
 // (markdown turns it into a literal dollar sign). Fenced and inline code are untouched.
 export function fixMath(src: string): string {
   if (!src.includes("\\$")) return src;
@@ -48,7 +48,7 @@ export function fixMath(src: string): string {
           i++;
         }
       } else if (c === "\\" && n === "$") {
-        res += "\\mathdollar ";
+        res += "\\char36 ";
         i += 2;
       } else if (c === "\\" && n === "\\") {
         res += "\\\\";

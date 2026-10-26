@@ -1,6 +1,7 @@
 "use client";
 // A quick check. The first answer counts: a miss goes into spaced review (back tomorrow, then after 3, 7, 14, 30 days).
 import { createContext, useContext, useState } from "react";
+import ExplainButton from "@/components/ai/ExplainButton";
 import MiniMarkdown from "@/components/MiniMarkdown";
 import Icon from "@/components/ui/Icon";
 import { type QuizData, recordCheck, useProgress } from "@/lib/progress";
@@ -65,6 +66,18 @@ export function QuizCard({
         <div className={`quiz-feedback ${picked === quiz.answer ? "right" : "wrong"}`}>
           <b>{picked === quiz.answer ? "Right." : "Not quite."}</b>
           {quiz.explain && <MiniMarkdown>{quiz.explain}</MiniMarkdown>}
+          {/* optional AI tutor (only shown when configured); the answer is already revealed here */}
+          <ExplainButton
+            prompt={() =>
+              [
+                `Explain this quick check. Question: ${quiz.q}`,
+                "Options:",
+                ...quiz.options.map((o, i) => `${String.fromCharCode(65 + i)}) ${o}`),
+                `The correct answer is ${String.fromCharCode(65 + quiz.answer)}. I picked ${String.fromCharCode(65 + (picked ?? 0))}.`,
+                picked === quiz.answer ? "Why is it right, and why are the others wrong?" : "Why is my pick wrong and the correct one right? Address the misconception behind my choice.",
+              ].join("\n")
+            }
+          />
         </div>
       )}
     </div>

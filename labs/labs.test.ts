@@ -12,9 +12,9 @@ const EXPECTED = [
   "plan-a-training-run", "lora-budget",
   "serve-a-chat-model", "shrink-the-model", "capacity-plan",
   "stop-the-injection",
-  "is-it-really-better",
+  "is-it-really-better", "build-an-eval-suite",
   "tune-the-index", "chunk-it-right", "fix-the-rag-bot",
-  "make-the-agent-reliable",
+  "make-the-agent-reliable", "evaluate-an-agent",
   "route-the-traffic",
   "design-support-bot",
 ];
@@ -24,16 +24,16 @@ const MODULE_OF: Record<string, string> = {
   "plan-a-training-run": "training-and-adaptation", "lora-budget": "training-and-adaptation",
   "serve-a-chat-model": "inference-and-serving", "shrink-the-model": "inference-and-serving", "capacity-plan": "inference-and-serving",
   "stop-the-injection": "prompt-and-context",
-  "is-it-really-better": "evaluation",
+  "is-it-really-better": "evaluation", "build-an-eval-suite": "evaluation",
   "tune-the-index": "retrieval-and-rag", "chunk-it-right": "retrieval-and-rag", "fix-the-rag-bot": "retrieval-and-rag",
-  "make-the-agent-reliable": "agents",
+  "make-the-agent-reliable": "agents", "evaluate-an-agent": "agents",
   "route-the-traffic": "production-systems",
   "design-support-bot": "llm-system-design",
 };
-const SYSTEM_LABS = ["serve-a-chat-model", "capacity-plan", "stop-the-injection", "fix-the-rag-bot", "make-the-agent-reliable", "route-the-traffic", "design-support-bot"];
+const SYSTEM_LABS = ["serve-a-chat-model", "capacity-plan", "stop-the-injection", "fix-the-rag-bot", "make-the-agent-reliable", "route-the-traffic", "design-support-bot", "build-an-eval-suite", "evaluate-an-agent"];
 
 describe("lab catalogue", () => {
-  it("has all 18 labs, with unique slugs, in curriculum order", () => {
+  it("has all 20 labs, with unique slugs, in curriculum order", () => {
     const slugs = LABS.map((l) => l.slug);
     expect(new Set(slugs).size).toBe(slugs.length);
     expect(slugs).toEqual(EXPECTED);

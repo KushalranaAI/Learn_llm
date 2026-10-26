@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ALL_KINDS, KINDS, defaultConfig, resolveConfig } from "./catalog";
-import { evaluateDesign, run, selfHostPerf } from "./engine";
+import { evalGateModel, evaluateDesign, run, selfHostPerf } from "./engine";
 import { applyAction, explain, whatIfs } from "./explain";
 import { build, cleanGraph, parseGraph } from "./presets";
 import { SCENARIOS, getScenario } from "./scenarios";
@@ -31,10 +31,10 @@ describe("catalog", () => {
 
 describe("scenarios", () => {
   it("has the required ids, in the required groups", () => {
-    for (const id of ["llm-serving-basic", "semantic-cache", "rag-basic", "rag-production", "guarded-assistant", "support-agent", "model-router", "provider-outage", "llm-gateway", "code-assistant", "doc-extraction", "voice-agent"])
+    for (const id of ["llm-serving-basic", "semantic-cache", "rag-basic", "rag-production", "guarded-assistant", "support-agent", "model-router", "provider-outage", "llm-gateway", "code-assistant", "doc-extraction", "voice-agent", "eval-gated-release", "agent-eval-harness"])
       expect(getScenario(id), id).toBeDefined();
     const groups = new Set(SCENARIOS.map((s) => s.group));
-    for (const g of ["Basics", "Retrieval", "Agents", "Production", "Case studies"]) expect(groups.has(g as never)).toBe(true);
+    for (const g of ["Basics", "Retrieval", "Agents", "Production", "Evaluation", "Case studies"]) expect(groups.has(g as never)).toBe(true);
     expect(new Set(SCENARIOS.map((s) => s.id)).size).toBe(SCENARIOS.length);
   });
 
@@ -168,6 +168,67 @@ describe("engine behaviour", () => {
     const withEvals = build({ users: ["users", { rps: 10 }], llm: "llm-api", obs: "observability" }, "users > llm");
     expect(summarize(runTimeline(withEvals, {}, { type: "badRollout" })).rolledBackAt).not.toBeNull();
     expect(summarize(runTimeline(g, {}, { type: "badRollout" })).rolledBackAt).toBeNull();
+  });
+
+  it("an eval gate in front of the model keeps quality up under a bad rollout, at the cost of eval spend", () => {
+    const bare = build({ users: ["users", { rps: 10 }], llm: "llm-api" }, "users > llm");
+    const gated = build({ users: ["users", { rps: 10 }], gate: "eval-gate", llm: "llm-api" }, "users > gate > llm");
+    const off = build({ users: ["users", { rps: 10 }], gate: "eval-gate", llm: "llm-api" }, "users > llm, gate > llm");
+    const bad = { type: "badRollout" } as const;
+    const normal = run(bare).metrics;
+    const a = run(bare, {}, bad).metrics;
+    const b = run(gated, {}, bad).metrics;
+    expect(b.quality).toBeGreaterThan(a.quality + 0.15);
+    expect(b.quality).toBeLessThanOrEqual(normal.quality + 1e-9);
+    // off the request path in latency terms, and wired beside the path it protects just as well
+    expect(run(gated).metrics.p50Ms).toBeCloseTo(normal.p50Ms, 6);
+    expect(run(off, {}, bad).metrics.quality).toBeCloseTo(b.quality, 9);
+    expect(run(off, {}, bad).metrics.successRate).toBeCloseTo(a.successRate, 9);
+    // no effect on a normal day, except the eval bill
+    expect(run(gated).metrics.quality).toBeCloseTo(normal.quality, 9);
+    expect(run(gated).metrics.costPerMonth).toBeGreaterThan(normal.costPerMonth);
+    // a gate that is not in front of the model protects nothing (and says so)
+    const stray = build({ users: ["users", { rps: 10 }], gate: "eval-gate", llm: "llm-api" }, "users > llm");
+    const rs = run(stray, {}, bad);
+    expect(rs.metrics.quality).toBeCloseTo(a.quality, 9);
+    expect(rs.issues.some((i) => i.nodeId === "gate")).toBe(true);
+    expect(explain(stray, rs).advice.some((x) => x.nodeId === "gate")).toBe(true);
+    // the guide offers to add a gate under a bad rollout, and the fix works
+    const fix = explain(bare, run(bare, {}, bad)).advice.find((x) => x.action?.kind === "insertBefore" && x.action.nodeKind === "eval-gate");
+    expect(fix).toBeDefined();
+    expect(run(applyAction(bare, fix!.action!), {}, bad).metrics.quality).toBeGreaterThan(a.quality + 0.15);
+  });
+
+  it("a larger eval set (and a lower threshold) raises the chance of catching a bad rollout", () => {
+    const rate = (evalSetSize: number, threshold = 2, judge = "llm-judge") => evalGateModel(resolveConfig({ id: "g", kind: "eval-gate", config: { evalSetSize, threshold, judge } }));
+    expect(rate(2000).catchRate).toBeGreaterThan(rate(500).catchRate);
+    expect(rate(500).catchRate).toBeGreaterThan(rate(50).catchRate);
+    expect(rate(500, 1).catchRate).toBeGreaterThan(rate(500, 4).catchRate);
+    expect(rate(500, 1).falseAlarm).toBeGreaterThan(rate(500, 4).falseAlarm);
+    expect(rate(2000).monthly).toBeGreaterThan(rate(500).monthly);
+    expect(rate(500, 2, "human").monthly).toBeGreaterThan(rate(500, 2, "llm-judge").monthly * 50);
+    expect(rate(500, 2, "assertions").catchRate).toBeLessThan(rate(500, 2, "llm-judge").catchRate);
+    const g = (evalSetSize: number) => build({ users: ["users", { rps: 10 }], gate: ["eval-gate", { evalSetSize }], llm: "llm-api" }, "users > gate > llm");
+    expect(run(g(3000), {}, { type: "badRollout" }).metrics.quality).toBeGreaterThan(run(g(50), {}, { type: "badRollout" }).metrics.quality);
+    // the false-alarm check reads the gate
+    const fa: DesignTest = { constraints: [{ type: "gateFalseAlarms", max: 0.2 }] };
+    expect(evaluateDesign(g(2000), fa).pass).toBe(true);
+    expect(evaluateDesign(build({ users: "users", gate: ["eval-gate", { threshold: 0.5 }], llm: "llm-api" }, "users > gate > llm"), fa).pass).toBe(false);
+    expect(evaluateDesign(build({ users: "users", llm: "llm-api" }, "users > llm"), fa).pass).toBe(false);
+  });
+
+  it("reports pass^3 for agent designs only, and checks it", () => {
+    const ag = (retries: number) => build({ users: ["users", { rps: 1 }], ag: ["agent", { steps: 4, stepSuccess: 0.9, retries }], llm: "llm-api", t: "tool" }, "users > ag > llm, ag > t");
+    const m = run(ag(0)).metrics;
+    expect(m.taskSuccessPassK).toBeDefined();
+    expect(m.taskSuccessPassK!).toBeCloseTo(run(ag(0)).nodes.ag.extra.taskSuccess ** 3, 9);
+    expect(m.taskSuccessPassK!).toBeLessThan(m.successRate);
+    expect(run(ag(2)).metrics.taskSuccessPassK!).toBeGreaterThan(m.taskSuccessPassK!);
+    expect(run(build({ users: "users", llm: "llm-api" }, "users > llm")).metrics.taskSuccessPassK).toBeUndefined();
+    const t: DesignTest = { constraints: [{ type: "taskSuccessPassK", min: 0.75 }] };
+    expect(evaluateDesign(ag(0), t).pass).toBe(false);
+    expect(evaluateDesign(ag(2), t).pass).toBe(true);
+    expect(evaluateDesign(build({ users: "users", llm: "llm-api" }, "users > llm"), t).pass).toBe(false);
   });
 
   it("one-click fixes from the guide improve the design", () => {

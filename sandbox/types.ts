@@ -16,7 +16,8 @@ export type NodeKind =
   | "fallback"
   | "agent"
   | "tool"
-  | "observability";
+  | "observability"
+  | "eval-gate";
 
 export type ConfigValue = number | string | boolean;
 export type NodeConfig = Record<string, ConfigValue>;
@@ -99,6 +100,10 @@ export type Constraint = ConstraintBase &
     /** share (0..1) of attack requests that got a model answer through */
     | { type: "attacksLeaked"; max: number }
     | { type: "cacheHitRate"; min: number }
+    /** pass^3 of the agents' task success: all three tries of the same task succeed */
+    | { type: "taskSuccessPassK"; min: number }
+    /** the worst eval gate's chance of blocking a good release by chance (fails when there is no gate) */
+    | { type: "gateFalseAlarms"; max: number }
     | { type: "gpuUtil"; min?: number; max?: number }
     /** the design must contain at least `count` (default 1) nodes of this kind */
     | { type: "requires"; kind: NodeKind; count?: number }
@@ -158,6 +163,11 @@ export interface Metrics {
   errors: number;
   /** model calls per second (all LLM nodes) */
   llmCallsPerSec: number;
+  /**
+   * Only for designs with an agent: pass^k for k = 3, the chance that the same task succeeds on all three tries
+   * (τ-bench style), from the load-weighted per-task success of the agent nodes.
+   */
+  taskSuccessPassK?: number;
 }
 
 export interface NodeStat {

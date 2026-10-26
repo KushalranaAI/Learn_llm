@@ -2,6 +2,7 @@
 // Params: hidden 1–8, act (tanh | sigmoid), lr 0.01–5 (log), epochs 10–3000, seed 1–50, data (points4 | cloud: 80 noisy points).
 // Metrics: finalLoss (mean binary cross-entropy), accuracy (fraction of training points classified right),
 // paramCount (4H + 1), epochsToSolve (first epoch at 100% accuracy, Infinity if never).
+import NetProbe from "../nn-probe";
 import { LineChart } from "../ui";
 import { num, str, type Params, type SimDef, type SimViewProps } from "../types";
 import { Caption, Field2D, PlayBar, usePlayer } from "./viz";
@@ -143,6 +144,21 @@ function View({ params }: SimViewProps) {
         points={res.data.map((d) => ({ x: d.x, y: d.y, color: d.t ? "var(--blue)" : "var(--red)", r: res.data.length > 10 ? 3.5 : 7 }))}
       />
       <PlayBar {...player} max={res.snaps.length - 1} label="snapshot" />
+      <NetProbe
+        inputs={[[-1, -1], [-1, 1], [1, -1], [1, 1]]}
+        run={(x, y) => {
+          const { h, out } = forward(snap.net, res.act, x, y);
+          return {
+            layers: [
+              { title: "input", nodes: [{ value: x, label: "x₁" }, { value: y, label: "x₂" }] },
+              { title: `hidden (${H})`, nodes: h.map((v, j) => ({ value: v, label: `h${j + 1}` })) },
+              { title: "output", nodes: [{ value: out, label: out >= 0.5 ? "says 1" : "says 0" }] },
+            ],
+            weights: [snap.net.W1, [snap.net.W2]],
+          };
+        }}
+        caption={`epoch ${snap.epoch}`}
+      />
       <LineChart x={lossX} series={[{ name: "loss (binary cross-entropy)", values: lossY }]} xLabel="epoch" yLabel="loss" marker={markIdx < 0 ? undefined : markIdx} height={170} />
     </>
   );

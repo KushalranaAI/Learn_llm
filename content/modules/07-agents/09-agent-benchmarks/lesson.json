@@ -1,0 +1,30 @@
+{
+  "title": "Agent Benchmarks: What the Public Numbers Mean",
+  "summary": "Agent benchmarks score models and scaffolds on real tasks in real environments: fixing repositories, serving simulated customers, browsing, operating a desktop or a terminal. This lesson explains how the main ones work, why their scores rose so fast, where they break, and how to read a reported agent result without being misled by scaffold, attempts or cost.",
+  "objectives": [
+    "After this lesson you can explain how SWE-bench decides a task is resolved and why SWE-bench Verified and later SWE-bench Pro were created",
+    "Explain tau-bench's simulated users and database-state grading, and compute and interpret pass^k",
+    "Compare GAIA, WebArena, OSWorld and Terminal-Bench by environment, grading and what they test",
+    "Read an agent result critically: scaffold, number of attempts, cost, benchmark version and error bars"
+  ],
+  "prerequisites": "pass@k and pass^k from [/learn/agents/traces-and-evaluation](/learn/agents/traces-and-evaluation), and reading benchmarks critically from [/learn/evaluation/benchmarks-and-leaderboards](/learn/evaluation/benchmarks-and-leaderboards).",
+  "sims": ["pass-at-k", "agent-reliability"],
+  "labs": ["evaluate-an-agent"],
+  "sandbox": [],
+  "sources": [
+    { "title": "SWE-bench: Can Language Models Resolve Real-World GitHub Issues?", "authors": "Jimenez et al.", "year": 2023, "note": "2,294 issues from 12 Python repositories", "url": "https://arxiv.org/abs/2310.06770" },
+    { "title": "SWE-bench Verified", "authors": "SWE-bench team with OpenAI", "year": 2024, "note": "500 human-validated instances; Bash Only setting", "url": "https://www.swebench.com/verified.html" },
+    { "title": "Why we no longer evaluate SWE-bench Verified", "authors": "OpenAI", "year": 2026, "note": "Audit of flawed tests and contamination", "url": "https://openai.com/index/why-we-no-longer-evaluate-swe-bench-verified/" },
+    { "title": "SWE-Bench Pro: Can AI Agents Solve Long-Horizon Software Engineering Tasks?", "authors": "Deng et al. (Scale AI)", "year": 2025, "note": "1,865 problems from 41 repositories with held-out and commercial splits", "url": "https://arxiv.org/abs/2509.16941" },
+    { "title": "τ-bench: A Benchmark for Tool-Agent-User Interaction in Real-World Domains", "authors": "Yao, Shinn, Razavi and Narasimhan", "year": 2024, "note": "Simulated users, database-state grading, pass^k", "url": "https://arxiv.org/abs/2406.12045" },
+    { "title": "τ²-Bench: Evaluating Conversational Agents in a Dual-Control Environment", "authors": "Barres et al.", "year": 2025, "note": "Agent and user both act on shared state", "url": "https://arxiv.org/abs/2506.07982" },
+    { "title": "GAIA: a benchmark for General AI Assistants", "authors": "Mialon et al.", "year": 2023, "note": "466 questions; humans 92% vs GPT-4 with plugins 15%", "url": "https://arxiv.org/abs/2311.12983" },
+    { "title": "WebArena: A Realistic Web Environment for Building Autonomous Agents", "authors": "Zhou et al.", "year": 2023, "note": "812 tasks on self-hosted websites", "url": "https://arxiv.org/abs/2307.13854" },
+    { "title": "OSWorld: Benchmarking Multimodal Agents for Open-Ended Tasks in Real Computer Environments", "authors": "Xie et al.", "year": 2024, "note": "369 desktop tasks with execution-based checks", "url": "https://arxiv.org/abs/2404.07972" },
+    { "title": "Terminal-Bench: Benchmarking Agents on Hard, Realistic Tasks in Command Line Interfaces", "authors": "Terminal-Bench team", "year": 2026, "note": "89 tasks in version 2.0; Harbor harness", "url": "https://arxiv.org/abs/2601.11868" },
+    { "title": "Berkeley Function Calling Leaderboard", "authors": "Gorilla team, UC Berkeley", "year": 2026, "note": "Function-calling accuracy, multi-turn and agentic categories", "url": "https://gorilla.cs.berkeley.edu/leaderboard.html" },
+    { "title": "AI Agents That Matter", "authors": "Kapoor et al.", "year": 2024, "note": "Cost-controlled evaluation, holdouts, reproducibility", "url": "https://arxiv.org/abs/2407.01502" },
+    { "title": "Holistic Agent Leaderboard (HAL)", "authors": "Princeton SAgE", "year": 2026, "note": "Accuracy and cost with a Pareto frontier", "url": "https://hal.cs.princeton.edu/" },
+    { "title": "Measuring AI Ability to Complete Long Tasks", "authors": "Kwa et al. (METR)", "year": 2025, "note": "50% task-completion time horizon", "url": "https://arxiv.org/abs/2503.14499" }
+  ]
+}

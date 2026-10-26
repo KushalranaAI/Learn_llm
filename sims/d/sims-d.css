@@ -1,0 +1,66 @@
+/* Group D sims (evaluation and agent evaluation). Motion is disabled under prefers-reduced-motion; states still step. */
+.sd { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.sd-card { background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--r, 12px); padding: 10px 12px; min-width: 0; }
+.sd-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 650; }
+.sd-cap { font-size: 0.84rem; color: var(--text-2); line-height: 1.5; }
+.sd-mono { font-family: var(--font-mono), ui-monospace, monospace; }
+.sd-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.sd-legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.74rem; color: var(--muted); }
+.sd-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
+.sd-badge { display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 1px 7px; border-radius: 99px; font-size: 0.72rem; font-weight: 650; white-space: nowrap; border: 1px solid currentColor; }
+.sd-badge.good { color: var(--good, var(--accent)); }
+.sd-badge.bad { color: var(--bad, var(--red)); }
+.sd-badge.warm { color: var(--warm, var(--yellow)); }
+.sd-badge.info { color: var(--info, var(--blue)); }
+.sd-badge.muted { color: var(--muted); }
+
+/* stat tiles inside a view */
+.sd-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }
+.sd-stat { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 7px 9px; min-width: 0; }
+.sd-stat span { display: block; font-size: 0.7rem; color: var(--muted); }
+.sd-stat b { display: block; font-family: var(--font-mono), ui-monospace, monospace; font-size: 0.95rem; color: var(--text); }
+.sd-stat.good b { color: var(--good, var(--accent)); }
+.sd-stat.bad b { color: var(--bad, var(--red)); }
+
+/* pass@k attempt grid */
+.sd-attempts { display: grid; gap: 4px; align-items: center; }
+.sd-attempts .sd-tl { font-size: 0.72rem; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sd-cells { display: grid; gap: 2px; min-width: 0; }
+.sd-cell { aspect-ratio: 1; max-width: 22px; width: 100%; border-radius: 4px; display: grid; place-items: center; font-size: 0.62rem; font-weight: 700; color: var(--on-accent, #04120c); }
+.sd-cell.ok { background: var(--good, var(--accent)); }
+.sd-cell.no { background: color-mix(in srgb, var(--bad, var(--red)) 70%, transparent); }
+.sd-cell.empty { background: var(--panel-3); }
+.sd-cell.new { animation: sd-pop .35s var(--ease, ease-out) both; }
+
+/* item grid (contamination) */
+.sd-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(14px, 1fr)); gap: 3px; }
+.sd-item { aspect-ratio: 1; border-radius: 3px; border: 2px solid transparent; transition: background-color .45s var(--ease, ease-out), border-color .45s, transform .45s; }
+.sd-item.seen { border-color: var(--warm, var(--yellow)); }
+.sd-item.right { background: var(--good, var(--accent)); }
+.sd-item.wrong { background: var(--panel-3); }
+.sd-item.flip { transform: rotateY(180deg); }
+
+/* trajectory timeline */
+.sd-steps { display: flex; flex-direction: column; gap: 6px; }
+.sd-step { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 8px; align-items: start; padding: 7px 9px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); border-left-width: 4px; }
+.sd-step.in { animation: sd-in .4s var(--ease, ease-out) both; }
+.sd-step .sd-n { font-family: var(--font-mono), ui-monospace, monospace; font-size: 0.72rem; color: var(--muted); padding-top: 2px; }
+.sd-step .sd-what { font-size: 0.8rem; color: var(--text); overflow-wrap: anywhere; }
+.sd-step .sd-obs { font-size: 0.74rem; color: var(--text-2); overflow-wrap: anywhere; margin-top: 2px; }
+.sd-mark { font-weight: 800; font-size: 0.95rem; line-height: 1; }
+.sd-mark.ok { color: var(--good, var(--accent)); }
+.sd-mark.bad { color: var(--bad, var(--red)); }
+.sd-mark.minor { color: var(--warm, var(--yellow)); }
+
+/* eval gate draws */
+.sd-drop { animation: sd-drop .55s var(--ease, ease-out) both; }
+.sd-fade { animation: sd-in .4s var(--ease, ease-out) both; }
+.sd-bar { transition: width .5s var(--ease, ease-out), x .5s, y .5s, height .5s; }
+
+@keyframes sd-pop { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); } }
+@keyframes sd-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes sd-drop { 0% { transform: translateY(-40px); opacity: 0; } 30% { opacity: 1; } 100% { transform: none; opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .sd *, .sd *::before, .sd *::after { animation-duration: 0.001ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; transition-delay: 0s !important; }
+}

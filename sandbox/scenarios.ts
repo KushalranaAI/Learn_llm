@@ -3,7 +3,7 @@
 import { build } from "./presets";
 import type { Graph, Incident } from "./types";
 
-export type ScenarioGroup = "Basics" | "Retrieval" | "Agents" | "Production" | "Case studies";
+export type ScenarioGroup = "Basics" | "Retrieval" | "Agents" | "Production" | "Evaluation" | "Case studies";
 
 export interface Scenario {
   id: string;
@@ -17,7 +17,7 @@ export interface Scenario {
   incident?: Incident;
 }
 
-export const SCENARIO_GROUPS: ScenarioGroup[] = ["Basics", "Retrieval", "Agents", "Production", "Case studies"];
+export const SCENARIO_GROUPS: ScenarioGroup[] = ["Basics", "Retrieval", "Agents", "Production", "Evaluation", "Case studies"];
 
 export const SCENARIOS: Scenario[] = [
   // ---------------------------------------------------------------- Basics
@@ -268,6 +268,55 @@ export const SCENARIOS: Scenario[] = [
       "Inject the bad rollout: success stays at 100% but quality drops - no error alarm fires.",
       "Add Observability & evals and run again: the timeline shows the regression detected and rolled back.",
       "Raise the eval sample rate: faster detection, higher judge cost.",
+    ],
+    incident: { type: "badRollout" },
+  },
+
+  // ---------------------------------------------------------------- Evaluation
+  {
+    id: "eval-gated-release",
+    title: "Gate releases with offline evals",
+    summary: "A new model version answers worse but throws no errors. Stop it in CI with an eval gate, and size the gate so it catches regressions without blocking good releases.",
+    group: "Evaluation",
+    graph: build(
+      {
+        users: ["users", { rps: 10, hardShare: 0.3 }],
+        gateway: ["gateway"],
+        llm: ["llm-api", { model: "medium" }],
+        obs: ["observability"],
+      },
+      "users > gateway > llm",
+    ),
+    tryThis: [
+      "Run it with the bad rollout: success stays at 100% while quality falls - only the online evals notice, after users already saw bad answers.",
+      "Use the guide's \"Add an eval gate\" fix (or drop an Eval gate between the gateway and the model). Run again: most bad versions are now blocked before release.",
+      "Click the gate: with 50 items it catches far fewer bad versions than with 2,000. Each run of the set is paid for on every candidate - watch eval spend.",
+      "Lower the threshold to 0.5 pp: more regressions caught, but the false-alarm rate on the node card shoots up. Switch the grader to assertions, then to human review, and compare catch rate and cost.",
+    ],
+    incident: { type: "badRollout" },
+  },
+  {
+    id: "agent-eval-harness",
+    title: "Evaluate a support agent before it ships",
+    summary: "An order-support agent with two tools, tracing and an eval gate. Measure pass^3, see how tool errors compound, and decide how much evaluation is worth paying for.",
+    group: "Evaluation",
+    graph: build(
+      {
+        users: ["users", { rps: 2, hardShare: 0.4, promptTokens: 1500, outputTokens: 250 }],
+        gate: ["eval-gate", { evalSetSize: 300, threshold: 3, judge: "llm-judge" }],
+        agent: ["agent", { steps: 4, stepSuccess: 0.95, retries: 1 }, "Support agent"],
+        llm: ["llm-api", { model: "medium", rateLimitRps: 100 }],
+        orders: ["tool", { latencyMs: 400, failureRate: 0.03 }, "Orders API"],
+        refunds: ["tool", { latencyMs: 600, failureRate: 0.05 }, "Refunds API"],
+        obs: ["observability"],
+      },
+      "users > gate > agent > llm, agent > orders, agent > refunds",
+    ),
+    tryThis: [
+      "Compare Success with the Agent pass^3 tile: pass^3 = (task success)^3 is the chance a task works on three tries in a row - what a repeat customer experiences.",
+      "Raise the Refunds API failure rate to 20% and watch success and pass^3 fall: tool errors compound across steps. Then allow 2 retries per step.",
+      "Inject the bad rollout: the eval gate stops most bad versions of the agent's model. Shrink the eval set to 50 and run it again.",
+      "Switch the gate's grader to human review: the catch rate barely moves but the eval bill jumps. Where is the sweet spot for your budget?",
     ],
     incident: { type: "badRollout" },
   },

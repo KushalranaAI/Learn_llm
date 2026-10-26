@@ -46,6 +46,16 @@ Two things to notice. First, the gradient for $w_1$ is the product of the output
 
 Try $\eta = 0.1$ instead: the new output is $3.625$ and the loss *rises* to $0.195$. Every parameter took a step that was right on its own, but together they overshot. That is the learning-rate limit from the previous topic, now in several dimensions.
 
+## Watch it happen, neuron by neuron
+
+Step one example through a tiny network. Press **Next step** to go Forward → Loss → Backward → Update: the activations light up going forwards, then the gradients flow back along the same connections, and every weight moves a little.
+
+```sim
+backprop-flow
+```
+
+Try this: on **Backward**, look at which connection has the biggest gradient: that weight changes most. Then press **Apply & next round** a few times and watch the loss curve fall.
+
 ## The general pattern
 
 For a layer $\mathbf{h}_{\text{out}} = \sigma(W \mathbf{h}_{\text{in}} + \mathbf{b})$ with pre-activation $\mathbf{z}$, backprop receives $\frac{\partial L}{\partial \mathbf{h}_{\text{out}}}$ from above and computes, using $\odot$ for element-wise multiplication:

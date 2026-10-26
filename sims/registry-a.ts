@@ -1,5 +1,6 @@
 // Group A: model foundations, training, inference and serving.
 import { attentionHeatmap } from "./a/attention-heatmap";
+import { backpropFlow } from "./a/backprop-flow";
 import { bpeTokenizer } from "./a/bpe-tokenizer";
 import { contextPosition } from "./a/context-position";
 import { embeddingSpace } from "./a/embedding-space";
@@ -25,7 +26,7 @@ import type { SimDef } from "./types";
 
 export const SIMS_A: SimDef[] = [
   // model-foundations
-  neuron, gradientDescent, xorTraining, bpeTokenizer, tokenCost, embeddingSpace, attentionHeatmap, transformerParams, sampling, kvCacheMemory, contextPosition,
+  neuron, gradientDescent, backpropFlow, xorTraining, bpeTokenizer, tokenCost, embeddingSpace, attentionHeatmap, transformerParams, sampling, kvCacheMemory, contextPosition,
   // training-and-adaptation
   scalingLaws, trainingMemory, lrSchedule, preferenceLoss, loraParams,
   // inference-and-serving

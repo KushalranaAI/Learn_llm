@@ -11,7 +11,10 @@
 // - Self-hosted models use a roofline: decode step = max(weight bytes ÷ HBM bandwidth, FLOPs ÷ compute)
 //   + KV-cache reads; batching shares each step across requests until compute or KV memory runs out.
 // Pure TypeScript - no React, safe to import anywhere.
+import { gateRates } from "../sims/d/eval-gate-model";
 import {
+  EVAL_GATE,
+  EVAL_JUDGES,
   GUARD_MODELS,
   INDEXES,
   KINDS,
@@ -312,6 +315,18 @@ export function retrieverModel(c: NodeConfig, slow = 1) {
   };
 }
 
+/**
+ * Offline eval gate (shared maths with the eval-gate simulation): a bad model version drops the eval score by
+ * EVAL_GATE.regressionPp × the grader's coverage; the gate blocks it when the measured drop exceeds the threshold.
+ */
+export function evalGateModel(c: NodeConfig) {
+  const j = EVAL_JUDGES[cfgStr(c, "judge")] ?? EVAL_JUDGES["llm-judge"];
+  const n = cfgNum(c, "evalSetSize");
+  const g = gateRates({ n, thresholdPp: cfgNum(c, "threshold"), regressionPp: EVAL_GATE.regressionPp * j.coverage, baseline: EVAL_GATE.baseline, noisePp: j.noisePp });
+  const monthly = n * (EVAL_GATE.genCostPerItem + j.gradeCost) * EVAL_GATE.runsPerMonth;
+  return { catchRate: g.catchRate, falseAlarm: g.falseAlarm, seDropPp: g.se, monthly, judge: j };
+}
+
 export interface SelfHostPerf {
   fits: boolean;
   why?: string;
@@ -510,6 +525,8 @@ class Solver {
   edges = new Map<string, number>();
   caps = new Map<string, Cap>();
   issues = new Map<string, Issue>();
+  /** LLM id → chance a bad version of it is blocked by an eval gate upstream */
+  gated = new Map<string, number>();
 
   constructor(readonly graph: Graph, readonly cond: Conditions) {
     this.byId = new Map(graph.nodes.map((n) => [n.id, n]));
@@ -523,11 +540,33 @@ class Solver {
       seen.add(key);
       this.out.get(e.from)!.push(e.to);
     }
+    // Eval gates protect every model reachable from them (they sit in front of the models they check).
+    for (const n of graph.nodes) {
+      if (n.kind !== "eval-gate") continue;
+      const p = evalGateModel(this.cfg.get(n.id)!).catchRate;
+      const queue = [...(this.out.get(n.id) ?? [])];
+      const reached = new Set(queue);
+      while (queue.length) {
+        const id = queue.shift()!;
+        const k = this.byId.get(id)?.kind;
+        if (k && isLlm(k)) this.gated.set(id, 1 - (1 - (this.gated.get(id) ?? 0)) * (1 - p));
+        for (const x of this.out.get(id) ?? []) if (!reached.has(x)) { reached.add(x); queue.push(x); }
+      }
+    }
   }
 
   issue(severity: Issue["severity"], text: string, nodeId?: string) {
     const key = `${nodeId ?? ""}|${text}`;
     if (!this.issues.has(key)) this.issues.set(key, { severity, text, nodeId });
+  }
+
+  /** Nodes reachable from `id` along outgoing edges. */
+  reach(id: string): Set<string> {
+    const seen = new Set<string>();
+    const queue = [...(this.out.get(id) ?? [])];
+    for (const q of queue) seen.add(q);
+    while (queue.length) for (const x of this.out.get(queue.shift()!) ?? []) if (!seen.has(x)) { seen.add(x); queue.push(x); }
+    return seen;
   }
 
   title(id: string) {
@@ -670,6 +709,8 @@ class Solver {
         return this.forward(id, st, rate);
 
       case "observability":
+      case "eval-gate":
+        // off the request path: no latency, no per-request cost
         own(0);
         return this.forward(id, st, rate);
 
@@ -869,7 +910,10 @@ class Solver {
   llm(id: string, kind: "llm-api" | "llm-selfhost", c: NodeConfig, cap: Cap, acc: Acc, st: State, rate: number, own: (l: number) => void): Outcome {
     const P = this.promptOf(st);
     const O = this.outputOf(st);
+    // A bad version reaches users unless an eval gate upstream blocks it (in expectation: a mix of the two).
     const bad = this.cond.badRollout === id;
+    const blocked = bad ? (this.gated.get(id) ?? 0) : 0;
+    const slow = 1 + 0.3 * (1 - blocked);
     let base: { easy: number; hard: number };
     let ttft: number;
     let lat: number;
@@ -882,8 +926,8 @@ class Solver {
       const m = apiModel(c.model);
       base = m.quality;
       const pc = cfgBool(c, "promptCache");
-      ttft = (m.ttftMs + (P / 1000) * m.prefillMsPer1k * (pc ? 0.6 : 1)) * cap.inflate * (bad ? 1.3 : 1);
-      const decode = (O / m.tokensPerSec) * 1000 * (bad ? 1.3 : 1);
+      ttft = (m.ttftMs + (P / 1000) * m.prefillMsPer1k * (pc ? 0.6 : 1)) * cap.inflate * (bad ? slow : 1);
+      const decode = (O / m.tokensPerSec) * 1000 * (bad ? slow : 1);
       lat = ttft + decode;
       ttftE = ttft * 1.2;
       latE = Math.sqrt(ttftE ** 2 + (decode * 0.4) ** 2);
@@ -913,11 +957,11 @@ class Solver {
         lat = ttft + O * stepMs;
         pass = 1 - s.drop;
       }
-      if (bad) { ttft *= 1.3; lat *= 1.3; }
+      if (bad) { ttft *= slow; lat *= slow; }
       ttftE = ttft * 0.8 + s.waitMs * 3;
       latE = Math.sqrt(ttftE ** 2 + (lat - ttft) ** 2 * 0.09);
     }
-    if (bad) base = { easy: base.easy * 0.6, hard: base.hard * 0.6 };
+    if (bad) { const f = blocked + (1 - blocked) * 0.6; base = { easy: base.easy * f, hard: base.hard * f }; }
     acc.dropped += rate * (1 - pass);
     acc.varCost += rate * cost;
     own(lat);
@@ -1081,6 +1125,11 @@ function buildResult(g: Graph, solver: Solver, sources: Source[], results: Retur
   }
 
   const costPerMonth = fixed + costRate * MONTH_SECONDS;
+  // Agent reliability across repeated tries of the same task (pass^3).
+  const agents = g.nodes.filter((n) => n.kind === "agent");
+  const agentLoad = agents.reduce((s, n) => s + (solver.acc.get(n.id)?.load ?? 0), 0);
+  const agentOk = agents.reduce((s, n) => s + (solver.acc.get(n.id)?.tasksOk ?? 0), 0);
+  const taskSuccess = agentLoad > 0 ? clamp01(agentOk / agentLoad) : 0;
   const metrics: Metrics = {
     rps,
     benignRps: benign,
@@ -1101,6 +1150,7 @@ function buildResult(g: Graph, solver: Solver, sources: Source[], results: Retur
     falseBlocks: benign > 0 ? falseBlocks / benign : 0,
     errors: benign > 0 ? clamp01(errors / benign) : 0,
     llmCallsPerSec: llmCalls,
+    ...(agents.length ? { taskSuccessPassK: Math.pow(taskSuccess, 3) } : {}),
   };
 
   structuralIssues(g, solver);
@@ -1114,7 +1164,9 @@ function structuralIssues(g: Graph, solver: Solver) {
   if (!g.nodes.some((n) => n.kind === "users")) solver.issue("bad", "There's no Users node, so no traffic flows. Add one and wire it to the rest of the design.");
   if (!g.nodes.some((n) => isLlm(n.kind))) solver.issue("bad", "There's no model (LLM API or self-hosted LLM) to answer requests.");
   for (const n of g.nodes) {
-    if (n.kind === "users" || n.kind === "observability") continue;
+    if (n.kind === "eval-gate" && ![...solver.gated.keys()].some((id) => solver.reach(n.id).has(id)))
+      solver.issue("warn", `${solver.title(n.id)} isn't in front of any model, so it gates nothing. Wire it before the model whose releases it checks.`, n.id);
+    if (n.kind === "users" || n.kind === "observability" || n.kind === "eval-gate") continue;
     const acc = solver.acc.get(n.id);
     if (!acc || acc.load <= 0) {
       const hasIn = g.edges.some((e) => e.to === n.id);
@@ -1224,6 +1276,17 @@ function describeNode(id: string, kind: NodeKind, c: NodeConfig, acc: Acc, cap: 
       stats.push({ label: "util", value: pct(cap.util), tone: utilTone(cap.util) });
       break;
     }
+    case "eval-gate": {
+      const e = evalGateModel(c);
+      monthly = e.monthly;
+      extra.catchRate = e.catchRate;
+      extra.falseAlarm = e.falseAlarm;
+      extra.evalMonthly = e.monthly;
+      stats.push({ label: "catches", value: pct(e.catchRate), tone: e.catchRate >= 0.9 ? "good" : e.catchRate < 0.7 ? "warn" : undefined });
+      stats.push({ label: "false alarms", value: pct(e.falseAlarm), tone: e.falseAlarm > 0.2 ? "warn" : undefined });
+      stats.push({ label: "eval spend", value: `${fmtUsd(e.monthly)}/mo` });
+      break;
+    }
     case "observability": {
       monthly = 300;
       stats.push({ label: "tracing", value: cfgBool(c, "tracing") ? "on" : "off" });
@@ -1250,6 +1313,8 @@ export function constraintLabel(c: Constraint): string {
     case "quality": return `Answer quality ≥ ${c.min.toFixed(2)}${under}`;
     case "attacksLeaked": return `Attacks leaked ≤ ${pct(c.max, c.max < 0.01 ? 1 : 0)}${under}`;
     case "cacheHitRate": return `Cache hit rate ≥ ${pct(c.min)}${under}`;
+    case "taskSuccessPassK": return `Agent pass^3 ≥ ${pct(c.min)}${under}`;
+    case "gateFalseAlarms": return `Eval gate blocks ≤ ${pct(c.max)} of good releases`;
     case "gpuUtil": return `GPU utilisation ${c.min !== undefined ? `≥ ${pct(c.min)}` : ""}${c.min !== undefined && c.max !== undefined ? " and " : ""}${c.max !== undefined ? `≤ ${pct(c.max)}` : ""}${under}`;
     case "requires": return `Uses ${c.count && c.count > 1 ? `${c.count}× ` : "a "}${KINDS[c.kind]?.label ?? c.kind}`;
     case "forbids": return `No ${KINDS[c.kind]?.label ?? c.kind}`;
@@ -1282,6 +1347,16 @@ export function checkConstraint(graph: Graph, c: Constraint, r: RunResult): Desi
     case "quality": return res(m.successRate > 0 && m.quality >= c.min - 1e-9, `Quality is ${m.quality.toFixed(3)} (needs ≥ ${c.min.toFixed(2)}).`);
     case "attacksLeaked": return res(m.attacksLeaked <= c.max + 1e-9, `${pct(m.attacksLeaked, 1)} of attacks got through (max ${pct(c.max, 1)}).`);
     case "cacheHitRate": return res(m.cacheHitRate >= c.min - 1e-9, `${pct(m.cacheHitRate, 1)} of requests answered from cache (needs ≥ ${pct(c.min)}).`);
+    case "gateFalseAlarms": {
+      const gates = graph.nodes.filter((n) => n.kind === "eval-gate");
+      if (!gates.length) return res(false, "There's no eval gate in the design.");
+      const fa = Math.max(...gates.map((n) => r.nodes[n.id]?.extra.falseAlarm ?? 1));
+      return res(fa <= c.max + 1e-9, `The gate blocks ${pct(fa, 1)} of releases that are actually fine (max ${pct(c.max)}).`);
+    }
+    case "taskSuccessPassK": {
+      if (m.taskSuccessPassK === undefined) return res(false, "There's no agent in the design.");
+      return res(m.taskSuccessPassK >= c.min - 1e-9, `pass^3 is ${pct(m.taskSuccessPassK, 1)}: the same task succeeds on all three tries that often (needs ≥ ${pct(c.min)}).`);
+    }
     case "gpuUtil": {
       const u = m.gpuUtil;
       if (u === null) return res(false, "There are no self-hosted GPUs in the design.");

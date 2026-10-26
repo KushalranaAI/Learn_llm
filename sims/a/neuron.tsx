@@ -1,4 +1,5 @@
 // One neuron: weighted sum, bias, activation. The reference example for how a simulation is written.
+import NeuralNetDiagram from "../nn-diagram";
 import { LineChart, StackBar } from "../ui";
 import { num, str, type Params, type SimDef, type SimViewProps } from "../types";
 
@@ -20,8 +21,23 @@ function View({ params }: SimViewProps) {
   // output as x1 sweeps from -3 to 3, the other input held where it is
   const xs = Array.from({ length: 61 }, (_, i) => -3 + i * 0.1);
   const marker = Math.round((num(params, "x1") + 3) / 0.1);
+  const x1 = num(params, "x1");
+  const z = w1 * x1 + w2 * x2 + b;
+  const y = f(z);
   return (
     <>
+      <NeuralNetDiagram
+        height={230}
+        range={[-3, 3]}
+        showWeights
+        caption="a perceptron: weigh, sum, bend"
+        layers={[
+          { title: "inputs", nodes: [{ value: x1, label: "x₁" }, { value: x2, label: "x₂" }, { value: 1, label: "bias", bias: true }] },
+          { title: "sum Σ", nodes: [{ value: z, label: "z = Σ wᵢxᵢ + b" }] },
+          { title: "activation σ", nodes: [{ value: y, label: "y" }] },
+        ]}
+        weights={[[[w1, w2, b]], [[1]]]}
+      />
       <StackBar
         parts={[
           { label: "w₁·x₁", value: Math.abs(w1 * num(params, "x1")) },

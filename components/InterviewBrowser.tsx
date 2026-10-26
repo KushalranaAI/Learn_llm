@@ -51,9 +51,10 @@ export default function InterviewBrowser({ sections, modules }: { sections: Inte
   const toggle = (id: string) => setOpen((o) => { const n = new Set(o); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
   return (
+    <div className="page">
     <div className="grid-main">
       <div className="stack">
-        <header className="card">
+        <header className="page-head">
           <span className="eyebrow"><Icon name="chats" size={14} /> Interview prep</span>
           <h1 style={{ marginTop: 8 }}>{all.length} questions, junior to senior</h1>
           <p className="lead">Say your answer out loud first, then reveal ours. Mark the ones you know so you can hide them and focus on the rest.</p>
@@ -132,6 +133,7 @@ export default function InterviewBrowser({ sections, modules }: { sections: Inte
           </div>
         </section>
       </aside>
+    </div>
     </div>
   );
 }

@@ -116,6 +116,16 @@ export const GUARD_MODELS: Record<string, { label: string; recallScale: number; 
   "llm-judge": { label: "LLM judge", recallScale: 1, recallPow: 5, fprScale: 0.6, latencyMs: 350, costPerReq: 0.0004 },
 };
 
+/** Graders for the Eval gate: how much of a regression they can see, how noisy they are, and $ per graded item. */
+export const EVAL_JUDGES: Record<string, { label: string; coverage: number; noisePp: number; gradeCost: number }> = {
+  assertions: { label: "Assertions (code checks)", coverage: 0.6, noisePp: 0.5, gradeCost: 0 },
+  "llm-judge": { label: "LLM judge", coverage: 1, noisePp: 1.5, gradeCost: 0.002 },
+  human: { label: "Human review", coverage: 1, noisePp: 0.5, gradeCost: 0.5 },
+};
+/** Eval-gate model constants: candidate builds evaluated per month, $ to run the candidate on one item, the
+ *  accuracy drop a bad model version shows on a fully covering eval set (pp), and the eval set's baseline accuracy. */
+export const EVAL_GATE = { runsPerMonth: 30, genCostPerItem: 0.003, regressionPp: 5, baseline: 0.85 };
+
 export const INDEXES: Record<string, { label: string; recallFactor: number }> = {
   flat: { label: "Flat (exact)", recallFactor: 1 },
   hnsw: { label: "HNSW graph", recallFactor: 0.97 },
@@ -288,6 +298,17 @@ export const KINDS: Record<NodeKind, KindDef> = {
       num("sampleRate", "Eval sample", 0.01, 1, 0.01, 0.05, "Share of answers scored (each costs a judge call).", { percent: true }),
     ],
   },
+  "eval-gate": {
+    kind: "eval-gate", label: "Eval gate", icon: "target", group: "Ops", hasInput: true,
+    description: "Offline evals in CI: a new model or prompt version must pass the eval set before it deploys.",
+    help: "Wire it in front of the model(s) it protects. Every candidate version is run on a golden eval set and blocked if its score drops more than the threshold, so a bad rollout is usually stopped before users see it. It is off the request path (no latency). A bigger eval set and a lower threshold catch more regressions; the eval runs cost money, and a threshold inside the noise blocks good releases too (false alarms).",
+    fields: [
+      num("evalSetSize", "Eval set size", 50, 5000, 10, 500, "Golden examples each candidate version is scored on. More items = less sampling noise = smaller regressions detected, at a higher eval bill.", { log: true }),
+      num("threshold", "Block if drop >", 0.5, 10, 0.5, 2, "Block the release when the eval score falls by more than this many percentage points. Lower catches more regressions but blocks more good releases by chance.", { unit: "pp" }),
+      sel("judge", "Grader", Object.entries(EVAL_JUDGES).map(([value, j]) => ({ value, label: j.label })), "llm-judge",
+        "Assertions are free and stable but only see what you wrote checks for. An LLM judge sees more but is noisier. Human review sees everything, at about $0.50 an item."),
+    ],
+  },
 };
 
 export const ALL_KINDS = Object.keys(KINDS) as NodeKind[];
@@ -362,5 +383,6 @@ export function nodeSubtitle(node: SandboxNode): string {
     case "agent": return `${n("steps")} steps · ${pctS(n("stepSuccess"))}/step`;
     case "tool": return `${n("latencyMs")} ms · ${pctS(n("failureRate"))} errors`;
     case "observability": return [cfgBool(c, "tracing") ? "tracing" : "", cfgBool(c, "evals") ? `evals ${pctS(n("sampleRate"))}` : ""].filter(Boolean).join(" · ") || "off";
+    case "eval-gate": return `${n("evalSetSize")} items · block > ${n("threshold")} pp · ${EVAL_JUDGES[cfgStr(c, "judge")]?.label ?? ""}`;
   }
 }

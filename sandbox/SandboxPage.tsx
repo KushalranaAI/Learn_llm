@@ -4,8 +4,11 @@
 import "./sandbox.css";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import ExplainButton from "@/components/ai/ExplainButton";
 import Icon from "@/components/ui/Icon";
-import { FlowCanvas } from "./Canvas";
+import { useChatSource } from "@/lib/ai/sources";
+import { type CanvasApi, FlowCanvas, Palette } from "./Canvas";
+import { ALL_KINDS } from "./catalog";
 import { incidentLabel, run } from "./engine";
 import { applyAction, describeDesign, explain, explainTimeline, whatIfs, type Action, type Guide, type WhatIf } from "./explain";
 import GuidePanel from "./GuidePanel";
@@ -16,6 +19,31 @@ import { runTimeline, summarize, type Tick, type TimelineSummary } from "./timel
 import type { Graph, Incident, RunResult, Traffic } from "./types";
 
 export const STORAGE_KEY = "llm100-sandbox";
+
+/** A panel's open/closed state, remembered per browser. Narrow screens start with panels closed. */
+function usePanel(key: string, initial: boolean): [boolean, (v: boolean | ((p: boolean) => boolean)) => void] {
+  const [open, setOpen] = useState(initial);
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem(key);
+      if (v !== null) setOpen(v === "1");
+      else if (window.innerWidth < 1100) setOpen(false);
+    } catch {
+      /* storage blocked */
+    }
+  }, [key]);
+  const set = (v: boolean | ((p: boolean) => boolean)) =>
+    setOpen((prev) => {
+      const n = typeof v === "function" ? v(prev) : v;
+      try {
+        localStorage.setItem(key, n ? "1" : "0");
+      } catch {
+        /* storage blocked */
+      }
+      return n;
+    });
+  return [open, set];
+}
 
 interface Saved {
   graph: Graph;
@@ -273,89 +301,188 @@ export default function SandboxPage() {
     return list;
   }, [incident]);
 
+  const [showLeft, setShowLeft] = usePanel("llm100-sbx-left", true);
+  const [showRight, setShowRight] = usePanel("llm100-sbx-right", true);
+  const [tab, setTab] = useState<"results" | "inspect">("results");
+  const [menu, setMenu] = useState(false);
+  const api = useRef<CanvasApi | null>(null);
+  const onReady = useCallback((x: CanvasApi) => {
+    api.current = x;
+  }, []);
+  const okRate = ran && !stale ? ran.result.metrics.successRate : null;
+  const tone = okRate === null ? "" : okRate >= 0.99 ? "good" : okRate >= 0.95 ? "warn" : "bad";
+  // What the optional AI tutor sees (lib/ai/sources.ts): the design, traffic, incident, last run and the guide's text.
+  useChatSource("sandbox", {
+    label: `Sandbox · ${scenario?.title ?? "your design"} · ${graph.nodes.length} components`,
+    suggestions: ["Explain my last run's results", "What is the bottleneck in this design?", "How would you make this cheaper without hurting quality?", "What happens if the main provider goes down?"],
+    explain: ran && !stale ? { label: "Explain this run with AI", prompt: "Explain my last sandbox run: what happened to the requests, why the metrics came out this way, and the single most useful change to make next (with its trade-off)." } : { label: "Explain this design with AI", prompt: "Explain how requests flow through my sandbox design, what each component is doing, and what I should check when I run it." },
+    build: () => ({
+      scenario: scenario ? { title: scenario.title, summary: scenario.summary, tryThis: scenario.tryThis } : "the learner's own design",
+      design: describeDesign(graph),
+      graph: cleanGraph(graph),
+      traffic: `×${scale}`,
+      incident: incident.type === "none" ? "none" : incidentLabel(incident),
+      lastRun: ran
+        ? { stale: stale ? "the design changed since this run" : false, metrics: ran.result.metrics, guide: { headline: ran.guide.headline, path: ran.guide.path, advice: ran.guide.advice.map(({ severity, problem, why, fix, tradeoff }) => ({ severity, problem, why, fix, tradeoff })) }, whatIfs: ran.whatIfs, timeline: ran.text }
+        : "not run yet",
+    }),
+  });
+
   return (
-    <div className="sbx-page">
-      <header className="card tight sbx-bar">
-        <div className="sbx-bar-title">
-          <span className="eyebrow"><Icon name="boxes" size={14} /> Sandbox</span>
-          <h1>{scenario?.title ?? "Your design"}</h1>
-          <p className="muted">{scenario?.summary ?? "Wire the parts of an LLM application, push traffic through it, break it on purpose."}</p>
+    <div className={`sbx2 ${showLeft ? "" : "no-left"} ${showRight ? "" : "no-right"}`}>
+      <header className="sbx2-bar">
+        <button type="button" className={`icon-btn ${showLeft ? "on" : ""}`} onClick={() => setShowLeft((v) => !v)} aria-label={showLeft ? "Hide components" : "Show components"} title="Components">
+          <Icon name="panel" size={17} />
+        </button>
+        <label className="sbx2-scenario" title={scenario?.summary}>
+          <Icon name="boxes" size={15} />
+          <select value={scenarioId ?? ""} onChange={(e) => (e.target.value ? loadScenario(e.target.value) : setScenarioId(null))} aria-label="Scenario">
+            <option value="">Your own design</option>
+            {SCENARIO_GROUPS.map((g) => (
+              <optgroup key={g} label={g}>
+                {SCENARIOS.filter((x) => x.group === g).map((x) => <option key={x.id} value={x.id}>{x.title}</option>)}
+              </optgroup>
+            ))}
+          </select>
+        </label>
+        <span className="sbx2-sep" />
+        <label className="sbx2-field">
+          <span>Traffic</span>
+          <select value={scale} onChange={(e) => setScale(Number(e.target.value))}>
+            {SCALES.map((x) => <option key={x} value={x}>×{x}</option>)}
+          </select>
+        </label>
+        <label className="sbx2-field">
+          <span>Incident</span>
+          <select value={JSON.stringify(incident)} onChange={(e) => setIncident(JSON.parse(e.target.value) as Incident)}>
+            {incidentOptions.map((i) => <option key={JSON.stringify(i)} value={JSON.stringify(i)}>{i.type === "none" ? "None" : incidentLabel(i)}</option>)}
+          </select>
+        </label>
+        <span className="spacer" />
+        <span className={`sbx2-status ${tone}`} aria-live="polite">
+          {okRate !== null && ran
+            ? `${(okRate * 100).toFixed(1)}% ok · p99 ${Math.round(ran.result.metrics.p99Ms).toLocaleString("en-US")} ms · $${Math.round(ran.result.metrics.costPerMonth).toLocaleString("en-US")}/mo`
+            : !graph.nodes.length
+              ? "Add components to start"
+              : stale
+                ? "Design changed: run again"
+                : "Ready to run"}
+        </span>
+        <button
+          type="button"
+          className={`btn primary sbx2-run ${stale ? "pulse" : ""}`}
+          onClick={() => {
+            doRun();
+            setTab("results");
+            setShowRight(true);
+          }}
+          disabled={!graph.nodes.length}
+          title="Run (Ctrl+Enter)"
+          aria-label="Run simulation"
+        >
+          <Icon name="play" size={15} /> {ran ? (stale ? "Run again" : "Re-run") : "Run"}
+        </button>
+        <div className="sbx2-menu">
+          <button type="button" className="icon-btn" onClick={() => setMenu((m) => !m)} aria-haspopup="menu" aria-expanded={menu} aria-label="Design actions" title="Share, export, import">
+            <Icon name="list" size={17} />
+          </button>
+          {menu && (
+            <div className="sbx2-pop" role="menu" onMouseLeave={() => setMenu(false)}>
+              <button type="button" role="menuitem" onClick={() => { share(); setMenu(false); }}><Icon name="send" size={14} /> Share link</button>
+              <button type="button" role="menuitem" onClick={() => { exportJson(); setMenu(false); }}><Icon name="download" size={14} /> Export JSON</button>
+              <button type="button" role="menuitem" onClick={() => { fileRef.current?.click(); setMenu(false); }}><Icon name="upload" size={14} /> Import JSON</button>
+              <button type="button" role="menuitem" onClick={() => { reset(); setMenu(false); }}><Icon name="refresh" size={14} /> Reset design</button>
+              <button type="button" role="menuitem" className="danger" onClick={() => { clear(); setMenu(false); }}><Icon name="trash" size={14} /> Clear canvas</button>
+            </div>
+          )}
+          <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) importJson(f); e.target.value = ""; }} />
         </div>
-        <div className="sbx-bar-actions">
-          <label className="control sbx-scenario">
-            <span className="control-label">Scenario</span>
-            <select value={scenarioId ?? ""} onChange={(e) => (e.target.value ? loadScenario(e.target.value) : setScenarioId(null))}>
-              <option value="">Your own design</option>
-              {SCENARIO_GROUPS.map((g) => (
-                <optgroup key={g} label={g}>
-                  {SCENARIOS.filter((s) => s.group === g).map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
-                </optgroup>
-              ))}
-            </select>
-          </label>
-          <div className="row sbx-file">
-            <button type="button" className="chip-btn" onClick={share} title="Copy a link to this design"><Icon name="send" size={13} /> Share</button>
-            <button type="button" className="chip-btn" onClick={exportJson} title="Download as JSON"><Icon name="download" size={13} /> Export</button>
-            <button type="button" className="chip-btn" onClick={() => fileRef.current?.click()} title="Load a JSON design"><Icon name="upload" size={13} /> Import</button>
-            <button type="button" className="chip-btn" onClick={() => setGraph(layout(graph, true))} title="Arrange nodes left to right"><Icon name="grid" size={13} /> Tidy</button>
-            <button type="button" className="chip-btn" onClick={reset} title={scenario ? "Back to the scenario's starting design" : "Back to the starter design"}><Icon name="refresh" size={13} /> Reset</button>
-            <button type="button" className="chip-btn" onClick={clear} title="Empty canvas"><Icon name="trash" size={13} /> Clear</button>
-            <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) importJson(f); e.target.value = ""; }} />
-          </div>
-        </div>
+        <button type="button" className={`icon-btn ${showRight ? "on" : ""}`} onClick={() => setShowRight((v) => !v)} aria-label={showRight ? "Hide results" : "Show results"} title="Results and inspector">
+          <Icon name="panel" size={17} className="flip-x" />
+        </button>
       </header>
 
-      <div className="sbx-main">
-        <section className="card sbx-stage">
-          <div className="sbx-runbar">
-            <button type="button" className={`btn accent sm ${stale ? "pulse" : ""}`} onClick={() => doRun()} title="Run (Ctrl+Enter)" aria-label="Run simulation">
-              <Icon name="play" size={14} /> {ran ? (stale ? "Run again" : "Re-run") : "Run"}
-            </button>
-            <label className="sbx-inline">
-              <span>Traffic</span>
-              <select value={scale} onChange={(e) => setScale(Number(e.target.value))}>
-                {SCALES.map((s) => <option key={s} value={s}>×{s}</option>)}
-              </select>
-            </label>
-            <label className="sbx-inline">
-              <span>Incident</span>
-              <select value={JSON.stringify(incident)} onChange={(e) => setIncident(JSON.parse(e.target.value) as Incident)}>
-                {incidentOptions.map((i) => <option key={JSON.stringify(i)} value={JSON.stringify(i)}>{i.type === "none" ? "None" : incidentLabel(i)}</option>)}
-              </select>
-            </label>
-            {ran && !stale && (
-              <span className="sbx-runstats">
-                <span className={ran.result.metrics.successRate >= 0.99 ? "good" : ran.result.metrics.successRate >= 0.95 ? "warn" : "bad"}>
-                  {(ran.result.metrics.successRate * 100).toFixed(ran.result.metrics.successRate > 0.99 ? 2 : 1)}% ok
-                </span>
-              </span>
-            )}
+      <div className="sbx2-body">
+        {showLeft && (
+          <aside className="sbx2-left" aria-label="Components">
+            <div className="sbx2-left-head">
+              <h4>Components</h4>
+              <span className="muted small">click or drag</span>
+            </div>
+            <Palette kinds={ALL_KINDS} onAdd={(k) => api.current?.add(k)} />
+            <p className="sbx2-tip"><Icon name="info" size={13} /> Drag from a node&apos;s right dot to another node to connect them. Backspace deletes.</p>
+          </aside>
+        )}
+
+        <section className="sbx2-stage" aria-label="Sandbox canvas">
+          <FlowCanvas
+            graph={graph}
+            onChange={setGraph}
+            selected={selected}
+            onSelect={(id) => {
+              setSelected(id);
+              if (id) {
+                setTab("inspect");
+                setShowRight(true);
+              }
+            }}
+            result={ran?.result ?? null}
+            stale={stale}
+            hidePalette
+            onReady={onReady}
+          />
+          <div className="sbx2-canvas-tools">
+            <button type="button" className="chip-btn" onClick={() => setGraph(layout(graph, true))} title="Arrange the nodes"><Icon name="grid" size={13} /> Tidy</button>
+            <button type="button" className="chip-btn" onClick={() => api.current?.fit()} title="Fit to screen"><Icon name="expand" size={13} /> Fit</button>
           </div>
-          <FlowCanvas graph={graph} onChange={setGraph} selected={selected} onSelect={setSelected} result={ran?.result ?? null} stale={stale} />
         </section>
 
-        <aside className="sbx-side">
-          <div className="card tight">
-            <Inspector graph={graph} selected={selected} onChange={setGraph} onSelect={setSelected} result={stale ? null : ran?.result ?? null} />
-          </div>
-          <div className="card tight">
-            <GuidePanel
-              intro={describeDesign(graph)}
-              tryThis={scenario?.tryThis}
-              result={ran?.result ?? null}
-              guide={ran?.guide ?? null}
-              whatIfs={ran?.whatIfs ?? []}
-              ticks={ran?.ticks ?? null}
-              timelineSummary={ran?.summary ?? null}
-              timelineText={ran?.text ?? null}
-              incident={incident}
-              stale={stale}
-              onApply={onApply}
-              onSelect={setSelected}
-              onRun={() => doRun()}
-            />
-          </div>
-        </aside>
+        {showRight && (
+          <aside className="sbx2-right" aria-label="Results and inspector">
+            <div className="sbx2-tabs" role="tablist">
+              <button type="button" role="tab" aria-selected={tab === "results"} className={tab === "results" ? "on" : ""} onClick={() => setTab("results")}><Icon name="chart" size={14} /> Results</button>
+              <button type="button" role="tab" aria-selected={tab === "inspect"} className={tab === "inspect" ? "on" : ""} onClick={() => setTab("inspect")}><Icon name="sliders" size={14} /> Inspector</button>
+            </div>
+            <div className="sbx2-right-body">
+              {tab === "inspect" ? (
+                <Inspector graph={graph} selected={selected} onChange={setGraph} onSelect={setSelected} result={stale ? null : ran?.result ?? null} />
+              ) : (
+                <>
+                {ran && !stale && (
+                  <div style={{ marginBottom: 12 }}>
+                    <ExplainButton
+                      label="Explain this run with AI"
+                      prompt={() => `Explain the result of this LLM-system sandbox run in plain language: what limited it, why, and the single most effective fix with its trade-off.
+
+Design: ${describeDesign(graph)}
+Traffic ×${scale}, incident: ${incident.type === "none" ? "none" : incidentLabel(incident)}
+Results: ${(ran.result.metrics.successRate * 100).toFixed(1)}% success, p99 ${Math.round(ran.result.metrics.p99Ms)} ms, first-token p99 ${Math.round(ran.result.metrics.ttftP99Ms)} ms, $${Math.round(ran.result.metrics.costPerMonth)}/month, quality ${ran.result.metrics.quality.toFixed(2)}, attacks leaked ${(ran.result.metrics.attacksLeaked * 100).toFixed(1)}%.`}
+                    />
+                  </div>
+                )}
+                <GuidePanel
+                  intro={describeDesign(graph)}
+                  tryThis={scenario?.tryThis}
+                  result={ran?.result ?? null}
+                  guide={ran?.guide ?? null}
+                  whatIfs={ran?.whatIfs ?? []}
+                  ticks={ran?.ticks ?? null}
+                  timelineSummary={ran?.summary ?? null}
+                  timelineText={ran?.text ?? null}
+                  incident={incident}
+                  stale={stale}
+                  onApply={onApply}
+                  onSelect={(id) => {
+                    setSelected(id);
+                    if (id) setTab("inspect");
+                  }}
+                  onRun={() => doRun()}
+                />
+                </>
+              )}
+            </div>
+          </aside>
+        )}
       </div>
       {toast && <div className="toast" role="status">{toast}</div>}
     </div>

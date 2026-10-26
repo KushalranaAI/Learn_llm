@@ -1,8 +1,10 @@
 // All labs, in curriculum order.
 import { attentionByHand } from "./attention-by-hand";
+import { buildAnEvalSuite } from "./build-an-eval-suite";
 import { capacityPlan } from "./capacity-plan";
 import { chunkItRight } from "./chunk-it-right";
 import { designSupportBot } from "./design-support-bot";
+import { evaluateAnAgent } from "./evaluate-an-agent";
 import { fitTheKvCache } from "./fit-the-kv-cache";
 import { fixTheRagBot } from "./fix-the-rag-bot";
 import { isItReallyBetter } from "./is-it-really-better";
@@ -37,12 +39,14 @@ export const LABS: Lab[] = [
   stopTheInjection,
   // evaluation
   isItReallyBetter,
+  buildAnEvalSuite,
   // retrieval-and-rag
   tuneTheIndex,
   chunkItRight,
   fixTheRagBot,
   // agents
   makeTheAgentReliable,
+  evaluateAnAgent,
   // production-systems
   routeTheTraffic,
   // llm-system-design

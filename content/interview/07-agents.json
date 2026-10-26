@@ -381,6 +381,110 @@
           "a": "Assume page content is hostile and the model may follow it, so the guarantees must live outside the model. Make `send_email` consequential: require human approval showing recipient and body, bind the approval to those arguments, and restrict recipients to an allow-list (the requesting user or known domains). Strip or flag untrusted content in the prompt, and never let tool results alone authorise an action.\n\nReduce what can leak: scope credentials so the agent session cannot read data it does not need, avoid combining private data access and untrusted content with an outbound channel in one run (split the agent or sandbox it with no network). Rate-limit outbound messages, log and alert on unusual recipients or large bodies, and keep a kill switch. Test with a red-team set of injection pages and add successes to the regression suite. Layers matter because any single filter can be bypassed."
         }
       ]
+    },
+    {
+      "slug": "agent-benchmarks",
+      "title": "Agent Benchmarks",
+      "lesson": "agent-benchmarks",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "How does SWE-bench decide whether an agent resolved a task?",
+          "a": "The harness applies the agent's patch to the repository at the pre-fix commit and runs two groups of tests from the real fix: FAIL_TO_PASS tests (failed before, must pass now: the issue is fixed) and PASS_TO_PASS tests (passed before, must still pass: nothing broke). The task is resolved only if the patch applies and all tests in both groups pass. The agent never sees these tests. The score is the share of tasks resolved."
+        },
+        {
+          "level": "junior",
+          "q": "What is pass^k and why did τ-bench introduce it?",
+          "a": "pass^k is the probability that all $k$ independent trials of a task succeed, estimated per task as $\\binom{c}{k}/\\binom{n}{k}$ and averaged. τ-bench tests customer-service agents, which handle the same kinds of requests over and over; users experience every run, so consistency matters more than 'can it ever succeed'. At release, strong agents solved under half the tasks and in retail pass^8 was below 25%, exposing inconsistency that average success hid."
+        },
+        {
+          "level": "mid",
+          "q": "Why was SWE-bench Verified created, and why did OpenAI later stop reporting it?",
+          "a": "The original 2,294 tasks included underspecified issues and tests that demanded one specific implementation, so some tasks were near impossible. Verified (2024) kept 500 tasks that professional developers judged fairly specified and tested. By 2026 scores were in the low 80s; OpenAI's audit found that at least 59.4% of the problems models kept failing had tests rejecting correct solutions, and saw signs of training-data exposure. Near that ceiling, gains no longer measured coding skill, so it recommended SWE-bench Pro, which has held-out and private splits."
+        },
+        {
+          "level": "mid",
+          "q": "Compare GAIA, WebArena, OSWorld and Terminal-Bench.",
+          "a": "GAIA: 466 multi-step research questions with short exact-match answers (humans 92% vs GPT-4 with plugins 15% at release). WebArena: 812 tasks on self-hosted shop, forum, GitLab and CMS sites, graded by functional checks. OSWorld: 369 tasks in real desktop VMs, graded by scripts inspecting final system state (humans over 72%, best model 12% at release). Terminal-Bench 2.0: 89 hard command-line tasks in containers, each with tests and a human solution. All use reproducible environments and outcome-based grading; scores on all rose steeply after release."
+        },
+        {
+          "level": "mid",
+          "q": "An agent scores 50% on an 89-task benchmark. How precise is that?",
+          "a": "SE $= \\sqrt{0.5 \\times 0.5 / 89} = 0.053$, so the 95% interval is about ±10 points: 40% to 60%. Two agents at 50% and 56% are indistinguishable from one run. Repeating trials reduces the agent's run-to-run noise but not the uncertainty from having only 89 tasks. Agent benchmarks are small because tasks are expensive to build, so always look for error bars or the task count."
+        },
+        {
+          "level": "senior",
+          "q": "A vendor claims 78% on a coding benchmark versus a competitor's 60%. What questions do you ask?",
+          "a": "Same scaffold or different? Same benchmark version and split? How many attempts, and how was the final answer chosen (oracle pass@k, the agent's own tests, a judge)? Cost and tokens per task, and time or step limits? Error bars and number of tasks? Contamination safeguards (held-out or private tasks)? For example, 60% per attempt with 5 attempts and a 79%-accurate selector yields 78%, at five times the cost per task: about \\$3.21 versus \\$0.83 per solved task at \\$0.50 per attempt."
+        },
+        {
+          "level": "senior",
+          "q": "Why do τ-bench results depend on the user simulator, and how would you account for it?",
+          "a": "The simulated user is part of the instrument. If it derails a fraction $e$ of conversations (reveals the wrong detail, quits early), measured success is roughly $s(1-e)$ and some agent 'failures' are simulator errors. It also adds noise to comparisons. I would have a person review a sample of conversations to estimate $e$, improve the simulator prompt, run the simulator on a different model family from the agent, and flag or rerun trials where the simulator broke character."
+        },
+        {
+          "level": "senior",
+          "q": "What does 'AI Agents That Matter' argue, and how does it change how you report agent results?",
+          "a": "It argues that accuracy-only agent leaderboards reward needlessly complex, expensive agents; that cost and accuracy should be optimised jointly (simple retry baselines are often on the Pareto frontier); that model developers and application developers need different evaluations; that many benchmarks lack proper held-out sets; and that inconsistent evaluation harms reproducibility. In practice: report cost per task and per solved task alongside accuracy, plot the Pareto frontier, state the scaffold and attempts, and keep a held-out set you never tune on."
+        },
+        {
+          "level": "mid",
+          "q": "What is METR's 50% time horizon and why is it useful?",
+          "a": "It is the length of task, measured by how long skilled humans take, that a model completes with 50% success. It puts results from different task suites on one axis and makes trends easy to state: METR estimated the horizon has doubled about every seven months since 2019. At that rate a 1-hour horizon becomes 8 hours in 21 months. It still depends on the task suite, scaffold and error bars, so it is a trend measure, not a precise capability reading."
+        }
+      ]
+    },
+    {
+      "slug": "evaluating-agentic-apps",
+      "title": "Evaluating Agentic Applications",
+      "lesson": "evaluating-agentic-apps",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What does 'grade outcomes, not paths' mean for agent evals?",
+          "a": "Check the final state of the world (the refund row exists with the right amount, the tests pass, the file is saved) rather than requiring the exact sequence of steps you imagined. Agents often find different valid routes, and exact-path matching fails them unfairly. Path information is still useful, but encode it as constraints that genuinely matter (verify identity before refunding, never call a forbidden tool) rather than as a gold sequence."
+        },
+        {
+          "level": "junior",
+          "q": "Why must the environment be reset before every trial?",
+          "a": "Shared state couples trials: a refund issued in trial one makes trial two see a different database, leftover files change behaviour, and results become correlated or inflated for reasons unrelated to the agent. Restoring a fixture snapshot before each trial keeps trials independent and reproducible, and lets graders compare the final state with a known goal state."
+        },
+        {
+          "level": "mid",
+          "q": "Compute tool-call precision, recall and F1: 3 expected calls; the agent made 5 calls, 2 of which match.",
+          "a": "Precision $= 2/5 = 0.40$ (unnecessary, repeated or wrong calls lower it). Recall $= 2/3 = 0.67$ (missed necessary calls lower it). $F_1 = 2PR/(P+R) = 0.536/1.07 = 0.50$. Report it next to the outcome: a good F1 with a failed outcome often means right tools with a wrong argument, while success with low precision means wasted cost."
+        },
+        {
+          "level": "mid",
+          "q": "How do you design a user simulator for a support agent?",
+          "a": "Give an LLM a persona (clarity, temperament, knowledge, language), a hidden goal and private details to reveal only when asked, rules not to solve the task for the agent, and a stopping condition. Vary personas deliberately so the agent faces unclear, impatient or mind-changing users. If users must act (restart a device), give the simulator its own sandboxed tools. Validate it like a judge: review a sample of conversations, estimate how often the simulator causes failures, and fix the prompt."
+        },
+        {
+          "level": "mid",
+          "q": "When do you use a judge over traces, and how do you keep it accurate and affordable?",
+          "a": "Use judges for criteria rules cannot check: whether the final message faithfully reports tool results, whether the agent asked for missing information, whether a refusal was explained. Feed each judge only the spans it needs rather than the whole trace: for 500 trials × 3 criteria, 30k-token traces cost about \\$135 in input at \\$3 per million tokens, versus \\$18 with 4k-token extracts. Use one binary judge per criterion, calibrate on 100 to 200 labelled traces, and watch for bias toward confident or long trajectories."
+        },
+        {
+          "level": "mid",
+          "q": "With a perfect verifier, how does retrying change cost per successful task?",
+          "a": "Expected attempts with cap $m$ are $(1-(1-p)^m)/p$ and success probability is $1-(1-p)^m$, so agent cost per success is $c/p$ regardless of $m$. Retries do not make successes cheaper; they make final failures rarer. The savings come from avoided failure costs: with $p = 0.7$, $c = \\$0.30$ and a \\$8 human hand-off, one attempt costs \\$2.70 per task and up to three attempts cost about \\$0.63."
+        },
+        {
+          "level": "senior",
+          "q": "Outline a complete evaluation plan for a refund-capable support agent.",
+          "a": "Error analysis on real conversations defines tasks. A task suite (say 120 tasks × 5 trials nightly, a 40-task smoke subset per PR) with must-pass state checks, trace constraints and a few calibrated judges; a regression suite of replayed production failures at 100% with a rerun rule; a safety suite of injection and out-of-policy cases with zero tolerance for high-severity forbidden actions plus over-refusal checks; budget metrics (steps, tokens, p95 latency, cost per success); and online sampling with the same graders. Report pass^1 and pass^3 with intervals, flipped tasks, and violations. Assign owners for tasks, graders and harness."
+        },
+        {
+          "level": "senior",
+          "q": "Your agent's pass^1 is 0.85 but pass^4 is 0.40. What does that tell you and what do you do?",
+          "a": "If every task had $p = 0.85$, pass^4 would be $0.85^4 = 0.52$; at 0.40 failures are even more spread across tasks than uniform flakiness would suggest, not concentrated in a few task types you could route away. Look for nondeterminism sources: temperature, nondeterministic tool results, race conditions, ambiguous policies that the model resolves differently each time, and long contexts. Read failing transcripts of tasks that sometimes pass. Fixes that raise consistency (lower temperature, clearer policy, verification and retry of the failing step) raise pass^k more than pass^1."
+        },
+        {
+          "level": "senior",
+          "q": "How would you budget the cost of agent evaluation, and what would you cut first if it is too expensive?",
+          "a": "Cost per run = trials × (agent + simulator + judges). For 600 trials at \\$0.30 + \\$0.05 + 2 × \\$0.006 that is about \\$217; with a safety suite and nightly cadence roughly \\$9k a month. Compare it with the cost of one bad release. To cut: run judges only where assertions pass, use extracted spans instead of whole traces, run the full suite nightly and a smoke subset per PR, and use fixtures instead of live tools for gates. Keep state checks and the safety suite; they are cheap and protect against the worst outcomes."
+        }
+      ]
     }
   ]
 }

@@ -1,13 +1,14 @@
 "use client";
 // Plays a lab step by step: read, answer, compute by hand, meet goals in a simulation, build in the sandbox.
 import Link from "next/link";
-import { useCallback, useState } from "react";
+import { Fragment, type ReactNode, useCallback, useState } from "react";
 import { getLab } from "@/labs";
+import { useChatSource } from "@/lib/ai/sources";
 import type { LabStep } from "@/labs/types";
 import { setLabStep, useProgress } from "@/lib/progress";
 import { getSim } from "@/sims";
 import { goalMet, type Metrics } from "@/sims/types";
-import { SimPanel } from "@/sims/ui";
+import SimWorkspace from "@/sims/workspace";
 import DesignStep from "./DesignStep";
 import Markdown from "./Markdown";
 import MiniMarkdown from "./MiniMarkdown";
@@ -76,11 +77,10 @@ function MathStep({ step, onPass }: { step: Extract<LabStep, { type: "math" }>; 
   );
 }
 
-function SimStep({ step, onPass }: { step: Extract<LabStep, { type: "sim" }>; onPass: () => void }) {
+function SimStep({ step, onPass, brief, nav }: { step: Extract<LabStep, { type: "sim" }>; onPass: () => void; brief: ReactNode; nav: ReactNode }) {
   const def = getSim(step.sim);
   const [hints, setHints] = useState(0);
-  const [solved, setSolved] = useState(false);
-  const [key, setKey] = useState(0);
+  const [solved, setSolved] = useState(0);
   const onMetrics = useCallback(
     (m: Metrics) => {
       if (step.goals.every((g) => goalMet(g, m))) onPass();
@@ -89,14 +89,26 @@ function SimStep({ step, onPass }: { step: Extract<LabStep, { type: "sim" }>; on
   );
   if (!def) return <div className="callout warn"><b>Simulation “{step.sim}” is not available yet.</b></div>;
   return (
-    <>
-      <SimPanel key={key} def={def} initial={solved ? { ...step.params, ...step.solution } : step.params} goals={step.goals} locked={step.locked} hidden={step.hidden} onMetrics={onMetrics} />
-      <div className="row">
-        {hints < step.hints.length && <button type="button" className="chip-btn" onClick={() => setHints(hints + 1)}><Icon name="lightbulb" size={14} /> Hint {hints + 1} of {step.hints.length}</button>}
-        <button type="button" className="chip-btn" onClick={() => { setSolved(true); setKey(key + 1); }}><Icon name="eye" size={14} /> Show a solution</button>
-      </div>
-      {step.hints.slice(0, hints).map((h) => <div key={h} className="callout tip"><b><Icon name="lightbulb" size={15} /> Hint</b><MiniMarkdown>{h}</MiniMarkdown></div>)}
-    </>
+    <SimWorkspace
+      def={def}
+      initial={solved ? { ...step.params, ...step.solution } : step.params}
+      resetKey={solved || undefined}
+      goals={step.goals}
+      locked={step.locked}
+      hidden={step.hidden}
+      onMetrics={onMetrics}
+      leftTop={
+        <div className="simws-brief">
+          {brief}
+          <div className="row" style={{ marginTop: 12, gap: 6 }}>
+            {hints < step.hints.length && <button type="button" className="chip-btn" onClick={() => setHints(hints + 1)}><Icon name="lightbulb" size={14} /> Hint {hints + 1}/{step.hints.length}</button>}
+            <button type="button" className="chip-btn" onClick={() => setSolved((n) => n + 1)}><Icon name="eye" size={14} /> Solution</button>
+          </div>
+          {step.hints.slice(0, hints).map((h) => <div key={h} className="callout tip"><b><Icon name="lightbulb" size={15} /> Hint</b><MiniMarkdown>{h}</MiniMarkdown></div>)}
+        </div>
+      }
+      rightTop={<div className="simws-panel">{nav}</div>}
+    />
   );
 }
 
@@ -112,63 +124,109 @@ export default function LabPlayer({ slug }: { slug: string }) {
     },
     [lab, passed],
   );
+  // What the optional AI tutor sees: the step's brief and question, never the answer, hints' solution or worked solution.
+  useChatSource(
+    "lab",
+    lab
+      ? {
+          label: `Lab · ${lab.title} · step ${i + 1}: ${lab.steps[i]?.title ?? ""}`,
+          suggestions: ["Give me a hint without giving away the answer", "Explain the idea behind this step"],
+          build: () => {
+            const st = lab.steps[i];
+            const ask = st.type === "quiz" ? { question: st.question, options: st.options.map((o) => o.text) } : st.type === "math" ? { question: st.question, unit: st.unit } : st.type === "sim" ? { goals: st.goals.map((g) => g.label) } : {};
+            return { lab: lab.title, summary: lab.summary, step: `${i + 1} of ${lab.steps.length} (${STEP_LABEL[st.type]})`, title: st.title, brief: st.body, ...ask, note: "Answers and worked solutions are hidden from the tutor: give hints, not the answer." };
+          },
+        }
+      : null,
+  );
   if (!lab) return <div className="card empty">Unknown lab.</div>;
   const step = lab.steps[i];
   const needsPass = step.type !== "intro";
   const ok = !needsPass || passed.has(i);
   const finished = p.labs[lab.slug]?.passed;
 
+  const canGo = (k: number) => lab.steps.slice(0, k).every((st, j) => st.type === "intro" || passed.has(j));
+  const isDone = (k: number) => passed.has(k) || (lab.steps[k].type === "intro" && k < i);
+  const goNext = () => {
+    if (!needsPass) pass(i);
+    setI(i + 1);
+  };
+
+  const wide = step.type === "sim" || step.type === "design";
+  const brief = (
+    <>
+      <p className="eyebrow">Step {i + 1} of {lab.steps.length} · {STEP_LABEL[step.type]}</p>
+      {wide ? <h2>{step.title}</h2> : <h1>{step.title}</h1>}
+      <Markdown>{step.body}</Markdown>
+    </>
+  );
+  const nav = (
+    <div className="lab-nav-row">
+      <button type="button" className="btn" disabled={i === 0} onClick={() => setI(i - 1)}><Icon name="arrow-left" size={15} /> Back</button>
+      <span className="row" style={{ gap: 6 }}>
+        {!wide && <span className={`pill ${lab.difficulty}`}>{lab.difficulty}</span>}
+        {!wide && <span className="pill"><Icon name="clock" size={12} /> {lab.minutes} min</span>}
+        {finished && <span className="pill accent"><Icon name="trophy" size={12} /> completed</span>}
+        {ok && needsPass && <span className="pill accent"><Icon name="check" size={12} /> done</span>}
+      </span>
+      {i < lab.steps.length - 1 ? (
+        <button type="button" className="btn primary" disabled={!ok} onClick={goNext} title={ok ? undefined : "Complete this step first"}>
+          {i === 0 ? "Continue" : "Next"} <Icon name="arrow-right" size={15} />
+        </button>
+      ) : (
+        <Link href="/labs" className="btn primary" aria-disabled={!ok} onClick={(e) => { if (!ok) e.preventDefault(); else pass(i); }}>
+          Finish <Icon name="trophy" size={15} />
+        </Link>
+      )}
+    </div>
+  );
+
   return (
-    <div className="topic-layout">
-      <div className="stack" style={{ gap: 24 }}>
-        <div className="topic-progress" style={{ marginBottom: 0 }}>
-          <div className="row">
-            <span>{lab.title}</span>
-            <span className="mono muted">Step {i + 1} / {lab.steps.length}</span>
-          </div>
-          <div className="segments">{lab.steps.map((_, k) => <i key={k} className={k === i ? "on" : passed.has(k) || (lab.steps[k].type === "intro" && k < i) ? "done" : ""} />)}</div>
+    <div>
+      <div className="labbar">
+        <Link href="/labs" className="icon-btn" aria-label="Back to labs"><Icon name="chevron-left" size={18} /></Link>
+        <div className="labbar-title">
+          <small>{lab.product}</small>
+          <b>{lab.title}</b>
         </div>
-        <article className="topic-article" style={{ padding: "40px 6% 36px" }}>
-          <span className="eyebrow"><Icon name={STEP_ICON[step.type]} size={14} /> {STEP_LABEL[step.type]}</span>
-          <h1 style={{ margin: "6px 0 18px" }}>{step.title}</h1>
-          <Markdown>{step.body}</Markdown>
-          {step.type === "quiz" && <QuizStep key={i} step={step} onPass={() => pass(i)} />}
-          {step.type === "math" && <MathStep key={i} step={step} onPass={() => pass(i)} />}
-          {step.type === "sim" && <SimStep key={i} step={step} onPass={() => pass(i)} />}
-          {step.type === "design" && <DesignStep key={i} step={step} onPass={() => pass(i)} />}
-          <div className="topic-end">
-            <button type="button" className="btn ghost" disabled={i === 0} onClick={() => setI(i - 1)}><Icon name="arrow-left" size={16} /> Back</button>
-            {ok && needsPass && <span className="pill green"><Icon name="check" size={13} /> Step complete</span>}
-            {i < lab.steps.length - 1 ? (
-              <button type="button" className="btn" disabled={!ok} onClick={() => { if (!needsPass) pass(i); setI(i + 1); }} title={ok ? undefined : "Complete this step first"}>
-                Next <Icon name="arrow-right" size={16} />
+        <div className="labsteps" role="list" aria-label="Lab steps">
+          {lab.steps.map((st, k) => (
+            <Fragment key={k}>
+              {k > 0 && <span className={`labjoin ${isDone(k - 1) ? "done" : ""}`} />}
+              <button
+                type="button"
+                role="listitem"
+                className={`labstep ${k === i ? "on" : ""} ${isDone(k) ? "done" : ""}`}
+                disabled={!canGo(k)}
+                onClick={() => setI(k)}
+                aria-label={`Step ${k + 1}: ${st.title}`}
+                aria-current={k === i ? "step" : undefined}
+              >
+                {isDone(k) ? <Icon name="check" size={13} /> : k + 1}
               </button>
-            ) : (
-              <Link href="/labs" className="btn" aria-disabled={!ok} onClick={(e) => { if (!ok) e.preventDefault(); else pass(i); }}>
-                Finish lab <Icon name="trophy" size={16} />
-              </Link>
-            )}
-          </div>
-        </article>
-      </div>
-      <aside className="toc">
-        <h4>{lab.product}</h4>
-        <ol>
-          {lab.steps.map((s, k) => (
-            <li key={k}>
-              <a href="#" className={k === i ? "on" : ""} onClick={(e) => { e.preventDefault(); if (k <= i || passed.has(k - 1) || lab.steps[k - 1]?.type === "intro") setI(k); }}>
-                <span className="n">{k + 1}</span>
-                <span>{s.title}</span>
-                {passed.has(k) ? <Icon name="check" size={15} /> : <span />}
-              </a>
-            </li>
+            </Fragment>
           ))}
-        </ol>
-        <div className="toc-foot">
-          <span className={`pill ${lab.difficulty}`}>{lab.difficulty}</span> <span className="pill"><Icon name="clock" size={12} /> {lab.minutes} min</span>
-          {finished && <p className="small" style={{ color: "var(--green)" }}><Icon name="trophy" size={14} /> Completed</p>}
+          <span className="labbar-label">{step.title}</span>
         </div>
-      </aside>
+        <button type="button" className="icon-btn" disabled={i === 0} onClick={() => setI(i - 1)} aria-label="Previous step"><Icon name="arrow-left" size={18} /></button>
+        <button type="button" className="icon-btn" disabled={i === lab.steps.length - 1 || !ok} onClick={goNext} aria-label="Next step"><Icon name="arrow-right" size={18} /></button>
+      </div>
+
+      {wide ? (
+        <div className="page wide" style={{ paddingTop: 20 }}>
+          {step.type === "sim" && <SimStep key={i} step={step} onPass={() => pass(i)} brief={brief} nav={nav} />}
+          {step.type === "design" && <DesignStep key={i} step={step} onPass={() => pass(i)} brief={brief} nav={nav} />}
+        </div>
+      ) : (
+        <div className="labstage">
+          <article className="labcard">
+            {brief}
+            {step.type === "quiz" && <QuizStep key={i} step={step} onPass={() => pass(i)} />}
+            {step.type === "math" && <MathStep key={i} step={step} onPass={() => pass(i)} />}
+            <div className="topic-end">{nav}</div>
+          </article>
+        </div>
+      )}
     </div>
   );
 }

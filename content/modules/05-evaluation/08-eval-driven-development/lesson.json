@@ -1,0 +1,31 @@
+{
+  "title": "Eval-Driven Development: Building the Evals Your Product Needs",
+  "summary": "How teams build application evals that actually steer development: start from observed failures, turn them into a golden set of the right size, pick the cheapest grader that is trustworthy for each criterion, calibrate model judges, gate releases in CI without drowning in false alarms, and close the loop with online monitoring.",
+  "objectives": [
+    "After this lesson you can run an error-analysis pass on traces and turn the failure taxonomy into binary, testable criteria",
+    "Size a golden set for a target margin of error and split it into regression and capability suites",
+    "Choose between code assertions, model judges and human review for each criterion, and estimate grading cost",
+    "Measure a judge's true-positive and true-negative rates and correct an observed pass rate for judge error",
+    "Design a CI eval gate and compute its false-alarm and miss rates, then connect it to online monitoring"
+  ],
+  "prerequisites": "Success criteria from [/learn/evaluation/success-criteria](/learn/evaluation/success-criteria), judges and kappa from [/learn/evaluation/llm-as-judge](/learn/evaluation/llm-as-judge), error analysis from [/learn/evaluation/error-analysis](/learn/evaluation/error-analysis), and significance testing from [/learn/evaluation/comparing-systems](/learn/evaluation/comparing-systems).",
+  "sims": ["judge-agreement", "eval-gate", "ab-significance", "canary-rollout"],
+  "labs": ["build-an-eval-suite"],
+  "sandbox": ["eval-gated-release"],
+  "sources": [
+    { "title": "Demystifying evals for AI agents", "authors": "Anthropic Engineering", "year": 2026, "note": "Tasks, trials, graders; capability vs regression evals; roadmap from 20-50 real failures", "url": "https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents" },
+    { "title": "AI Evals: Everything You Need to Know (FAQ)", "authors": "Hamel Husain and Shreya Shankar", "year": 2026, "note": "Error analysis first, binary labels, one judge per failure mode, TPR/TNR validation", "url": "https://hamel.dev/blog/posts/evals-faq/" },
+    { "title": "Who Validates the Validators? Aligning LLM-Assisted Evaluation of LLM Outputs with Human Preferences", "authors": "Shankar et al.", "year": 2024, "note": "Criteria drift; EvalGen", "url": "https://arxiv.org/abs/2404.12272" },
+    { "title": "Evaluating the Effectiveness of LLM-Evaluators (aka LLM-as-Judge)", "authors": "Eugene Yan", "year": 2024, "note": "Choosing scoring modes and metrics for evaluators", "url": "https://eugeneyan.com/writing/llm-evaluators/" },
+    { "title": "Replacing Judges with Juries: Evaluating LLM Generations with a Panel of Diverse Models", "authors": "Verga et al.", "year": 2024, "note": "Panels of smaller judges", "url": "https://arxiv.org/abs/2404.18796" },
+    { "title": "A statistical approach to model evaluations", "authors": "Anthropic (E. Miller)", "year": 2024, "note": "Standard errors, paired differences, power analysis", "url": "https://www.anthropic.com/research/statistical-approach-to-model-evals" },
+    { "title": "LangSmith evaluation concepts", "authors": "LangChain", "year": 2026, "note": "Offline vs online evaluation, datasets, experiments", "url": "https://docs.langchain.com/langsmith/evaluation-concepts" },
+    { "title": "Inspect", "authors": "UK AI Security Institute", "year": 2026, "note": "Open-source eval framework: datasets, solvers, scorers, sandboxes", "url": "https://inspect.aisi.org.uk/" },
+    { "title": "OpenAI Evals", "authors": "OpenAI", "year": 2023, "note": "Open-source eval framework and registry", "url": "https://github.com/openai/evals" },
+    { "title": "promptfoo documentation", "authors": "promptfoo", "year": 2026, "note": "CLI for evals and red-teaming in CI", "url": "https://www.promptfoo.dev/docs/intro/" },
+    { "title": "DeepEval documentation", "authors": "Confident AI", "year": 2026, "note": "Pytest-style LLM test cases", "url": "https://deepeval.com/docs/getting-started" },
+    { "title": "Ragas metrics", "authors": "Ragas", "year": 2026, "note": "RAG and agent metrics", "url": "https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/" },
+    { "title": "Arize Phoenix", "authors": "Arize AI", "year": 2026, "note": "Open-source tracing and evals", "url": "https://github.com/Arize-ai/phoenix" },
+    { "title": "Braintrust documentation", "authors": "Braintrust", "year": 2026, "note": "Hosted evals and observability", "url": "https://www.braintrust.dev/docs" }
+  ]
+}

@@ -2,7 +2,7 @@
 // (bottlenecks, failures, what to try - with one-click fixes - and the trade-offs), and "what if" checks.
 // Pure: no React.
 import { KINDS, apiModel, cfgBool, cfgNum, cfgStr, isLlm, nodeTitle, openModel, resolveConfig } from "./catalog";
-import { incidentLabel, run } from "./engine";
+import { evalGateModel, incidentLabel, run } from "./engine";
 import { fmtMs, fmtRps, fmtUsd, pct } from "./format";
 import { addFallback, insertAfter, insertBefore, setConfig } from "./presets";
 import { TIMELINE, type TimelineSummary } from "./timeline";
@@ -458,6 +458,71 @@ export function explain(g: Graph, r: RunResult, traffic: Traffic = {}): Guide {
         fix: cfgNum(c, "retries") < 2 ? "Retry failed steps (validate tool calls and try again), or redesign the task to need fewer steps." : "Use fewer steps: combine tools, or give the model better instructions.",
         tradeoff: "Retries cost extra model calls and add latency.",
         action: cfgNum(c, "retries") < 2 ? { kind: "config", nodeId: n.id, patch: { retries: cfgNum(c, "retries") + 1 }, label: "Retry failed steps" } : { kind: "config", nodeId: n.id, patch: { steps: Math.max(1, cfgNum(c, "steps") - 1) }, label: "One step fewer" },
+      });
+  }
+
+  // Agent reliability over repeated tries.
+  if (m.taskSuccessPassK !== undefined && m.taskSuccessPassK < 0.7) {
+    const ag = g.nodes.find((n) => n.kind === "agent" && (r.nodes[n.id]?.load ?? 0) > 0);
+    if (ag)
+      advice.push({
+        severity: "info", problem: `pass^3 is only ${pct(m.taskSuccessPassK)}: a task tried three times succeeds all three times that rarely.`, nodeId: ag.id,
+        why: `Per-task success of ${pct(r.nodes[ag.id]?.extra.taskSuccess ?? 0)} sounds fine for one attempt, but users repeat tasks and every attempt must work. pass^k = (task success)^k falls fast with k, which is why agent benchmarks such as τ-bench report it alongside pass@1.`,
+        fix: "Raise per-step success or cut steps (fewer, better tools), retry steps whose failure you can detect, and evaluate with repeated trials before shipping.",
+        tradeoff: "Retries and verification cost extra model calls; fewer steps may need a stronger model.",
+      });
+  }
+
+  // Eval gates.
+  const gates = g.nodes.filter((n) => n.kind === "eval-gate");
+  for (const n of gates) {
+    const c = resolveConfig(n);
+    const e = evalGateModel(c);
+    const ownsModel = r.issues.every((i) => i.nodeId !== n.id);
+    if (!ownsModel) {
+      const entry = modelEntry(g);
+      advice.push({
+        severity: "warn", problem: `${title(n.id)} isn't wired in front of a model, so it protects nothing.`, nodeId: n.id,
+        why: "A gate checks the releases of the models downstream of it. Unwired, a bad model version goes straight to users.",
+        fix: entry ? `Wire ${title(n.id)} → ${title(entry.id)} (or put it on the path just before the model).` : "Wire it to the model whose releases it checks.",
+        tradeoff: "None - it adds no latency on the request path.",
+      });
+      continue;
+    }
+    if (e.catchRate < 0.85)
+      advice.push({
+        severity: "info", problem: `${title(n.id)} would stop only ${pct(e.catchRate)} of bad model versions.`, nodeId: n.id,
+        why: `With ${cfgNum(c, "evalSetSize")} items the measured score moves by about ±${e.seDropPp.toFixed(1)} points from run to run, so a real ${e.judge.coverage < 1 ? "but partly invisible " : ""}regression often stays under the ${cfgNum(c, "threshold")}-point threshold${e.judge.coverage < 1 ? `, and ${e.judge.label.toLowerCase()} only see about ${pct(e.judge.coverage)} of what goes wrong` : ""}.`,
+        fix: e.judge.coverage < 1 ? "Add an LLM judge to the assertions, or grow the eval set." : "Grow the eval set (less noise) or lower the threshold a little.",
+        tradeoff: `Every candidate version runs the whole set: ${fmtUsd(e.monthly)}/month now. A lower threshold also blocks more good releases (${pct(e.falseAlarm)} today).`,
+        action: { kind: "config", nodeId: n.id, patch: { evalSetSize: Math.min(5000, cfgNum(c, "evalSetSize") * 2) }, label: `Use ${Math.min(5000, cfgNum(c, "evalSetSize") * 2)} eval items` },
+      });
+    else if (e.falseAlarm > 0.2)
+      advice.push({
+        severity: "info", problem: `${title(n.id)} blocks ${pct(e.falseAlarm)} of perfectly good releases.`, nodeId: n.id,
+        why: `The ${cfgNum(c, "threshold")}-point threshold sits inside the run-to-run noise (±${e.seDropPp.toFixed(1)} points), so chance dips trip it. Engineers learn to override a gate that cries wolf.`,
+        fix: "Raise the threshold a little, or grow the eval set so the noise shrinks.",
+        tradeoff: "A higher threshold lets smaller regressions through; a bigger set costs more per run.",
+        action: { kind: "config", nodeId: n.id, patch: { threshold: Math.min(10, cfgNum(c, "threshold") + 1) }, label: `Block at > ${Math.min(10, cfgNum(c, "threshold") + 1)} pp` },
+      });
+    if (cfgStr(c, "judge") === "human" && e.monthly > 2000)
+      advice.push({
+        severity: "info", problem: `Human review of every candidate costs ${fmtUsd(e.monthly)}/month.`, nodeId: n.id,
+        why: "People are the most accurate graders but grade every item of every run.",
+        fix: "Use an LLM judge calibrated against a small human-labelled sample, and keep humans for spot checks.",
+        tradeoff: "An LLM judge is noisier and has its own biases; re-check its agreement with humans regularly.",
+        action: { kind: "config", nodeId: n.id, patch: { judge: "llm-judge" }, label: "Grade with an LLM judge" },
+      });
+  }
+  if (r.incident.type === "badRollout" && !gates.length) {
+    const entry = modelEntry(g);
+    if (entry)
+      advice.push({
+        severity: "warn", problem: "A worse model version went live and nothing checked it before release.", nodeId: entry.id,
+        why: "Error rates and latency look normal, so no alarm fires: only answer quality dropped. Online evals notice later; offline evals in CI can stop it before any user sees it.",
+        fix: "Add an Eval gate in front of the model: every new version must pass the golden eval set before it deploys.",
+        tradeoff: "Each candidate pays for an eval run, and a too-tight threshold blocks good releases by chance.",
+        action: { kind: "insertBefore", nodeId: entry.id, nodeKind: "eval-gate", label: "Add an eval gate" },
       });
   }
 

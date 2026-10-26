@@ -2,6 +2,13 @@
 export const BRAND = {
   name: "Kushal Rana",
   course: "LLM Engineering 1 → 100",
+  tagline: "AI engineer building open, hands-on courses you learn by doing.",
+  handle: "@KushalranaAI",
+  projects: [
+    { label: "System Learn", href: "https://kushalranaai.github.io/system_learn/" },
+    { label: "Machine Learning 1 → 100", href: "https://kushalranaai.github.io/machine-learning-1-to-100/" },
+    { label: "All-in-One RAG Tutorials", href: "https://kushalranaai.github.io/All-in-One-RAG_tutorials/" },
+  ],
   links: [
     { id: "portfolio", label: "Portfolio", href: "https://kushalranaai.github.io/" },
     { id: "linkedin", label: "LinkedIn", href: "https://www.linkedin.com/in/kushal-rana" },

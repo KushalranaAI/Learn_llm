@@ -34,29 +34,37 @@ export default async function LessonPage({ params }: { params: Promise<{ module:
   const next = m.lessons[i + 1];
 
   return (
-    <div className="grid-main">
-      <div className="stack">
-        <header className="card">
-          <Link href={`/learn/${m.slug}`} className="eyebrow">Module {pad(m.order)} · {m.title}</Link>
-          <h1 style={{ marginTop: 8 }}>{l.title}</h1>
+    <div className="page">
+      <nav className="crumbs" aria-label="Breadcrumb">
+        <Link href="/curriculum"><Icon name="chevron-left" size={14} /> Curriculum</Link> / <Link href={`/learn/${m.slug}`}>Module {m.order} · {m.title}</Link>
+      </nav>
+      <div className="grid-main">
+      <div className="stack" style={{ gap: 20 }}>
+        <header>
+          <div className="lesson-meta-row">
+            <span className="pill"><Icon name="book" size={12} /> Lesson {m.order}.{l.order}</span>
+            <span className="pill"><Icon name="clock" size={12} /> {l.minutes} min</span>
+            <span className="pill">{l.topics.length} topics</span>
+          </div>
+          <h1>{l.title}</h1>
           <p className="lead">{l.summary}</p>
           <div style={{ maxWidth: 420, margin: "22px 0" }}>
             <LessonBar ids={l.topics.map((t) => `${base}/${t.slug}`)} minutes={l.minutes} />
           </div>
           {l.topics[0] && (
             <div className="row">
-              <Link href={`/learn/${base}/${l.topics[0].slug}`} className="btn">Start lesson</Link>
-              {questions > 0 && <Link href={`/interview?section=${l.slug}`} className="btn ghost">{questions} interview questions</Link>}
+              <Link href={`/learn/${base}/${l.topics[0].slug}`} className="btn primary">Start lesson <Icon name="arrow-right" size={15} /></Link>
+              {questions > 0 && <Link href={`/interview?section=${l.slug}`} className="btn">{questions} interview questions</Link>}
             </div>
           )}
         </header>
 
         <section className="card">
-          <h2 style={{ marginBottom: 8 }}>Topics</h2>
+          <h2 style={{ marginBottom: 8, fontSize: "1.05rem" }}>Topics</h2>
           <div className="list-rows">
             {l.topics.map((t, k) => (
               <Link key={t.slug} href={`/learn/${base}/${t.slug}`}>
-                <span className="mono muted" style={{ width: 26 }}>{k + 1}</span>
+                <span className="lesson-id" style={{ width: 26, marginRight: 0 }}>{k + 1}</span>
                 <span style={{ flex: 1 }}>{t.title}</span>
                 <span className="muted small">{t.minutes} min{t.checks ? ` · ${t.checks} check${t.checks > 1 ? "s" : ""}` : ""}</span>
                 <DoneTick id={`${base}/${t.slug}`} />
@@ -67,7 +75,7 @@ export default async function LessonPage({ params }: { params: Promise<{ module:
 
         {(sims.length > 0 || labs.length > 0 || scenarios.length > 0) && (
           <section className="card">
-            <h2 style={{ marginBottom: 18 }}>Practise it</h2>
+            <h2 style={{ marginBottom: 14, fontSize: "1.05rem" }}>Practise it</h2>
             <div className="cards-2">
               {sims.map((s) => (
                 <Link key={s.id} href={`/simulations/${s.id}`} className="link-card">
@@ -136,6 +144,7 @@ export default async function LessonPage({ params }: { params: Promise<{ module:
           </Link>
         )}
       </aside>
+      </div>
     </div>
   );
 }

@@ -1,0 +1,21 @@
+{
+  "title": "What Is an LLM?",
+  "summary": "A large language model is a next-token predictor trained on a huge amount of text. Five short, animated tours: what it does, where it came from, what is inside, how it is made, and where it falls short.",
+  "objectives": [
+    "Describe an LLM as a model that repeatedly predicts the next token, and read its output as probabilities",
+    "Place the transformer, GPT-3 and ChatGPT on the path from n-gram statistics to today's assistants",
+    "Name the stages inside a transformer (tokens, embeddings, attention and MLP blocks, softmax) and the stages that make an assistant (pretraining, fine-tuning, preference tuning)",
+    "Tell which tasks a plain LLM does well and which need tools or grounding"
+  ],
+  "prerequisites": "None. Start here.",
+  "sims": ["llm-autocomplete", "llm-timeline", "transformer-flow", "training-stages", "llm-can-cant"],
+  "labs": [],
+  "sandbox": [],
+  "sources": [
+    { "title": "Attention Is All You Need", "authors": "Vaswani et al.", "year": 2017, "note": "The transformer architecture" },
+    { "title": "Improving Language Understanding by Generative Pre-Training", "authors": "Radford et al.", "year": 2018, "note": "GPT-1: pretrain on next-token prediction, then fine-tune" },
+    { "title": "Language Models are Unsupervised Multitask Learners", "authors": "Radford et al.", "year": 2019, "note": "GPT-2 (1.5B parameters)" },
+    { "title": "Language Models are Few-Shot Learners", "authors": "Brown et al.", "year": 2020, "note": "GPT-3 (175B parameters) and in-context learning" },
+    { "title": "Training language models to follow instructions with human feedback", "authors": "Ouyang et al.", "year": 2022, "note": "InstructGPT: supervised fine-tuning plus RLHF" }
+  ]
+}

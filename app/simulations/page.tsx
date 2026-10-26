@@ -12,8 +12,8 @@ export default function SimulationsPage() {
   const known = new Set(modules.map((m) => m.slug));
   const other = SIMS.filter((s) => !known.has(s.module));
   return (
-    <div className="stack">
-      <header className="card">
+    <div className="page mid stack">
+      <header className="page-head">
         <span className="eyebrow"><Icon name="activity" size={14} /> Simulations</span>
         <h1 style={{ marginTop: 8 }}>{SIMS.length} live models of how LLM systems behave</h1>
         <p className="lead">

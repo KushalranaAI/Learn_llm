@@ -124,6 +124,15 @@ export interface FlowCanvasProps {
   /** px; default fills its container */
   height?: number;
   readOnly?: boolean;
+  /** render the palette elsewhere (the full sandbox puts it in its left panel) */
+  hidePalette?: boolean;
+  /** receives functions to add a node at the view centre and to fit the view */
+  onReady?: (api: CanvasApi) => void;
+}
+
+export interface CanvasApi {
+  add: (kind: NodeKind) => void;
+  fit: () => void;
 }
 
 export function FlowCanvas(props: FlowCanvasProps) {
@@ -136,7 +145,7 @@ export function FlowCanvas(props: FlowCanvasProps) {
 
 const edgeKey = (from: string, to: string) => `${from}->${to}`;
 
-function FlowInner({ graph, onChange, selected, onSelect, result = null, stale = false, palette, height, readOnly }: FlowCanvasProps) {
+function FlowInner({ graph, onChange, selected, onSelect, result = null, stale = false, palette, height, readOnly, hidePalette, onReady }: FlowCanvasProps) {
   const rf = useReactFlow();
   const wrap = useRef<HTMLDivElement>(null);
   const graphRef = useRef(graph);
@@ -266,7 +275,7 @@ function FlowInner({ graph, onChange, selected, onSelect, result = null, stale =
 
   // Fit the view: on mount, whenever the node set is replaced (scenario load, import, reset) and when the
   // container is resized. Fitting waits until React Flow has measured every node, else it fits nothing.
-  const FIT = { padding: 0.08, minZoom: 0.55, maxZoom: 1 } as const;
+  const FIT = { padding: 0.12, minZoom: 0.3, maxZoom: 1 } as const;
   const initialized = useNodesInitialized();
   const pendingFit = useRef(true);
   const idsKey = graph.nodes.map((n) => n.id).join("|");
@@ -307,12 +316,17 @@ function FlowInner({ graph, onChange, selected, onSelect, result = null, stale =
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rf]);
 
+  useEffect(() => {
+    onReady?.({ add: (k) => add(k), fit: () => rf.fitView({ ...FIT, duration: 200 }) });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onReady, add, rf]);
+
   const ctx = useMemo(() => ({ result, stale, nodes: graph.nodes }), [result, stale, graph.nodes]);
   const kinds = palette?.length ? palette : ALL_KINDS;
 
   return (
     <div className="sbx-canvas" style={height ? { height } : undefined}>
-      {!readOnly && <Palette kinds={kinds} onAdd={(k) => add(k)} compact={!!palette?.length && palette.length <= 6} />}
+      {!readOnly && !hidePalette && <Palette kinds={kinds} onAdd={(k) => add(k)} compact={!!palette?.length && palette.length <= 6} />}
       <div
         className="sbx-flow"
         ref={wrap}

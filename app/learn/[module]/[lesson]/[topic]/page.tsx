@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { TocList, TopicFooter, TopicSegments } from "@/components/ProgressBits";
 import TopicBody from "@/components/TopicBody";
+import Icon from "@/components/ui/Icon";
 import { flatTopics, getLesson, getModule, getModules } from "@/lib/content";
 
 export function generateStaticParams() {
@@ -34,25 +35,35 @@ export default async function TopicPage({ params }: P) {
 
   return (
     <div>
-      <div className="topic-progress">
-        <div className="row">
-          <Link href={`/learn/${base}`}>{l.title}</Link>
-          <span className="mono muted">{i + 1} / {l.topics.length}</span>
+      <div className="topic-bar">
+        <div className="topic-bar-inner">
+          <div className="row">
+            <Link href={`/learn/${base}`}><Icon name="chevron-left" size={14} /> {l.title}</Link>
+            <span className="mono muted">{i + 1} / {l.topics.length}</span>
+          </div>
+          <TopicSegments base={base} topics={topics} current={i} />
         </div>
-        <TopicSegments base={base} topics={topics} current={i} />
       </div>
-      <div className="topic-layout">
-        <article className="topic-article">
-          <span className="muted small">Topic {i + 1} · {t.minutes} min</span>
-          <h1>{t.title}</h1>
-          <TopicBody id={id} title={t.title} body={t.body} />
-          <TopicFooter id={id} next={nextHref} nextLabel={nextLabel} />
-        </article>
-        <aside className="toc" aria-label="In this lesson">
-          <h4>In this lesson</h4>
-          <TocList base={base} topics={topics} current={i} />
-          <Link href={`/learn/${base}#sources`} className="toc-foot">Overview and sources</Link>
-        </aside>
+      <div className="page" style={{ paddingTop: 36 }}>
+        <div className="topic-layout">
+          <article className="topic-article">
+            <nav className="crumbs" aria-label="Breadcrumb">
+              <Link href="/curriculum">Curriculum</Link> / <Link href={`/learn/${m.slug}`}>Module {m.order}</Link> / <span>Lesson {m.order}.{l.order}</span>
+            </nav>
+            <div className="lesson-meta-row">
+              <span className="pill"><Icon name="book" size={12} /> Topic {i + 1}</span>
+              <span className="pill"><Icon name="clock" size={12} /> {t.minutes} min</span>
+            </div>
+            <h1>{t.title}</h1>
+            <TopicBody id={id} title={t.title} body={t.body} lesson={l.title} />
+            <TopicFooter id={id} next={nextHref} nextLabel={nextLabel} />
+          </article>
+          <aside className="toc" aria-label="In this lesson">
+            <h4>In this lesson</h4>
+            <TocList base={base} topics={topics} current={i} />
+            <Link href={`/learn/${base}#sources`} className="toc-foot">Overview and sources</Link>
+          </aside>
+        </div>
       </div>
     </div>
   );

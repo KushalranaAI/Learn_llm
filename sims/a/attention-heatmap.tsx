@@ -3,6 +3,7 @@
 // scale 0.1–4 (multiplies the logits; 1 = the standard 1/√d_k), query 0–10 (which token's row to inspect).
 // Metrics: maxWeight (largest weight in the inspected row), entropyBits (that row's entropy), argmaxPos (position it attends
 // to most, 0-based), meanEntropyBits (average entropy over all rows).
+import NeuralNetDiagram from "../nn-diagram";
 import { Heatmap, TokenStrip, useWidth } from "../ui";
 import { bool, num, str, type Params, type SimDef, type SimViewProps } from "../types";
 import { Caption, HBars } from "./viz";
@@ -108,6 +109,16 @@ function View({ params, setParam }: SimViewProps) {
           </button>
         ))}
       </div>
+      <NeuralNetDiagram
+        height={Math.max(260, n * 34 + 50)}
+        range={[0, Math.max(...row, 1e-9)]}
+        caption={`"${r.toks[r.qi].w}" reads from earlier tokens; line thickness = attention weight`}
+        layers={[
+          { title: "keys / values", nodes: r.toks.map((t, j) => ({ value: row[j], inner: row[j] >= 0.005 ? row[j].toFixed(2) : "·", label: t.w })) },
+          { title: "query → output", nodes: r.toks.map((t, j) => ({ value: j === r.qi ? Math.max(...row) : 0, inner: j === r.qi ? "Σ" : "", label: t.w })) },
+        ]}
+        weights={[r.toks.map((_, q) => (q === r.qi ? row.map((v) => (v < 0.005 ? 0 : v)) : r.toks.map(() => 0)))]}
+      />
       <Caption>Attention weights: row = query token, column = key token it reads from. Each row sums to 1.</Caption>
       <Heatmap rows={labels} cols={labels} values={r.W} max={1} cell={cell} showValues={cell >= 34} />
       <Caption>Row &quot;{r.toks[r.qi].w}&quot;: where this token&apos;s output comes from</Caption>

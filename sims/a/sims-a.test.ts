@@ -8,7 +8,7 @@ const byId = Object.fromEntries(SIMS_A.map((s) => [s.id, s])) as Record<string, 
 const run = (id: string, over: Params = {}) => byId[id].compute({ ...byId[id].defaults, ...over });
 
 const EXPECTED_IDS = [
-  "neuron", "gradient-descent", "xor-training", "bpe-tokenizer", "token-cost", "embedding-space", "attention-heatmap", "transformer-params",
+  "neuron", "gradient-descent", "backprop-flow", "xor-training", "bpe-tokenizer", "token-cost", "embedding-space", "attention-heatmap", "transformer-params",
   "sampling", "kv-cache-memory", "context-position", "scaling-laws", "training-memory", "lr-schedule", "preference-loss", "lora-params",
   "latency-breakdown", "roofline", "llm-batching", "quantization", "speculative-decoding", "gpu-capacity",
 ];

@@ -71,11 +71,11 @@ export function TopicFooter({ id, next, nextLabel }: { id: string; next: string 
   const done = !!p.done[id];
   return (
     <div className="topic-end">
-      <button type="button" className={`btn ${done ? "ghost" : "ghost"}`} onClick={() => setDone(id, !done)}>
+      <button type="button" className="btn" onClick={() => setDone(id, !done)}>
         <Icon name={done ? "circle-check" : "circle"} size={18} /> {done ? "Finished" : "Mark as finished"}
       </button>
       {next && (
-        <Link href={next} className="btn" onClick={() => !done && setDone(id, true)}>
+        <Link href={next} className="btn primary" onClick={() => !done && setDone(id, true)}>
           {nextLabel} <Icon name="arrow-right" size={16} />
         </Link>
       )}

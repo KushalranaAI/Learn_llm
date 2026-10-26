@@ -12,6 +12,7 @@ From a single neuron to a transformer that predicts the next token.
 
 | # | lesson slug | title | sims to embed | lab / sandbox |
 |---|---|---|---|---|
+| 00 | what-is-an-llm | What Is an LLM? (animated opener, start here) | llm-autocomplete, llm-timeline, transformer-flow, training-stages, llm-can-cant | — |
 | 01 | how-networks-learn | How a Network Learns: Loss and Gradient Descent | neuron, gradient-descent, xor-training | lab: train-a-tiny-network |
 | 02 | tokenization | Tokenization: From Text to Token IDs | bpe-tokenizer, token-cost | lab: token-budget |
 | 03 | embeddings | Embeddings: Meaning as Geometry | embedding-space | — |
@@ -71,6 +72,9 @@ Deciding what "good" means, measuring it, and trusting the comparison.
 | 04 | comparing-systems | Comparing Systems You Can Trust: Samples, Variance and Significance | ab-significance | lab: is-it-really-better |
 | 05 | error-analysis | Error Analysis: Finding What Goes Wrong | — | — |
 | 06 | online-evaluation | Online Evaluation: A/B Tests, Feedback and Drift | ab-significance | — |
+| 07 | benchmarks-and-leaderboards | Benchmarks and Leaderboards: Reading Public Numbers Critically | benchmark-contamination, arena-elo, ab-significance | lab: build-an-eval-suite |
+| 08 | eval-driven-development | Eval-Driven Development: Building the Evals Your Product Needs | judge-agreement, eval-gate, ab-significance, canary-rollout | lab: build-an-eval-suite, sandbox: eval-gated-release |
+| 09 | safety-and-red-team-evals | Safety and Red-Team Evaluations | pass-at-k, guardrail-threshold | lab: stop-the-injection, sandbox: guarded-assistant |
 
 ## 06 · retrieval-and-rag: Retrieval and RAG
 Grounding answers in your own data: retrieval, ranking, chunking and evaluation.
@@ -98,6 +102,8 @@ Models that act: loops, tools, memory, failure handling and limits.
 | 06 | multi-agent | Multi-Agent Systems: When More Agents Help | agent-reliability | — |
 | 07 | traces-and-evaluation | Traces and Evaluating Agents | — | — |
 | 08 | bounded-autonomy | Bounded Autonomy: Limits, Permissions and Sandboxes | — | sandbox: support-agent |
+| 09 | agent-benchmarks | Agent Benchmarks: What the Public Numbers Mean | pass-at-k, agent-reliability | lab: evaluate-an-agent |
+| 10 | evaluating-agentic-apps | Evaluating Agentic Applications End to End | agent-trajectory, pass-at-k, judge-agreement, agent-reliability | lab: evaluate-an-agent, sandbox: agent-eval-harness |
 
 ## 08 · production-systems: Production LLM Systems
 Running LLM features for real users: routing, fallbacks, budgets, observability and safety.
@@ -180,12 +186,28 @@ Group B — built in `sims/b/` and registered in `sims/registry-b.ts`:
 | token-bucket | token-bucket rate limiting per user/tenant; burst size, refill rate vs traffic pattern |
 | guardrail-threshold | classifier score threshold → precision/recall, false blocks vs missed attacks, cost |
 | canary-rollout | canary % and duration vs detection probability of a regression and users affected |
+| pass-at-k | per-attempt success p and attempts k → pass@k vs pass^k, optionally over tasks of varying difficulty |
+| arena-elo | Bradley-Terry ratings fitted from simulated pairwise votes; vote count, true gap, intervals and rank flips |
+| benchmark-contamination | contamination rate × memorisation boost → reported vs true score and inflation; benchmark size noise |
+| eval-gate | CI eval gate: eval set size, true regression, threshold, noise → false-alarm and miss rates |
+| agent-trajectory | scores a scripted agent trace: task success, step accuracy, tool-call accuracy, cost per success |
+
+Group C — the animated opener, built in `sims/c/` and registered in `sims/registry-c.ts`:
+
+| id | what it shows |
+|---|---|
+| llm-autocomplete | token-by-token generation: top-5 next-token bars, the drawn token flies into the text; prompt presets, temperature, resample |
+| llm-timeline | animated timeline from Shannon's n-grams (1948) to tool-using agents; published parameter counts on a log chart; growth vs GPT-1 |
+| transformer-flow | text → tokens → IDs → embeddings → L × (attention, MLP) → logits → softmax → next token, with a packet flowing stage by stage |
+| training-stages | pretraining → SFT → preference tuning → deployment; how one prompt's answer changes per stage; illustrative data scales |
+| llm-can-cant | sorting game: ten tasks into "good at" vs "needs tools or grounding", with a one-line why per card |
 
 ## Sandbox scenarios (ids)
 llm-serving-basic, semantic-cache, rag-basic, rag-production, guarded-assistant, support-agent, model-router,
-provider-outage, llm-gateway (plus any others the sandbox defines).
+provider-outage, llm-gateway, eval-gated-release, agent-eval-harness (plus any others the sandbox defines).
 
 ## Labs (slugs)
 train-a-tiny-network, token-budget, attention-by-hand, tune-the-sampler, fit-the-kv-cache, plan-a-training-run,
 lora-budget, serve-a-chat-model, shrink-the-model, capacity-plan, stop-the-injection, is-it-really-better,
-tune-the-index, chunk-it-right, fix-the-rag-bot, make-the-agent-reliable, route-the-traffic, design-support-bot.
+tune-the-index, chunk-it-right, fix-the-rag-bot, make-the-agent-reliable, route-the-traffic, design-support-bot,
+build-an-eval-suite, evaluate-an-agent.

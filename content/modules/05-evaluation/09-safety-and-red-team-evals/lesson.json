@@ -1,0 +1,26 @@
+{
+  "title": "Safety and Red-Team Evaluations",
+  "summary": "Measuring what a system should not do, and what it should not refuse. This lesson covers harmful-compliance and over-refusal metrics, honest jailbreak evaluation with attack budgets and good graders, prompt-injection evals for tool-using agents, the refusal trade-off, and how frontier labs use capability thresholds to decide when stronger safeguards are required.",
+  "objectives": [
+    "After this lesson you can define harmful-compliance rate, over-refusal rate and attack success rate, and compute expected harm cost with base rates",
+    "Evaluate jailbreak robustness with an attack budget and correct an attack success rate for grader error",
+    "Design a prompt-injection eval for an agent that reports utility, utility under attack and targeted attack success",
+    "Choose a refusal threshold by weighing over-refusal against harmful compliance",
+    "Explain how frontier safety frameworks use capability evaluations, thresholds and elicitation"
+  ],
+  "prerequisites": "Prompt injection and attack success rate from [/learn/prompt-and-context/prompt-injection](/learn/prompt-and-context/prompt-injection), guardrail thresholds from [/learn/production-systems/guardrails](/learn/production-systems/guardrails), and judge calibration from [/learn/evaluation/eval-driven-development](/learn/evaluation/eval-driven-development).",
+  "sims": ["pass-at-k", "guardrail-threshold"],
+  "labs": ["stop-the-injection"],
+  "sandbox": ["guarded-assistant"],
+  "sources": [
+    { "title": "HarmBench: A Standardized Evaluation Framework for Automated Red Teaming and Robust Refusal", "authors": "Mazeika et al.", "year": 2024, "note": "18 red-teaming methods vs 33 targets under one protocol", "url": "https://arxiv.org/abs/2402.04249" },
+    { "title": "A StrongREJECT for Empty Jailbreaks", "authors": "Souly et al.", "year": 2024, "note": "Jailbreak evaluations overstate success; score usefulness of responses", "url": "https://arxiv.org/abs/2402.10260" },
+    { "title": "XSTest: A Test Suite for Identifying Exaggerated Safety Behaviours in Large Language Models", "authors": "Röttger et al.", "year": 2023, "note": "250 safe prompts and 200 unsafe contrasts for over-refusal", "url": "https://arxiv.org/abs/2308.01263" },
+    { "title": "AgentDojo: A Dynamic Environment to Evaluate Prompt Injection Attacks and Defenses for LLM Agents", "authors": "Debenedetti et al.", "year": 2024, "note": "97 tasks, 629 security test cases; utility under attack", "url": "https://arxiv.org/abs/2406.13352" },
+    { "title": "Responsible Scaling Policy", "authors": "Anthropic", "year": 2026, "note": "Capability thresholds, ASL safeguards, elicitation", "url": "https://www.anthropic.com/responsible-scaling-policy" },
+    { "title": "Preparedness Framework (Version 2)", "authors": "OpenAI", "year": 2025, "note": "Tracked categories and High/Critical thresholds", "url": "https://cdn.openai.com/pdf/18a02b5d-6b67-4cec-ab64-68cdfbddebcd/preparedness-framework-v2.pdf" },
+    { "title": "Strengthening our Frontier Safety Framework", "authors": "Google DeepMind", "year": 2025, "note": "Critical Capability Levels and early-warning evaluations", "url": "https://deepmind.google/discover/blog/strengthening-our-frontier-safety-framework/" },
+    { "title": "Measuring AI Ability to Complete Long Tasks", "authors": "Kwa et al. (METR)", "year": 2025, "note": "50% time horizon and its doubling trend", "url": "https://arxiv.org/abs/2503.14499" },
+    { "title": "Inspect", "authors": "UK AI Security Institute", "year": 2026, "note": "Framework used for many public safety evaluations", "url": "https://inspect.aisi.org.uk/" }
+  ]
+}

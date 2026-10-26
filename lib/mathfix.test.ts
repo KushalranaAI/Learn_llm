@@ -6,11 +6,11 @@ describe("fixMath", () => {
     expect(fixMath("It costs \\$3 per 1M tokens and \\$15 for output.")).toBe("It costs \\$3 per 1M tokens and \\$15 for output.");
   });
   it("rewrites a dollar inside inline maths", () => {
-    expect(fixMath("so $1.5 \\times 1.16 \\approx \\$1.74$ a day")).toBe("so $1.5 \\times 1.16 \\approx \\mathdollar 1.74$ a day");
+    expect(fixMath("so $1.5 \\times 1.16 \\approx \\$1.74$ a day")).toBe("so $1.5 \\times 1.16 \\approx \\char36 1.74$ a day");
   });
   it("rewrites a dollar inside display maths and keeps the prose after it", () => {
     const md = "$$\n\\text{cost} = \\$3 \\times 2\n$$\n\nThen \\$5 more.";
-    expect(fixMath(md)).toBe("$$\n\\text{cost} = \\mathdollar 3 \\times 2\n$$\n\nThen \\$5 more.");
+    expect(fixMath(md)).toBe("$$\n\\text{cost} = \\char36 3 \\times 2\n$$\n\nThen \\$5 more.");
   });
   it("does not touch fenced or inline code", () => {
     const md = "```python\nprice = '\\$3'\n```\n\nUse `\\$x` here and \\$4.";

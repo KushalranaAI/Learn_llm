@@ -106,5 +106,71 @@
   "slug": "simpsons-paradox",
   "def": "A reversal where one system wins within every slice yet loses overall because the groups have different slice mixes.",
   "lesson": "evaluation/online-evaluation"
+ },
+ {
+  "term": "Benchmark saturation",
+  "slug": "benchmark-saturation",
+  "def": "When strong models score near a benchmark's achievable ceiling, so differences between them fall within noise and the benchmark stops separating them.",
+  "lesson": "evaluation/benchmarks-and-leaderboards"
+ },
+ {
+  "term": "Data contamination",
+  "slug": "data-contamination",
+  "def": "Test items, their answers or close paraphrases appearing in a model's training data, which inflates its score with recall rather than skill.",
+  "lesson": "evaluation/benchmarks-and-leaderboards"
+ },
+ {
+  "term": "Bradley-Terry model",
+  "slug": "bradley-terry-model",
+  "def": "A model of pairwise comparisons in which the probability that one item beats another depends only on the difference of their strengths; used to fit arena ratings.",
+  "lesson": "evaluation/benchmarks-and-leaderboards"
+ },
+ {
+  "term": "Style control",
+  "slug": "style-control",
+  "def": "Adding style features such as answer length and markdown counts to an arena's rating regression so model ratings reflect preference beyond presentation.",
+  "lesson": "evaluation/benchmarks-and-leaderboards"
+ },
+ {
+  "term": "Holistic evaluation",
+  "slug": "holistic-evaluation",
+  "def": "Evaluating models across many scenarios and several metrics (accuracy, calibration, robustness, efficiency and more) so weaknesses cannot hide behind one score.",
+  "lesson": "evaluation/benchmarks-and-leaderboards"
+ },
+ {
+  "term": "Eval-driven development",
+  "slug": "eval-driven-development",
+  "def": "A way of working in which every change is judged by evaluations that run the same way each time, with evaluators written for failures observed in real outputs.",
+  "lesson": "evaluation/eval-driven-development"
+ },
+ {
+  "term": "Criteria drift",
+  "slug": "criteria-drift",
+  "def": "The tendency for evaluation criteria to change as people grade outputs, because seeing outputs reshapes what they consider good or bad.",
+  "lesson": "evaluation/eval-driven-development"
+ },
+ {
+  "term": "Regression suite",
+  "slug": "regression-suite",
+  "def": "Eval cases the system already passes and must keep passing, expected near 100%, run on every change.",
+  "lesson": "evaluation/eval-driven-development"
+ },
+ {
+  "term": "Eval gate",
+  "slug": "eval-gate",
+  "def": "An automated CI check that blocks a change when evaluation results fall below a threshold or drop relative to the baseline by more than noise allows.",
+  "lesson": "evaluation/eval-driven-development"
+ },
+ {
+  "term": "Over-refusal",
+  "slug": "over-refusal",
+  "def": "Refusing an acceptable request because it superficially resembles a harmful one; also called exaggerated safety.",
+  "lesson": "evaluation/safety-and-red-team-evals"
+ },
+ {
+  "term": "Elicitation",
+  "slug": "elicitation",
+  "def": "Effort to draw out a model's maximum capability during evaluation, through prompting, tools, many attempts or fine-tuning, so the result is an upper bound rather than typical behaviour.",
+  "lesson": "evaluation/safety-and-red-team-evals"
  }
 ]

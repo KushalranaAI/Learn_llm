@@ -36,6 +36,7 @@ export function MetricTiles({ m, streaming = true }: { m: Metrics; streaming?: b
     { label: "Quality", value: m.successRate > 0 ? m.quality.toFixed(2) : "–", tone: m.successRate > 0 && m.quality < 0.6 ? "bad" : undefined, title: "Answer-quality proxy (0-1) over answered requests: model strength, grounding, truncation, cache false hits." },
     { label: "Cache hits", value: pct(m.cacheHitRate), title: "Share of requests answered from the semantic cache." },
   ];
+  if (m.taskSuccessPassK !== undefined) tiles.push({ label: "Agent pass^3", value: pct(m.taskSuccessPassK, 1), tone: m.taskSuccessPassK < 0.7 ? "bad" : m.taskSuccessPassK >= 0.9 ? "ok" : undefined, title: "Chance the same agent task succeeds on all three of three tries (pass^k, k = 3): reliability as a repeat customer sees it." });
   if (m.gpuUtil !== null) tiles.push({ label: "GPU busy", value: pct(m.gpuUtil), tone: m.gpuUtil >= 1 ? "bad" : undefined, title: "Load-weighted utilisation of self-hosted GPUs." });
   if (m.attackRps > 0) {
     tiles.push({ label: "Attacks blocked", value: pct(m.attacksBlocked, 1), title: "Share of attack requests blocked by guardrails or auth." });
