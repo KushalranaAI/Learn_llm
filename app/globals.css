@@ -184,7 +184,7 @@ p { margin: 0 0 0.8em; }
 .page.narrow { width: min(760px, calc(100% - 48px)); }
 .page.mid { width: min(960px, calc(100% - 48px)); }
 .page.wide { width: min(1280px, calc(100% - 48px)); }
-.credit { flex: none; display: flex; align-items: center; gap: 12px; height: 30px; padding: 0 14px; border-top: 1px solid var(--line); background: var(--bg); font-size: 0.72rem; color: var(--faint); }
+.credit { flex: none; display: flex; align-items: center; gap: 12px; height: 30px; padding: 0 14px; border-top: 1px solid var(--line); background: var(--bg); font-size: 0.72rem; color: var(--faint); position: sticky; bottom: 0; z-index: 25; }
 .credit-text a { color: var(--muted); font-weight: 600; }
 .credit-text a:hover { color: var(--accent-strong); }
 .credit-links { display: flex; align-items: center; gap: 2px; }
