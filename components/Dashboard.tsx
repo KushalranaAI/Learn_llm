@@ -1,16 +1,17 @@
 "use client";
-// Home, in System Learn's pattern: hero with a system picture, resume/review cards, "four ways in", how a topic teaches,
+// Home, in System Learn's pattern: hero with a system picture, resume/review cards, "three ways in", how a topic teaches,
 // then the current module and interview prep.
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { Outline } from "@/lib/content";
-import { dueReviews, type Progress, streak, useProgress } from "@/lib/progress";
+import { readyToLearn } from "@/lib/learner";
+import { dueReviews, type Progress, useProgress, weekActivity } from "@/lib/progress";
 import { BRAND } from "@/lib/brand";
 import HeroPanel from "./HeroPanel";
 import Icon, { type IconName } from "./ui/Icon";
 
 type InterviewStats = { total: number; junior: number; mid: number; senior: number; byModule: { slug: string; title: string; count: number }[] };
-type PracticeStats = { sims: number; labs: number; scenarios: number };
+type PracticeStats = { sims: number; labs: number };
 
 const EMPTY: Progress = { done: {}, visited: {}, last: null, days: {}, checks: {}, reviews: {}, known: {}, labs: {}, simsTried: {} };
 
@@ -29,17 +30,17 @@ function resumePoint(outline: Outline, p: Progress) {
 }
 
 const WAYS: { href: string; icon: IconName; title: string; text: string }[] = [
-  { href: "/curriculum", icon: "route", title: "Follow the curriculum", text: "Short topics in the order a real LLM product needs them." },
+  { href: "/curriculum", icon: "route", title: "Follow the roadmap", text: "A recommended path with branches. Pick a goal; nothing is locked." },
   { href: "/labs", icon: "beaker", title: "Solve a lab", text: "A real situation: predict, compute by hand, then meet the goals." },
-  { href: "/sandbox", icon: "boxes", title: "Open the sandbox", text: "Wire gateways, caches, models and guardrails. Push traffic through." },
-  { href: "/simulations", icon: "activity", title: "Run a simulation", text: "Attention, sampling, KV caches, batching, retrieval, agents." },
+  { href: "/simulations", icon: "activity", title: "Run a simulation", text: "Attention, sampling, KV caches, batching, quantization." },
 ];
 
 const HOW: { icon: IconName; title: string; text: string }[] = [
-  { icon: "lightbulb", title: "Get the intuition", text: "A plain-language picture first, with the one idea that matters." },
-  { icon: "sigma", title: "See the maths", text: "Every symbol defined and a worked example you can check by hand." },
-  { icon: "activity", title: "Play with it", text: "A live simulation you change with sliders; the numbers follow." },
-  { icon: "target", title: "Check it", text: "Quick checks you miss come back after 1, 3, 7, 14 and 30 days." },
+  { icon: "lightbulb", title: "Predict", text: "Commit to a guess before the explanation. A wrong guess makes the answer stick." },
+  { icon: "sigma", title: "Learn it", text: "The intuition, then the maths with every symbol defined and a worked example." },
+  { icon: "activity", title: "Do it", text: "Run the simulation as an experiment, then write the code on your laptop or in Colab." },
+  { icon: "target", title: "Check it", text: "Answer, say how sure you are, then see the explanation." },
+  { icon: "repeat", title: "Recall it later", text: "Every check returns over days and weeks; lessons are mastered by recall, not by reading." },
 ];
 
 export default function Dashboard({ outline, interview, practice }: { outline: Outline; interview: InterviewStats; practice: PracticeStats }) {
@@ -51,7 +52,8 @@ export default function Dashboard({ outline, interview, practice }: { outline: O
   const doneCount = Object.keys(prog.done).length;
   const started = doneCount > 0 || prog.last !== null;
   const due = dueReviews(prog);
-  const days = streak(prog);
+  const week = weekActivity(prog);
+  const ready = readyToLearn(prog, outline, undefined, 1)[0];
   const lessons = outline.reduce((a, m) => a + m.lessons.length, 0);
   const topics = outline.reduce((a, m) => a + m.lessons.reduce((b, l) => b + l.topics.length, 0), 0);
   const currentModule = outline.find((m) => m.slug === start?.m.slug) ?? outline[0];
@@ -63,13 +65,13 @@ export default function Dashboard({ outline, interview, practice }: { outline: O
       <section className="hero">
         <div>
           <p className="eyebrow">Open source · by Kushal Rana · runs in your browser</p>
-          <h1>Learn LLM engineering by <em>building</em> it.</h1>
+          <h1>Learn how LLMs work by <em>building</em> one.</h1>
           <p className="lead">
-            From a single neuron to production LLM systems. Every idea comes with the maths, a live simulation, a lab and a systems sandbox where you can break things on purpose.
+            From a single neuron to a trained, aligned and evaluated language model. Every idea comes with the maths, a live simulation and a hands-on lab.
           </p>
           <div className="row" style={{ marginTop: 26 }}>
             <Link href={startHref} className="btn primary big">{started ? "Continue learning" : "Start learning"} <Icon name="arrow-right" size={16} /></Link>
-            <Link href="/sandbox" className="btn big">Open the sandbox</Link>
+            <Link href="/curriculum" className="btn big">See the curriculum</Link>
           </div>
           <div className="hero-stats">
             <span><b>{outline.length}</b> modules</span>
@@ -92,18 +94,24 @@ export default function Dashboard({ outline, interview, practice }: { outline: O
               <span className="meter" style={{ height: 4 }}><span style={{ width: `${(doneIn(start.m, start.l) / Math.max(1, start.l.topics.length)) * 100}%` }} /></span>
             </span>
           </Link>
+          {ready && (
+            <Link href={`/learn/${ready.id}`} className="resume-card">
+              <span className="tile"><Icon name="route" size={18} /></span>
+              <span><small>Ready to learn</small><b>{ready.lesson.title}</b><small>{ready.module.title} · {ready.lesson.minutes} min</small></span>
+            </Link>
+          )}
           <Link href="/review" className="resume-card">
             <span className="tile"><Icon name="repeat" size={18} /></span>
-            <span><small>Review</small><b>{due.length > 0 ? `${due.length} quick checks due` : "Nothing due right now"}</b><small>{Object.keys(prog.reviews).length} in your queue</small></span>
+            <span><small>Review</small><b>{due.length > 0 ? `${due.length} quick checks due` : "Nothing due right now"}</b><small>{Object.keys(prog.reviews).length} in your deck</small></span>
           </Link>
           <Link href="/progress" className="resume-card">
             <span className="tile"><Icon name="flame" size={18} /></span>
-            <span><small>Progress</small><b>{doneCount} topics finished</b><small>{days > 0 ? `${days}-day streak` : "Finish a topic to start a streak"}</small></span>
+            <span><small>This week</small><b>{week.thisWeek} of 7 days active</b><small>{week.weeks > 1 ? `${week.weeks} weeks in a row · ${doneCount} topics finished` : `${doneCount} topics finished`}</small></span>
           </Link>
         </div>
       )}
 
-      <div className="section-title"><h2>Four ways in</h2></div>
+      <div className="section-title"><h2>Three ways in</h2></div>
       <div className="entry-grid">
         {WAYS.map((w) => (
           <Link key={w.href} href={w.href} className="card entry">
@@ -191,7 +199,7 @@ export default function Dashboard({ outline, interview, practice }: { outline: O
       </section>
 
       <p className="muted small" style={{ marginTop: 28 }}>
-        All numbers in the simulations and the sandbox are teaching approximations built from public hardware specs and standard formulas; they show how the pieces
+        All numbers in the simulations and labs are teaching approximations built from public hardware specs and standard formulas; they show how the pieces
         trade off, not the exact prices or speeds of any provider.
       </p>
     </div>

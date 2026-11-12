@@ -11,7 +11,6 @@
   "prerequisites": "You should be comfortable with dot products and cosine similarity ([Embeddings](/learn/model-foundations/embeddings)) and with matrix multiplication as a stack of dot products. Softmax is introduced here; it reappears in [Sampling](/learn/model-foundations/sampling).",
   "sims": ["attention-heatmap"],
   "labs": ["attention-by-hand"],
-  "sandbox": [],
   "sources": [
     { "title": "Attention Is All You Need", "authors": "Vaswani et al.", "year": 2017, "note": "Section 3.2: scaled dot-product and multi-head attention, including the √d_k argument" },
     { "title": "Neural Machine Translation by Jointly Learning to Align and Translate", "authors": "Bahdanau, Cho and Bengio", "year": 2015, "note": "The attention idea before transformers" },

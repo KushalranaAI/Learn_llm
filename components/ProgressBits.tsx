@@ -1,8 +1,9 @@
 "use client";
 // Small progress-aware pieces dropped into server-rendered pages.
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { setDone, useProgress, visitTopic } from "@/lib/progress";
+import { creditLessons, setDone, useProgress, visitTopic } from "@/lib/progress";
 import Icon from "./ui/Icon";
 
 export function useMounted() {
@@ -64,18 +65,39 @@ export function TocList({ base, topics, current }: { base: string; topics: { slu
   );
 }
 
-/** Records the visit, and offers "Mark as finished" + next topic. */
-export function TopicFooter({ id, next, nextLabel }: { id: string; next: string | null; nextLabel: string }) {
+/**
+ * Records the visit, and offers "Mark as finished" + next topic. ← and → step between topics.
+ * `credits`: in practice lessons, finishing a topic counts as review of the theory lessons it builds on.
+ */
+export function TopicFooter({ id, next, nextLabel, prev, credits = [] }: { id: string; next: string | null; nextLabel: string; prev?: string | null; credits?: string[] }) {
   const p = useProgress();
+  const router = useRouter();
   useEffect(() => visitTopic(id), [id]);
   const done = !!p.done[id];
+  const finish = () => {
+    if (done) return;
+    setDone(id, true);
+    creditLessons(credits);
+  };
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+      const el = e.target as HTMLElement | null;
+      if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) || el.closest("[role=slider]"))) return;
+      if (e.key === "ArrowRight" && next) router.push(next);
+      if (e.key === "ArrowLeft" && prev) router.push(prev);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [next, prev, router]);
   return (
     <div className="topic-end">
-      <button type="button" className="btn" onClick={() => setDone(id, !done)}>
+      <button type="button" className="btn" onClick={() => (done ? setDone(id, false) : finish())}>
         <Icon name={done ? "circle-check" : "circle"} size={18} /> {done ? "Finished" : "Mark as finished"}
       </button>
+      <span className="kbd-hint muted small" aria-hidden="true"><kbd>←</kbd> <kbd>→</kbd> to step</span>
       {next && (
-        <Link href={next} className="btn primary" onClick={() => !done && setDone(id, true)}>
+        <Link href={next} className="btn primary" onClick={finish}>
           {nextLabel} <Icon name="arrow-right" size={16} />
         </Link>
       )}

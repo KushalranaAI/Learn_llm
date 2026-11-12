@@ -1,4 +1,4 @@
-// Pure model of a CI regression gate on an eval set (shared by the eval-gate sim and the sandbox's Eval gate node).
+// Pure model of a CI regression gate on an eval set (used by the eval-gate sim).
 // A candidate build is scored on n eval items and compared with the baseline score; the release is blocked when the
 // measured drop exceeds a threshold. No React.
 import { normCdf, normInv } from "../b/lib";

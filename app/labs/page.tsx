@@ -16,8 +16,8 @@ export default function LabsPage() {
         <span className="eyebrow"><Icon name="beaker" size={14} /> Labs</span>
         <h1 style={{ marginTop: 8 }}>{LABS.length ? `${LABS.length} hands-on labs` : "Hands-on labs"}</h1>
         <p className="lead">
-          Each lab is a small real problem. Predict what happens, compute the key number by hand, then meet measurable goals in a simulation or build the
-          system in the sandbox. Every lab has hints and a verified solution.
+          Each lab is a small real problem. Predict what happens, compute the key number by hand, then meet measurable goals in a
+          simulation. Every lab has hints and a verified solution.
         </p>
       </header>
       {groups.length === 0 && <div className="card empty">Labs are being written.</div>}

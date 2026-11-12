@@ -1,4 +1,4 @@
-// Saved tutor conversations, one thread per page (topic, simulation, lab, sandbox …). Browser-local, trimmed so storage stays small.
+// Saved tutor conversations, one thread per page (topic, simulation, lab …). Browser-local, trimmed so storage stays small.
 import { jsonStore } from "../localstore";
 
 export type Msg = { role: "user" | "assistant"; content: string; quote?: string };

@@ -1,0 +1,27 @@
+{
+  "title": "Preference Optimization in Practice: RLHF, DPO, IPO, KTO, ORPO and SimPO",
+  "summary": "The preference-tuning family on one map: which data each method needs, whether it learns online or offline, whether it keeps a reference model, and what that costs in GPU memory. Then hands-on DPO and IPO with LoRA, KTO for thumbs-up/down feedback, one-stage ORPO, length-normalised SimPO, and how to choose a method and check that it worked.",
+  "objectives": [
+    "Place RLHF-PPO, RLOO/GRPO, DPO, IPO, KTO, ORPO, SimPO and CPO by data, online/offline, reference model and memory, and compute the model-state memory of each for an 8B model",
+    "Run DPO or IPO with LoRA in TRL, explain how the reference model comes from disabling the adapters, and read rewards/chosen, rewards/rejected, rewards/margins and rewards/accuracies",
+    "Compute the KTO, ORPO and SimPO losses for a worked example and say when each beats DPO",
+    "Choose a method from the feedback, memory and goal you have, and evaluate the result with a length-aware win rate against the SFT model"
+  ],
+  "prerequisites": "The theory of preference tuning from [Preference Tuning: RLHF and DPO](/learn/fine-tuning/preference-tuning), especially [the DPO derivation](/learn/fine-tuning/preference-tuning/dpo). Memory per parameter from [Start Here](/learn/fine-tuning/start-here/sizing-your-first-run). A working environment from [Run fine-tuning yourself](/learn/fine-tuning/run-fine-tuning-yourself) and an SFT model from [SFT with LoRA, step by step](/learn/fine-tuning/sft-with-lora-step-by-step).",
+  "sims": ["preference-loss", "training-memory", "judge-agreement"],
+  "labs": [],
+  "sources": [
+    { "title": "Training language models to follow instructions with human feedback", "authors": "Ouyang et al.", "year": 2022, "note": "InstructGPT: reward model plus PPO with a KL penalty" },
+    { "title": "Proximal Policy Optimization Algorithms", "authors": "Schulman et al.", "year": 2017, "note": "The clipped surrogate objective used in RLHF" },
+    { "title": "Back to Basics: Revisiting REINFORCE Style Optimization for Learning from Human Feedback in LLMs", "authors": "Ahmadian et al.", "year": 2024, "note": "RLOO: leave-one-out baseline instead of a value model" },
+    { "title": "Direct Preference Optimization: Your Language Model is Secretly a Reward Model", "authors": "Rafailov et al.", "year": 2023, "note": "The DPO loss and its implicit reward" },
+    { "title": "A General Theoretical Paradigm to Understand Learning from Human Preferences", "authors": "Azar et al.", "year": 2023, "note": "IPO: squared loss on the log-ratio gap with target 1/(2τ); DPO overfits deterministic preferences" },
+    { "title": "KTO: Model Alignment as Prospect Theoretic Optimization", "authors": "Ethayarajh et al.", "year": 2024, "note": "Binary desirable/undesirable labels, KL reference point, weights for imbalanced data" },
+    { "title": "ORPO: Monolithic Preference Optimization without Reference Model", "authors": "Hong, Lee and Thorne", "year": 2024, "note": "SFT loss plus a log-odds-ratio penalty, single stage, no reference model" },
+    { "title": "SimPO: Simple Preference Optimization with a Reference-Free Reward", "authors": "Meng, Xia and Chen", "year": 2024, "note": "Length-normalised average log-probability reward with a target margin γ (NeurIPS 2024)" },
+    { "title": "Contrastive Preference Optimization: Pushing the Boundaries of LLM Performance in Machine Translation", "authors": "Xu et al.", "year": 2024, "note": "CPO: reference-free preference loss plus a behaviour-cloning term" },
+    { "title": "DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models", "authors": "Shao et al.", "year": 2024, "note": "GRPO, placed on the map here and practised in the GRPO lesson" },
+    { "title": "From RLHF to Direct Alignment: A Theoretical Unification of Preference Learning for Large Language Models", "authors": "Raheja and Pochhi", "year": 2026, "note": "arXiv 2601.06108: preference model, regulariser and data distribution as the axes that separate the methods" },
+    { "title": "TRL documentation: DPO, KTO, ORPO and CPO trainers", "authors": "Hugging Face", "year": 2026, "note": "Trainer names, import paths, loss_type options and logged metrics as of November 2026; experimental APIs may change" }
+  ]
+}

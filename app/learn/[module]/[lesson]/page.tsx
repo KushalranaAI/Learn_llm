@@ -5,8 +5,8 @@ import MiniMarkdown from "@/components/MiniMarkdown";
 import { DoneTick, LessonBar } from "@/components/ProgressBits";
 import Icon from "@/components/ui/Icon";
 import { getLab } from "@/labs";
-import { getInterview, getLesson, getModule, getModules } from "@/lib/content";
-import { getScenario } from "@/sandbox/scenarios";
+import BuildsOn from "@/components/BuildsOn";
+import { getInterview, getLesson, getMap, getModule, getModules } from "@/lib/content";
 import { getSim } from "@/sims";
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -28,15 +28,19 @@ export default async function LessonPage({ params }: { params: Promise<{ module:
   const base = `${m.slug}/${l.slug}`;
   const sims = l.sims.map(getSim).filter((s) => s !== undefined);
   const labs = l.labs.map(getLab).filter((s) => s !== undefined);
-  const scenarios = l.sandbox.map(getScenario).filter((s) => s !== undefined);
   const questions = getInterview().find((s) => s.module === m.slug && (s.lesson ?? s.slug) === l.slug)?.questions.length ?? 0;
   const i = m.lessons.findIndex((x) => x.slug === l.slug);
   const next = m.lessons[i + 1];
+  const prereqs = (getMap().lessons[base] ?? []).flatMap((r) => {
+    const [rm, rl] = r.split("/");
+    const pl = getLesson(rm, rl);
+    return pl ? [{ id: r, title: pl.title, moduleTitle: getModule(rm)?.title ?? rm, topics: pl.topics.map((x) => x.slug) }] : [];
+  });
 
   return (
     <div className="page">
       <nav className="crumbs" aria-label="Breadcrumb">
-        <Link href="/curriculum"><Icon name="chevron-left" size={14} /> Curriculum</Link> / <Link href={`/learn/${m.slug}`}>Module {m.order} · {m.title}</Link>
+        <Link href="/curriculum"><Icon name="chevron-left" size={14} /> Roadmap</Link> / <Link href={`/learn/${m.slug}`}>Module {m.order} · {m.title}</Link>
       </nav>
       <div className="grid-main">
       <div className="stack" style={{ gap: 20 }}>
@@ -48,6 +52,7 @@ export default async function LessonPage({ params }: { params: Promise<{ module:
           </div>
           <h1>{l.title}</h1>
           <p className="lead">{l.summary}</p>
+          <BuildsOn reqs={prereqs} />
           <div style={{ maxWidth: 420, margin: "22px 0" }}>
             <LessonBar ids={l.topics.map((t) => `${base}/${t.slug}`)} minutes={l.minutes} />
           </div>
@@ -73,7 +78,7 @@ export default async function LessonPage({ params }: { params: Promise<{ module:
           </div>
         </section>
 
-        {(sims.length > 0 || labs.length > 0 || scenarios.length > 0) && (
+        {(sims.length > 0 || labs.length > 0) && (
           <section className="card">
             <h2 style={{ marginBottom: 14, fontSize: "1.05rem" }}>Practise it</h2>
             <div className="cards-2">
@@ -90,14 +95,6 @@ export default async function LessonPage({ params }: { params: Promise<{ module:
                   <span className="badge"><Icon name="beaker" size={14} /> Lab · {lab.minutes} min</span>
                   <b>{lab.title}</b>
                   <span className="muted small">{lab.summary}</span>
-                  <Icon name="arrow-right" size={16} />
-                </Link>
-              ))}
-              {scenarios.map((s) => (
-                <Link key={s.id} href={`/sandbox?s=${s.id}`} className="link-card">
-                  <span className="badge"><Icon name="boxes" size={14} /> Sandbox</span>
-                  <b>{s.title}</b>
-                  <span className="muted small">{s.summary}</span>
                   <Icon name="arrow-right" size={16} />
                 </Link>
               ))}

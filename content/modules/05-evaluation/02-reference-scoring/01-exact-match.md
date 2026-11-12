@@ -8,6 +8,10 @@ Before you start
 This lesson assumes each eval example has a **reference**: an answer written by a person that counts as correct. Lesson 3 handles the many tasks where no single reference exists.
 ```
 
+```predict
+{"q":"Exact match (after normalising case and punctuation) compares a model's answer with a reference. Which mistake does it mostly make?","options":["Passing wrong answers","Failing correct answers","Both, about equally often","Neither, once the text is normalised"],"answer":1,"reveal":"EM almost never credits a wrong answer, but it rejects correct ones worded differently, such as \"In 1989\" against \"1989\". The table under \"Where exact match breaks\" lists the typical cases."}
+```
+
 The simplest way to score an answer against a reference is to ask whether they are the same. For short factual answers ("What year did the Berlin Wall fall?", "Which plan includes SSO?") that is often exactly what you want. **Exact match (EM)** gives 1 if the output equals the reference and 0 otherwise.
 
 The trouble is that "equal" is very strict. "1989", "1989.", " 1989" and "In 1989" are all correct, and a naive string comparison rejects three of them. So exact match is never applied to raw strings. Both sides first go through **normalisation**: a fixed set of transformations that removes differences you have decided not to care about.

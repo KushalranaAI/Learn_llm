@@ -1,9 +1,10 @@
 "use client";
-// My progress: completion by module, activity heatmap, streak, checks accuracy, labs, and backup/restore.
+// My progress: completion and mastery by module, activity, calibration (confidence vs accuracy), labs, backup/restore.
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { Outline } from "@/lib/content";
-import { exportProgress, importProgress, resetProgress, streak, useProgress } from "@/lib/progress";
+import { calibration, moduleStats } from "@/lib/learner";
+import { exportProgress, importProgress, isMastered, resetProgress, useProgress, weekActivity } from "@/lib/progress";
 import Icon from "./ui/Icon";
 
 export default function ProgressPage({ outline, totals }: { outline: Outline; totals: { questions: number; labs: number; sims: number } }) {
@@ -48,9 +49,10 @@ export default function ProgressPage({ outline, totals }: { outline: Outline; to
         <p className="lead">Everything is saved in this browser only. Export a backup to move it to another device.</p>
         <div className="metric-tiles" style={{ marginTop: 22 }}>
           <div className="metric"><span>Topics finished</span><b>{done} / {topics.length}</b></div>
-          <div className="metric"><span>Streak</span><b>{streak(p)} days</b></div>
+          <div className="metric"><span>Active this week</span><b>{weekActivity(p).thisWeek} of 7 days</b></div>
+          <div className="metric"><span>Lessons mastered</span><b>{outline.reduce((a, m) => a + moduleStats(p, outline, m).mastered, 0)}</b></div>
           <div className="metric"><span>Quick checks right first time</span><b>{checks.length ? `${Math.round((right / checks.length) * 100)}%` : "–"}</b></div>
-          <div className="metric"><span>In review</span><b>{Object.keys(p.reviews).length}</b></div>
+          <div className="metric"><span>Checks mastered</span><b>{Object.values(p.reviews).filter(isMastered).length} / {Object.keys(p.reviews).length}</b></div>
           <div className="metric"><span>Interview known</span><b>{Object.keys(p.known).length} / {totals.questions}</b></div>
           <div className="metric"><span>Labs passed</span><b>{labsPassed} / {totals.labs}</b></div>
           <div className="metric"><span>Sims tried</span><b>{Object.keys(p.simsTried).length} / {totals.sims}</b></div>
@@ -64,6 +66,8 @@ export default function ProgressPage({ outline, totals }: { outline: Outline; to
         </div>
       </section>
 
+      <Calibration rows={calibration(p)} />
+
       <section className="card">
         <h2 style={{ marginBottom: 6 }}>By module</h2>
         <div className="list-rows">
@@ -75,7 +79,7 @@ export default function ProgressPage({ outline, totals }: { outline: Outline; to
                 <span className="mono muted" style={{ width: 28 }}>{String(m.order).padStart(2, "0")}</span>
                 <span style={{ flex: "1 1 200px" }}>{m.title}</span>
                 <span style={{ flex: "1 1 200px" }}><div className="bar green"><i style={{ width: `${(n / Math.max(1, ids.length)) * 100}%` }} /></div></span>
-                <span className="muted small" style={{ width: 70, textAlign: "right" }}>{n} / {ids.length}</span>
+                <span className="muted small" style={{ width: 150, textAlign: "right" }}>{n} / {ids.length} topics{moduleStats(p, outline, m).mastered ? ` · ${moduleStats(p, outline, m).mastered} mastered` : ""}</span>
               </Link>
             );
           })}
@@ -100,5 +104,40 @@ export default function ProgressPage({ outline, totals }: { outline: Outline; to
         </div>
       </section>
     </div>
+  );
+}
+
+/** Confidence vs accuracy: are you as right as you feel? Learners routinely overrate fluent material. */
+function Calibration({ rows }: { rows: ReturnType<typeof calibration> }) {
+  const order = [["sure", "Sure"], ["think", "Think so"], ["guess", "Guessing"]] as const;
+  const n = order.reduce((a, [k]) => a + rows[k].n, 0);
+  const sure = rows.sure.n ? rows.sure.ok / rows.sure.n : null;
+  return (
+    <section className="card">
+      <h2 style={{ marginBottom: 6 }}>Are you as right as you feel?</h2>
+      <p className="muted small" style={{ margin: 0 }}>Every quick check asks how sure you are before showing the answer. Well calibrated means "sure" is right nearly every time and "guessing" much less often.</p>
+      {n === 0 ? (
+        <div className="empty" style={{ marginTop: 12 }}>Answer a few quick checks and this fills in.</div>
+      ) : (
+        <div className="calib">
+          {order.map(([k, label]) => {
+            const r = rows[k];
+            const acc = r.n ? r.ok / r.n : 0;
+            return (
+              <div key={k} className="calib-row">
+                <span>{label}</span>
+                <span className="calib-bar"><i style={{ width: `${acc * 100}%` }} /></span>
+                <span className="muted small mono">{r.n ? `${Math.round(acc * 100)}% of ${r.n}` : "–"}</span>
+              </div>
+            );
+          })}
+          {sure !== null && rows.sure.n >= 10 && (
+            <p className="muted small" style={{ margin: "4px 0 0" }}>
+              {sure < 0.8 ? "You are often wrong when sure: slow down on those, and use review to find which ideas feel more familiar than they are." : "When you are sure, you are usually right. Good calibration."}
+            </p>
+          )}
+        </div>
+      )}
+    </section>
   );
 }

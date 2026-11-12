@@ -11,7 +11,6 @@
   "prerequisites": "You should know scaled dot-product and multi-head attention from [Attention](/learn/model-foundations/attention), what an embedding table is from [Embeddings](/learn/model-foundations/embeddings), and how a layer's parameters are counted from [A model is a function with knobs](/learn/model-foundations/how-networks-learn).",
   "sims": ["transformer-params"],
   "labs": [],
-  "sandbox": [],
   "sources": [
     { "title": "Attention Is All You Need", "authors": "Vaswani et al.", "year": 2017, "note": "Section 3: the original encoder-decoder block, feed-forward sublayer and sinusoidal positions" },
     { "title": "Language Models are Unsupervised Multitask Learners", "authors": "Radford et al.", "year": 2019, "note": "GPT-2: decoder-only model sizes and the move of layer norm to the input of each sub-block" },

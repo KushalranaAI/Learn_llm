@@ -8,6 +8,15 @@ Before you start
 You need fractions, averages and a square root. No statistics background is assumed: every formula in this module is built up from these.
 ```
 
+```callout-tip
+Run it yourself
+Every method here applies to models you train yourself. The fine-tuning lessons ([start with the setup](/learn/fine-tuning/run-fine-tuning-yourself)) use these measurements to decide whether a fine-tune actually beat the prompted baseline.
+```
+
+```predict
+{"q":"You try a new prompt on 10 questions and 8 look right. Which range of true pass rates is consistent with that, at 95% confidence?","options":["About 78% to 82%","About 70% to 90%","About 55% to 100%","Exactly 80%"],"answer":2,"reveal":"With $n = 10$ the standard error is about 0.13, so the range is $0.8 \\pm 0.25$: ten examples cannot tell a 60% system from a 95% one. The steps under \"The maths\" work it through."}
+```
+
 Imagine tasting a soup to decide whether the new recipe is better. One spoonful is pleasant, so you declare victory. Tomorrow the soup is too salty for half the table. A single taste told you almost nothing, because one spoonful is a tiny, unrepresentative sample of what the pot will do across many bowls.
 
 Changing a prompt, a model or a retrieval setting and then trying three questions in a chat window is the same spoonful. LLM outputs vary from input to input and from run to run, so a handful of good-looking replies is weak evidence. This habit is often called a **vibe check**. It is useful for spotting obvious breakage, and useless for deciding between two versions that are both "fine".

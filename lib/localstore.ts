@@ -65,14 +65,16 @@ export function createStore<T>(o: {
 }
 
 /** A JSON object in localStorage. Unknown/missing fields fall back to `fallback`. */
-export function jsonStore<T extends object>(key: string, fallback: T, migrate?: () => Partial<T> | null): Store<T> {
+/** `upgrade` runs on every load of saved data (e.g. to rename ids after content moves); it must be idempotent. */
+export function jsonStore<T extends object>(key: string, fallback: T, migrate?: () => Partial<T> | null, upgrade?: (v: T) => T): Store<T> {
   return createStore<T>({
     server: fallback,
     read: () => localStorage.getItem(key),
     parse(raw) {
       if (raw) {
         try {
-          return { ...fallback, ...JSON.parse(raw) };
+          const v = { ...fallback, ...JSON.parse(raw) } as T;
+          return upgrade ? upgrade(v) : v;
         } catch {
           return fallback;
         }

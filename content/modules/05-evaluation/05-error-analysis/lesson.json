@@ -11,7 +11,6 @@
   "prerequisites": "Pass rates and confidence intervals from [Comparing Systems You Can Trust](/learn/evaluation/comparing-systems), and the confusion-matrix vocabulary from [Success Criteria](/learn/evaluation/success-criteria).",
   "sims": [],
   "labs": [],
-  "sandbox": [],
   "sources": [
     { "title": "Exploratory Data Analysis", "authors": "John W. Tukey", "year": 1977, "note": "The case for looking closely at the data before and after summarising it" },
     { "title": "The Discovery of Grounded Theory", "authors": "Glaser and Strauss", "year": 1967, "note": "Origin of open coding: let categories emerge from the material" },

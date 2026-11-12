@@ -1,5 +1,5 @@
 ---
-title: The causal mask: no peeking ahead
+title: "The causal mask: no peeking ahead"
 minutes: 7
 ---
 

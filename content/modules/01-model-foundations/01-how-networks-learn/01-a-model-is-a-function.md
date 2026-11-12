@@ -8,6 +8,10 @@ Before you start
 No machine-learning background is needed. If you can multiply and add, and you know that a function takes numbers in and gives a number out, you have everything this lesson uses.
 ```
 
+```predict
+{"q":"Each parameter of a model is one adjustable number. How much memory does a 7-billion-parameter model need just to hold its weights in 16-bit precision?","options":["About 1.4 GB","About 14 GB","About 140 GB","About 7 MB"],"answer":1,"reveal":"About 14 GB: 16 bits is 2 bytes, and $7 \\times 10^9 \\times 2$ bytes is 14 GB. The topic builds up what those billions of numbers are, and the last section shows this one-line calculation."}
+```
+
 Picture a mixing desk in a recording studio. Sound goes in, sound comes out, and in between sit hundreds of knobs. Turn them one way and the vocals are buried; turn them another and the mix is perfect. Nobody calculates the right setting from first principles. An engineer listens, hears what is wrong, and nudges knobs until it sounds right.
 
 A neural network is the same idea with numbers. Numbers go in (pixels, or the IDs of words), numbers come out (a label, or the probability of each possible next word), and in between sits a long list of adjustable numbers called **parameters**. **Training** is the search for parameter values that make the outputs right. A small network has a few dozen parameters. GPT-style language models have billions. The principle does not change.

@@ -3,6 +3,10 @@ title: The residual stream
 minutes: 8
 ---
 
+```predict
+{"q":"In a plain 12-layer network where each layer passes back half of the gradient (a derivative of 0.5), what fraction of the learning signal reaches the first layer?","options":["About half","About 1/24","About 1/4,096","Exactly zero"],"answer":2,"reveal":"About 1/4,096, since $0.5^{12} = 1/4096$: the first layer barely learns. The residual stream adds a path that carries the gradient through unchanged; the gradients section below shows how."}
+```
+
 Think of a shared document passed down a line of editors. Nobody rewrites it from scratch. Each editor reads it, writes a few notes in the margin, and passes it on. At the end the document holds the original text plus every editor's contribution, and any editor can still see what the first one wrote.
 
 A transformer works the same way. Each token starts as an embedding vector of length $d$. That vector is the **residual stream**: a running state that flows from the bottom of the model to the top. Every **transformer block** reads the stream, computes a correction, and *adds* it back. Nothing overwrites the stream; blocks only add to it.

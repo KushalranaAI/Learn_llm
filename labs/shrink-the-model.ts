@@ -1,27 +1,16 @@
-// Lab: quantization for a legal-research assistant. Bytes per weight, group size, outliers, and a sandbox design that trades precision for GPUs.
-import { build } from "@/sandbox/presets";
-import type { Graph, NodeConfig } from "@/sandbox/types";
+// Lab: quantization for a legal-research assistant. Bytes per weight, group size, outliers, and whether a 70B model fits.
 import type { Lab } from "./types";
 
 const r = String.raw;
-
-const research = (llm: NodeConfig): Graph =>
-  build(
-    {
-      users: ["users", { rps: 1, promptTokens: 1200, outputTokens: 300, hardShare: 0.4 }],
-      llm: ["llm-selfhost", { model: "70B", gpu: "A100", replicas: 1, batching: true, maxBatch: 32, ...llm }, "70B research model"],
-    },
-    "users > llm",
-  );
 
 export const shrinkTheModel: Lab = {
   slug: "shrink-the-model",
   module: "inference-and-serving",
   title: "Shrink the model",
   product: "A legal research assistant on a 70B model",
-  summary: "A research assistant needs a 70B model but the GPU budget is tight. Compute the memory of quantized weights by hand, pick a format that fits without wrecking quality, see how outliers hurt, and then fix a serving design that is too expensive.",
+  summary: "A research assistant needs a 70B model but the GPU budget is tight. Compute the memory of quantized weights by hand, pick a format that fits without wrecking quality, see how outliers hurt, and check whether the 70B model fits.",
   difficulty: "medium",
-  minutes: 30,
+  minutes: 25,
   tags: ["quantization", "INT8", "INT4", "NF4", "group size", "outliers", "memory"],
   steps: [
     {
@@ -35,7 +24,7 @@ $$\text{bits per weight} = b + \frac{16}{g}$$
 
 so memory is $\text{params}\times \text{bits}/8$ bytes. Fewer bytes means a smaller model **and** faster decoding, because decoding is bound by how fast the weights can be read from GPU memory.
 
-The price is rounding error. This lab takes you from bits per weight to the quality cost, and then to a design that saves real money.`,
+The price is rounding error. This lab takes you from bits per weight to the quality cost, and then to whether the big model fits on the GPUs you have.`,
     },
     {
       type: "quiz",
@@ -124,30 +113,6 @@ Outliers are switched on below with INT4 and a group size of 128, and quality is
 $$\frac{7.109\times 10^{10}}{2^{30}} = 66.2\text{ GiB}$$
 
 That is under 72 GiB, so the weights only just squeeze into one A100 with almost nothing left for the KV cache, and a real serving stack leaves more headroom than that: it puts one replica on **two** A100s. In bf16 the weights are 140 GB and need **four**. Halving the GPUs per replica is the saving the next step uses.`,
-    },
-    {
-      type: "design",
-      title: "Cut the research model's bill",
-      body: r`The design below serves the 70B model in fp16 on A100s. Traffic is about **1 request/s** (long prompts, 40% hard questions). It works, but costs \$8,760 a month: four GPUs for one copy of the model.
-
-Cut the cost to **under \$5,000** while keeping: nearly all requests answered, p99 time to first token under **2 s**, and answer quality of at least **0.82** (fp16 scores 0.828, INT8 0.824, INT4 0.803). GPUs should not run over 90% busy.`,
-      starter: research({ quantization: "fp16" }),
-      palette: ["llm-selfhost", "llm-api", "semantic-cache", "gateway"],
-      test: {
-        constraints: [
-          { type: "costPerMonth", maxUsd: 5000, why: "In fp16 a replica needs 4 A100s. Fewer bytes per weight means fewer GPUs per replica." },
-          { type: "successRate", min: 0.99, why: "A cheaper design must still answer almost everything." },
-          { type: "ttft", maxMs: 2000, why: "Queueing grows quickly as a GPU gets close to full." },
-          { type: "quality", min: 0.82, why: "INT4 is cheaper again but costs too much quality for legal research." },
-          { type: "gpuUtil", max: 0.9, why: "Keep headroom: a GPU at 100% queues and times out." },
-        ],
-      },
-      hints: [
-        "Open the model node and read how many GPUs one replica needs: weights must fit in memory.",
-        "INT8 halves the weight bytes, so one replica shrinks from four A100s to two.",
-        "Set quantization to INT8. INT4 saves more money but drops quality below 0.82.",
-      ],
-      solution: research({ quantization: "int8" }),
     },
   ],
 };

@@ -8,6 +8,10 @@ Before you start
 You should know that each token enters the model as a vector of $d$ numbers (its embedding) and what a dot product measures. Both come from the embeddings lesson.
 ```
 
+```predict
+{"q":"Attention turns relevance scores into weights that add up to 1. If the word \"it\" scores three earlier words 2, 1 and 0, roughly what weight goes to the top-scoring word?","options":["1.0, all of it","About 0.67","About 0.5","About 0.33"],"answer":1,"reveal":"About 0.665. Softmax exponentiates the scores, so $e^2 \\approx 7.4$ out of a total of about 11.1: the top word dominates, but the others still get a say. The worked steps below compute it."}
+```
+
 Read this sentence: "The trophy did not fit in the suitcase because **it** was too big." What does "it" refer to? You answered by looking back at "trophy", "suitcase" and "big" and weighing them. Change "big" to "small" and the answer flips to the suitcase. The meaning of a token depends on other tokens, sometimes far away, and which ones matter depends on the sentence.
 
 After the embedding lookup, each position holds a vector that knows only its own token. To predict the next word well, the vector at "it" must collect information from "trophy" or "suitcase". **Attention** is the mechanism that does this: each position computes how relevant every other position is, turns those relevance scores into weights that add up to 1, and takes a weighted average of information from the positions it finds relevant.

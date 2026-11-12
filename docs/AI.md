@@ -1,13 +1,13 @@
 # AI tutor: setup
 
-The AI tutor is optional. Without it, every page, simulation, lab and the sandbox work exactly the same; the only
+The AI tutor is optional. Without it, every page, simulation and lab works exactly the same; the only
 visible trace is a small **Add AI** chip in the top bar and an **AI tutor** button at the bottom right.
 
 With it you get:
 
 - **Ask AI** (bottom right, or **Ctrl+/**): a resizable side panel that knows what is on your screen and keeps one
   conversation per page. Answers stream in, with maths rendered by KaTeX.
-- **Explain with AI** under simulation results, next to quiz feedback, and next to the Ask AI button on the sandbox.
+- **Explain with AI** under simulation results and next to quiz feedback.
 - **Explain / Ask…** on any text you highlight.
 
 Nothing is ever sent until you press a button.
@@ -121,7 +121,6 @@ Each screen registers what it shows with `useChatSource(key, { label, suggestion
 | Topic page | lesson and topic title, the topic's markdown | quick-check answers and explanations (stripped) |
 | Simulation (and lab sim steps) | title, summary, current settings, results, goals, the maths | a lab's solution parameters |
 | Lab step | lab title, step title and brief, the question and options | correct option, numeric answer, worked solution |
-| Sandbox | your design (components, settings, wiring), traffic and incident, last run's metrics and the guide's text | |
 | Interview | the current question; the answer only after you reveal it | an answer you haven't revealed |
 
 Turn off **Share the current screen with my questions** on `/ai` to send only your question.

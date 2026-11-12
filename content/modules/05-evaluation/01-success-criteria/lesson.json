@@ -11,7 +11,6 @@
   "prerequisites": "Comfort with fractions, percentages and averages. It helps to have built or used an LLM feature, for example from [Anatomy of a Prompt](/learn/prompt-and-context/prompt-anatomy), but no statistics background is assumed.",
   "sims": [],
   "labs": [],
-  "sandbox": [],
   "sources": [
     { "title": "Introduction to Information Retrieval", "authors": "Manning, Raghavan and Schütze", "year": 2008, "note": "Chapter 8: evaluation in information retrieval, precision, recall and F-measure" },
     { "title": "Information Retrieval", "authors": "C. J. van Rijsbergen", "year": 1979, "note": "Origin of the effectiveness measure behind F-beta" },

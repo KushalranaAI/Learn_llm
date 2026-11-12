@@ -25,7 +25,7 @@ export default async function ModulePage({ params }: { params: Promise<{ module:
   return (
     <div className="page mid">
       <nav className="crumbs" aria-label="Breadcrumb">
-        <Link href="/curriculum"><Icon name="chevron-left" size={14} /> Curriculum</Link> / <span>Module {m.order}</span>
+        <Link href="/curriculum"><Icon name="chevron-left" size={14} /> Roadmap</Link> / <span>Module {m.order}</span>
       </nav>
       <p className="eyebrow">Module {String(m.order).padStart(2, "0")}</p>
       <h1>{m.title}</h1>

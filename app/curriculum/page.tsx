@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import CurriculumView from "@/components/CurriculumView";
-import { getOutline } from "@/lib/content";
+import { getMap, getOutline } from "@/lib/content";
 
-export const metadata: Metadata = { title: "Curriculum" };
+export const metadata: Metadata = { title: "Roadmap" };
 
 export default function Curriculum() {
-  return <CurriculumView outline={getOutline()} />;
+  return <CurriculumView outline={getOutline()} goals={getMap().goals} />;
 }

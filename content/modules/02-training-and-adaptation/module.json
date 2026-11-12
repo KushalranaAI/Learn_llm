@@ -1,1 +1,1 @@
-{ "title": "Training and Adapting Models", "summary": "How models are pretrained, aligned and specialised, and what each step costs: data, scaling laws, memory and parallelism, SFT, RLHF and DPO, LoRA, distillation and multimodal inputs.", "icon": "layers", "cover": "scaling-laws" }
+{"title":"Pretraining and Scale","summary":"How base models are made and what it costs: pretraining data, scaling laws and compute budgets, memory, precision and parallelism, distillation into small models, and multimodal inputs.","icon":"layers","cover":"scaling-laws"}

@@ -11,7 +11,6 @@
   "prerequisites": "You should know how text becomes token IDs ([Tokenization](/learn/model-foundations/tokenization)) and how a network is trained by gradient descent ([How a Network Learns](/learn/model-foundations/how-networks-learn)). Vectors are introduced from scratch.",
   "sims": ["embedding-space"],
   "labs": [],
-  "sandbox": [],
   "sources": [
     { "title": "Efficient Estimation of Word Representations in Vector Space", "authors": "Mikolov, Chen, Corrado and Dean", "year": 2013, "note": "word2vec: skip-gram and CBOW, and the vector-offset analogies" },
     { "title": "GloVe: Global Vectors for Word Representation", "authors": "Pennington, Socher and Manning", "year": 2014, "note": "Embeddings from global co-occurrence statistics" },

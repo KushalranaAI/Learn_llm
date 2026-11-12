@@ -8,6 +8,10 @@ Before you start
 You need the idea of a token ID from the tokenization lesson: text is split into pieces and each piece is replaced by an integer between $0$ and $V-1$, where $V$ is the vocabulary size.
 ```
 
+```predict
+{"q":"GPT-2 small has 124 million parameters. What share of them is just the embedding table, one learned vector per token in the vocabulary?","options":["About 1%","About 10%","About 31%","About 75%"],"answer":2,"reveal":"About 31%: 50,257 tokens times 768 numbers is 38.6 million parameters. In Llama-2-7B the same kind of table is only about 2%; the size table below shows why the share shrinks."}
+```
+
 A token ID is a name tag, not a quantity. Token 464 is not "bigger" than token 12 in any useful sense, and the average of tokens 100 and 200 means nothing. If you fed raw IDs into a network as numbers, it would waste its capacity trying to make sense of an ordering that does not exist.
 
 So the first layer of every language model replaces each ID with a list of $d$ real numbers, called an **embedding** (or embedding vector). The list is looked up in a big table, the **embedding matrix**, with one row per token in the vocabulary. The rows are parameters: they start random and are adjusted by gradient descent like every other weight. After training, the row for "cat" holds whatever $d$ numbers turned out to be most useful for predicting text that contains "cat".

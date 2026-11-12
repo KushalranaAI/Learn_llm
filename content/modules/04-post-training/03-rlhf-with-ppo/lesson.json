@@ -1,0 +1,49 @@
+{
+  "title": "RLHF with PPO from Scratch",
+  "summary": "Train the SFT model against the reward model with PPO in plain PyTorch: generation as an RL episode, a policy with a value head and a frozen reference, a reward shaped by a per-token KL penalty, advantages, the clipped objective, and the rollout-and-update loop with the tricks that keep it stable.",
+  "objectives": [
+    "Map text generation onto RL terms (state, action, episode, sparse reward) and line up actions, masks and rewards in the shifted log-prob tensors",
+    "Explain the roles of the policy, value head, frozen reference and reward model, and why the reference must be a separate frozen copy",
+    "Compute a per-token KL-shaped reward, and advantages by the repo's immediate scheme, reward-to-go and GAE, for a worked example",
+    "Evaluate PPO's clipped policy loss, value loss and total loss for a batch of tokens, and say which tokens receive a gradient",
+    "Run the rollout-and-update loop, add several PPO epochs and an adaptive KL coefficient, and read reward, KL and value-loss curves"
+  ],
+  "prerequisites": "The RLHF objective and PPO's clipped surrogate from [Preference Tuning](/learn/fine-tuning/preference-tuning), especially [RLHF with PPO and a KL leash](/learn/fine-tuning/preference-tuning/rlhf-ppo). The SFT model from [the SFT lesson](/learn/post-training/sft-from-scratch) and the reward model from [the reward-model lesson](/learn/post-training/reward-models). Log-probabilities and sampling settings from [Sampling](/learn/model-foundations/sampling), and AdamW with gradient clipping from [Train a Tiny GPT](/learn/model-foundations/train-a-tiny-gpt/the-training-loop).",
+  "sims": [
+    "training-memory",
+    "sampling"
+  ],
+  "labs": [],
+  "sources": [
+    {
+      "title": "Proximal Policy Optimization Algorithms",
+      "authors": "Schulman, Wolski, Dhariwal, Radford and Klimov",
+      "year": 2017,
+      "note": "The clipped surrogate objective, value loss and entropy bonus combined in one loss"
+    },
+    {
+      "title": "High-Dimensional Continuous Control Using Generalized Advantage Estimation",
+      "authors": "Schulman, Moritz, Levine, Jordan and Abbeel",
+      "year": 2015,
+      "note": "GAE: exponentially weighted TD errors with the λ knob"
+    },
+    {
+      "title": "Fine-Tuning Language Models from Human Preferences",
+      "authors": "Ziegler et al.",
+      "year": 2019,
+      "note": "PPO on a language model with a KL penalty to the original policy, and the adaptive KL controller"
+    },
+    {
+      "title": "Training language models to follow instructions with human feedback",
+      "authors": "Ouyang et al.",
+      "year": 2022,
+      "note": "InstructGPT: SFT, reward model, then PPO with a per-token KL penalty and a separate value model"
+    },
+    {
+      "title": "The N+ Implementation Details of RLHF with PPO: A Case Study on TL;DR Summarization",
+      "authors": "Huang, Noukhovitch, Hosseini, Rasul, Wang and Tunstall",
+      "year": 2024,
+      "note": "Reproducing OpenAI's RLHF pipeline: reward whitening, temperature handling, KL estimation and other details that change results"
+    }
+  ]
+}

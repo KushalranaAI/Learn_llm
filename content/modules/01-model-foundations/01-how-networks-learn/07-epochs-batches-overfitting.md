@@ -64,7 +64,7 @@ The noisy cloud has 100 points with some labels effectively on the "wrong" side.
 ## In practice
 
 - **Regularisation** is the toolbox against overfitting: more data (the strongest), **weight decay** (a penalty pulling weights towards 0, standard in LLM training through the AdamW optimiser), **dropout** (randomly switching off units during training), and early stopping.
-- **Fine-tuning overfits fast.** Pretraining sees enormous data once. Fine-tuning a big model on a few thousand examples for several epochs can memorise them in a few hundred steps. Watching validation loss is mandatory there, as module 02 shows.
+- **Fine-tuning overfits fast.** Pretraining sees enormous data once. Fine-tuning a big model on a few thousand examples for several epochs can memorise them in a few hundred steps. Watching validation loss is mandatory there, as module 03 shows.
 - **Leakage makes overfitting invisible.** If validation examples (or near-duplicates) are also in training, validation loss looks great and the real-world performance does not. For LLMs this is benchmark **contamination**: test questions that appeared somewhere in the web crawl.
 - **Shuffle every epoch.** Feeding data in a fixed order lets the model pick up order artefacts and makes batches correlated, which makes the gradient noise worse than the $1/\sqrt{B}$ estimate.
 

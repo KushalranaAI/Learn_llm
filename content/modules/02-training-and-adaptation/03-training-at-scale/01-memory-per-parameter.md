@@ -8,6 +8,10 @@ Before you start
 You should know that training runs a forward pass, a backward pass that computes a gradient for every parameter, and an optimizer step that updates them. You also need the habit of multiplying parameter counts by bytes.
 ```
 
+```predict
+{"q":"Running a 7B model in 16-bit precision needs about 14 GB for its weights. How much memory do the model states need to train it with AdamW, before counting any activations?","options":["About 14 GB","About 28 GB","About 108 GB","About 1 TB"],"answer":2,"reveal":"About 108 GB, roughly eight times the inference figure: 16 bytes per parameter once gradients, a full-precision master copy and Adam's two moments are counted. The byte count below adds them up."}
+```
+
 Running a 7B model for inference in 16-bit precision needs about 14 GB for the weights. Training the same model needs roughly eight times that, before you store a single activation. Engineers who move from inference to training are usually surprised by this, so it is worth doing the accounting once, carefully.
 
 The extra memory comes from the **optimizer**. Plain gradient descent needs only the weights and their gradients. **Adam** (and its variant **AdamW**, the standard for LLMs) keeps two running averages for every parameter, and in mixed-precision training an extra full-precision copy of the weights too. Each of those is as large as the model.

@@ -7,7 +7,7 @@
 import { useEffect, useRef, useSyncExternalStore } from "react";
 
 export interface ChatSource {
-  /** short label shown to the learner, e.g. "Sandbox · 5 components" */
+  /** short label shown to the learner, e.g. "Simulation · Sampling" */
   label: string;
   /** starter questions that make sense on this screen (read on every render of the panel, so keep them cheap) */
   suggestions?: string[];

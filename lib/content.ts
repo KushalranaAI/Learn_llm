@@ -8,6 +8,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
+import { hashText } from "./hash";
 
 const ROOT = path.join(process.cwd(), "content");
 
@@ -34,7 +35,6 @@ export type Lesson = {
   sources: Source[];
   labs: string[];
   sims: string[];
-  sandbox: string[];
   topics: Topic[];
   minutes: number;
 };
@@ -101,7 +101,7 @@ function loadLesson(moduleSlug: string, dir: string, name: string): Lesson {
       return {
         slug: rest.replace(/\.md$/, ""),
         order: Number(n),
-        title: String(data.title ?? rest),
+        title: String(data.title ?? rest.replace(/\.md$/, "").replace(/-/g, " ")),
         minutes: Number(data.minutes ?? Math.max(2, Math.round(words / 200))),
         body: content,
         checks: countChecks(content),
@@ -118,7 +118,6 @@ function loadLesson(moduleSlug: string, dir: string, name: string): Lesson {
     sources: meta.sources ?? [],
     labs: meta.labs ?? [],
     sims: meta.sims ?? [],
-    sandbox: meta.sandbox ?? [],
     topics,
     minutes: topics.reduce((a, t) => a + t.minutes, 0),
   };
@@ -189,8 +188,53 @@ export function getGlossary(): Term[] {
     .sort((a, b) => a.term.localeCompare(b.term));
 }
 
-/** Small, serialisable outline for client components (sidebar, dashboard, progress). */
+// ---------------------------------------------------------------- course map
+// content/map.json: where each module sits on the roadmap, soft prerequisites per module and lesson, and goal paths.
+
+export type MapModule = { col: number; row: number; requires: string[]; branch?: boolean };
+export type Goal = { id: string; title: string; text: string; modules: string[]; noCode?: boolean };
+/** practice: hands-on code lessons (they credit the theory they build on; noCode goals hide them) */
+export type CourseMap = { modules: Record<string, MapModule>; lessons: Record<string, string[]>; practice: string[]; goals: Goal[] };
+
+export function getMap(): CourseMap {
+  const raw = readJson<Partial<CourseMap>>(path.join(ROOT, "map.json"), {});
+  return { modules: raw.modules ?? {}, lessons: raw.lessons ?? {}, practice: raw.practice ?? [], goals: raw.goals ?? [] };
+}
+
+/** Quick checks in a topic, with the ids the browser records answers under. */
+export function topicQuizzes(moduleSlug: string, lessonSlug: string, t: Topic): { id: string; topic: string; topicTitle: string; quiz: QuizBlock }[] {
+  const tid = `${moduleSlug}/${lessonSlug}/${t.slug}`;
+  return [...t.body.matchAll(/^```quiz\s*\r?\n([\s\S]*?)\r?\n```\s*$/gm)].flatMap(([, raw]) => {
+    try {
+      const quiz = JSON.parse(raw) as QuizBlock;
+      if (!Array.isArray(quiz.options) || typeof quiz.answer !== "number") return [];
+      return [{ id: `${tid}#${hashText(quiz.q)}`, topic: tid, topicTitle: t.title, quiz }];
+    } catch {
+      return [];
+    }
+  });
+}
+export type QuizBlock = { q: string; options: string[]; answer: number; explain?: string };
+
+export const lessonQuizzes = (m: string, l: Lesson) => l.topics.flatMap((t) => topicQuizzes(m, l.slug, t));
+
+/**
+ * "From earlier": one quick check from a lesson this lesson builds on, rotated by topic so each topic recalls
+ * something different. Practice lessons recall their theory; theory lessons recall their own prerequisites.
+ */
+export function recallFor(moduleSlug: string, lessonSlug: string, topicIndex: number) {
+  const reqs = getMap().lessons[`${moduleSlug}/${lessonSlug}`] ?? [];
+  const pool = reqs.flatMap((id) => {
+    const [m, l] = id.split("/");
+    const lesson = getLesson(m, l);
+    return lesson ? lessonQuizzes(m, lesson).map((q) => ({ ...q, lessonTitle: lesson.title, lessonId: id })) : [];
+  });
+  return pool.length ? pool[(topicIndex * 7 + lessonSlug.length) % pool.length] : null;
+}
+
+/** Small, serialisable outline for client components (sidebar, dashboard, progress, roadmap). */
 export function getOutline() {
+  const map = getMap();
   return getModules().map((m) => ({
     slug: m.slug,
     order: m.order,
@@ -199,6 +243,7 @@ export function getOutline() {
     icon: m.icon,
     cover: m.cover,
     minutes: m.minutes,
+    map: map.modules[m.slug] ?? { col: m.order - 1, row: 1, requires: [] },
     lessons: m.lessons.map((l) => ({
       slug: l.slug,
       order: l.order,
@@ -207,7 +252,10 @@ export function getOutline() {
       minutes: l.minutes,
       sims: l.sims.length,
       labs: l.labs.length,
-      sandbox: l.sandbox.length,
+      code: l.topics.some((t) => /^```python/m.test(t.body)),
+      requires: map.lessons[`${m.slug}/${l.slug}`] ?? [],
+      practice: map.practice.includes(`${m.slug}/${l.slug}`),
+      quizIds: lessonQuizzes(m.slug, l).map((q) => q.id),
       topics: l.topics.map((t) => ({ slug: t.slug, title: t.title, minutes: t.minutes, checks: t.checks })),
     })),
   }));

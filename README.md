@@ -2,20 +2,19 @@
 
 *Built by [Kushal Rana](https://kushalranaai.github.io/) · [LinkedIn](https://www.linkedin.com/in/kushal-rana) · [YouTube](https://www.youtube.com/@naaku-o2x) · [X](https://x.com/KushalranaAI) · [Medium](https://kushalrana448.medium.com/)*
 
-**Learn how large language models work and how to build with them, by doing.** Every topic explains the idea, works
-through the maths with real numbers, lets you see it in a live simulation, and checks your understanding. Labs and a
-systems sandbox turn it into practice.
+**Learn how large language models work and how they are built, by doing.** Every topic explains the idea, works
+through the maths with real numbers, lets you see it in a live simulation, and checks your understanding. Labs turn it
+into practice. Building applications on top of LLMs (RAG, agents, production systems) is covered by the separate AI
+Engineering path.
 
-- **9 modules**: how LLMs work · training and adaptation · inference and serving · prompt and context engineering ·
-  evaluation · retrieval and RAG · agents and tool use · production systems · LLM system design case studies.
+- **7 modules**: how LLMs work · build an LLM from scratch (with the `llm_from_scratch` repo) · training and adaptation ·
+  fine-tuning in practice · inference and serving · prompt and context engineering · evaluation. Next: post-training and alignment.
 - **Topic pages** with a sticky segmented progress bar, an "In this lesson" panel, KaTeX maths, diagrams, step-by-step
   walkthroughs, embedded simulations and quick checks.
 - **Spaced review**: quick checks you miss come back after 1, 3, 7, 14 and 30 days until they stick.
-- **Simulations**: live models of neurons, gradient descent, tokenizers, attention, sampling, KV caches, batching,
-  quantization, retrieval, agents, routing, guardrails and more, each with "How this is computed".
-- **Labs**: predict → compute by hand → meet goals in a simulation → build it in the sandbox. Hints and verified solutions.
-- **Sandbox**: wire an LLM system on a canvas (gateway, router, caches, guardrails, retriever, models, agents), push
-  traffic through it, inject incidents, and read the guide's explanation.
+- **Simulations**: live models of neurons, gradient descent, tokenizers, attention, sampling, KV caches, scaling laws,
+  batching, quantization, LLM judges, benchmarks and more, each with "How this is computed".
+- **Labs**: predict → compute by hand → meet goals in a simulation. Hints and verified solutions.
 - **Interview prep** (junior → senior) and a **glossary**.
 - No account and no backend: progress stays in your browser (export/import from **My progress**).
 
@@ -38,10 +37,10 @@ key, press **Test connection**, then **Save and use AI**. Full step-by-step setu
   render maths with KaTeX. Each page keeps its own conversation.
 - **It sees what you see.** Each screen registers what the tutor may know with one `useChatSource(...)` call
   (`lib/ai/sources.ts`, System Learn's idea): the topic text on a topic page; the settings, results and maths of a
-  simulation (also inside lab steps); the brief and question of a lab step; your sandbox design, last run and guide; the
-  current interview question. **Never** quiz answers, worked solutions, or an interview answer you haven't revealed.
+  simulation (also inside lab steps); the brief and question of a lab step; the current
+  interview question. **Never** quiz answers, worked solutions, or an interview answer you haven't revealed.
   You can switch screen sharing off on `/ai`.
-- **Explain with AI** buttons under simulation results, next to quiz feedback and on the sandbox (beside **Ask AI**), and **Explain** on any text you
+- **Explain with AI** buttons under simulation results, next to quiz feedback, and **Explain** on any text you
   highlight. They appear only when AI is set up, and nothing is sent until you click.
 
 | Provider | What you enter | Default model |
@@ -80,21 +79,20 @@ Small local models have small context windows, so the tutor sends less of the sc
 ## Write content
 
 Lessons are markdown in `content/modules/NN-module/NN-lesson/NN-topic.md`. See `CONTENT_GUIDE.md` for the format and
-the directive blocks (```` ```quiz ````, ```` ```sim ````, ```` ```steps ````, ```` ```callout-* ````, ```` ```lab ````,
-```` ```sandbox ````) and `CURRICULUM.md` for the map of modules, lessons, simulations and labs.
+the directive blocks (```` ```quiz ````, ```` ```sim ````, ```` ```steps ````, ```` ```callout-* ````, ```` ```lab ````)
+and `CURRICULUM.md` for the map of modules, lessons, simulations and labs.
 
 ## Layout
 
 | Path | What |
 |---|---|
-| `app/` | routes: home, curriculum, learn/[module]/[lesson]/[topic], interview, glossary, review, progress, simulations, labs, sandbox |
+| `app/` | routes: home, curriculum, learn/[module]/[lesson]/[topic], interview, glossary, review, progress, simulations, labs |
 | `components/` | shell, dashboard, markdown + lesson blocks, quiz, lab player |
 | `lib/` | content loader (server), progress and spaced review (browser), `lib/ai/` (providers, encrypted key vault, streaming client, `.env` relay, tutor context) |
 | `components/ai/` | the optional AI tutor: top-bar chip, side panel, settings, Explain with AI |
 | `sims/` | simulation framework (`types.ts`, `ui.tsx`) and the simulations (`a/`, `b/`) |
 | `labs/` | lab definitions |
-| `sandbox/` | sandbox engine, catalogue, scenarios and canvas |
 | `content/` | the course text, interview questions and glossary |
 
-The curriculum structure takes inspiration from [llmdojo.dev](https://llmdojo.dev/). The visual design (tokens, top bar, cards, step player, sandbox canvas) is the same design system as
+The curriculum structure takes inspiration from [llmdojo.dev](https://llmdojo.dev/). The visual design (tokens, top bar, cards, step player) is the same design system as
 [System Learn](../system_learn_app), so the two apps feel like one family. All content and code here are original.

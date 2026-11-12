@@ -11,7 +11,6 @@
   "prerequisites": "You should know what a token is ([Tokenization](/learn/model-foundations/tokenization)) and what cross-entropy loss measures ([How a Network Learns](/learn/model-foundations/how-networks-learn)). Log-probabilities and perplexity are introduced in [Next-Token Prediction and Sampling](/learn/model-foundations/sampling); they are re-derived here, so that lesson helps but is not required.",
   "sims": [],
   "labs": [],
-  "sandbox": [],
   "sources": [
     { "title": "Language Models are Few-Shot Learners", "authors": "Brown et al.", "year": 2020, "note": "GPT-3: 175B parameters trained on about 300B tokens drawn from a weighted mixture of sources" },
     { "title": "On the Resemblance and Containment of Documents", "authors": "Andrei Broder", "year": 1997, "note": "Shingling and min-wise hashing for near-duplicate detection" },

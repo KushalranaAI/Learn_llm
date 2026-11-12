@@ -1,0 +1,18 @@
+{
+  "title": "When to Fine-Tune and How Big a Run You Need",
+  "summary": "Fine-tuning changes the weights instead of the prompt. This lesson sets out when that pays for itself, then sizes a first run: trainable parameters and GPU memory for full fine-tuning, LoRA and QLoRA. The lessons after it walk through real fine-tuning runs end to end.",
+  "objectives": [
+    "Decide between prompting and fine-tuning with a break-even calculation on token cost",
+    "Compute the memory of full fine-tuning from bytes per parameter",
+    "Count LoRA trainable parameters for a real model and target set",
+    "Choose between full fine-tuning, LoRA and QLoRA for a given GPU"
+  ],
+  "prerequisites": "Instruction tuning and loss masking from [Instruction Tuning](/learn/fine-tuning/instruction-tuning), the LoRA update from [LoRA and QLoRA](/learn/fine-tuning/peft-lora), and memory per parameter from [Training at Scale](/learn/training-and-adaptation/training-at-scale).",
+  "sims": ["lora-params", "token-cost"],
+  "labs": ["lora-budget"],
+  "sources": [
+    { "title": "LoRA: Low-Rank Adaptation of Large Language Models", "authors": "Hu et al.", "year": 2021, "note": "The low-rank update and its parameter count" },
+    { "title": "QLoRA: Efficient Finetuning of Quantized LLMs", "authors": "Dettmers et al.", "year": 2023, "note": "4-bit NF4 base weights with LoRA adapters trained on top" },
+    { "title": "ZeRO: Memory Optimizations Toward Training Trillion Parameter Models", "authors": "Rajbhandari et al.", "year": 2020, "note": "The 16 bytes per parameter accounting for mixed-precision Adam" }
+  ]
+}

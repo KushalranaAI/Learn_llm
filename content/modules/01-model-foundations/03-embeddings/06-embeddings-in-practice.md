@@ -1,5 +1,5 @@
 ---
-title: Embeddings in practice: size, cost and pitfalls
+title: "Embeddings in practice: size, cost and pitfalls"
 minutes: 7
 ---
 

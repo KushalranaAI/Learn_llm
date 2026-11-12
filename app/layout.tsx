@@ -12,16 +12,16 @@ const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", displ
 export const metadata: Metadata = {
   title: { default: "LLM Engineering 1 → 100 · Kushal Rana", template: "%s · LLM 1 → 100" },
   description:
-    "Learn how large language models work and how to build with them: every idea explained with the maths, a live simulation, labs and a systems sandbox.",
+    "Learn how large language models work and how they are built: every idea explained with the maths, a live simulation and hands-on labs.",
   authors: [{ name: "Kushal Rana", url: "https://kushalranaai.github.io/" }],
   creator: "Kushal Rana",
   publisher: "Kushal Rana",
-  keywords: ["LLM", "large language models", "transformer", "RAG", "agents", "LLM system design", "interview prep", "Kushal Rana"],
+  keywords: ["LLM", "large language models", "transformer", "attention", "pretraining", "fine-tuning", "RLHF", "LLM evaluation", "interview prep", "Kushal Rana"],
   openGraph: {
     type: "website",
     siteName: "LLM Engineering 1 → 100 by Kushal Rana",
     title: "LLM Engineering 1 → 100 - built by Kushal Rana",
-    description: "Learn how large language models work and how to build with them: maths, live simulations, labs and a systems sandbox.",
+    description: "Learn how large language models work and how they are built: maths, live simulations and labs.",
   },
   twitter: { card: "summary_large_image", site: "@KushalranaAI", creator: "@KushalranaAI" },
 };

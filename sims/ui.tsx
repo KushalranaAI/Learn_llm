@@ -239,7 +239,7 @@ export function Heatmap({
               const a = Math.max(0, Math.min(1, v / top));
               return (
                 <g key={j}>
-                  <rect x={lw + j * cell + 1} y={th + i * cell + 1} width={cell - 2} height={cell - 2} rx={5} fill="var(--accent)" fillOpacity={0.06 + a * 0.9} />
+                  <rect x={lw + j * cell + 1} y={th + i * cell + 1} width={cell - 2} height={cell - 2} rx={5} fill="var(--accent)" fillOpacity={Math.round((0.06 + a * 0.9) * 1e4) / 1e4} />
                   {showValues && cell >= 34 && (
                     <text x={lw + j * cell + cell / 2} y={th + i * cell + cell / 2 + 4} textAnchor="middle" className={`axis ${a > 0.55 ? "on-accent" : ""}`}>
                       {fmt(v, format)}

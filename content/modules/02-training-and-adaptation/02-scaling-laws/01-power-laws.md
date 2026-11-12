@@ -8,6 +8,10 @@ Before you start
 You need the pretraining loss from the previous lesson and a working memory of logarithms: $\log(xy) = \log x + \log y$ and $\log(x^k) = k \log x$.
 ```
 
+```predict
+{"q":"Scaling laws describe how loss falls as models grow. Make a model 10 times larger: what happens to the part of the loss that can still be removed?","options":["It falls to about a tenth","It falls to about half (0.46 times)","It barely changes (0.95 times)","It drops to zero"],"answer":1,"reveal":"It is multiplied by about 0.46, which is $10^{-0.34}$ with the Chinchilla exponent. Each tenfold step cuts it by the same ratio, so gains shrink and the total never drops below an irreducible floor. The next section gives the equation."}
+```
+
 Train a family of language models that differ only in size, each on plenty of data, and plot the final loss against the number of parameters. The points do not scatter. They fall on a smooth curve so regular that you can fit it on small models and predict the loss of a model a hundred times larger before training it. The same happens when you vary the amount of data, or the total compute. This regularity is what people mean by **scaling laws**, and it turned training large models from a gamble into an engineering plan.
 
 The shape of the curve is a **power law**: every time you multiply the model size by a constant factor, the loss (more precisely, the part of the loss that can still be removed) shrinks by a constant factor. Doubling helps, but each doubling helps by the same ratio, so the absolute gains get smaller and smaller.

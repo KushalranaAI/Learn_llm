@@ -1,0 +1,22 @@
+{
+  "title": "Set Up Your Fine-Tuning Environment: CPU, Free Colab or a Rented GPU",
+  "summary": "Where to run a fine-tune and how to set each place up: a laptop with no GPU for small models, free Colab or Kaggle T4s for QLoRA on 1–8B models, and a rented GPU for an hour when you need more. Ends with a complete LoRA run on a CPU that you can check before and after.",
+  "objectives": [
+    "Pick a model size and method that fit your hardware using bytes per parameter and the 4N-per-token time estimate",
+    "Set up a CPU-only Python environment and run a smoke test that measures seconds per step and extrapolates run time",
+    "Run QLoRA on a free Colab or Kaggle T4 with fp16, Drive or Hub checkpoints, and resume after a disconnect",
+    "Estimate the cost of a rented GPU run, including setup and idle time, and shut it down safely",
+    "Fine-tune SmolLM2-135M-Instruct with LoRA on a laptop and verify the change with a held-out before/after score"
+  ],
+  "prerequisites": "Memory per parameter and the LoRA parameter count from [Start Here](/learn/fine-tuning/start-here/sizing-your-first-run); the LoRA update and NF4 from [LoRA and QLoRA](/learn/fine-tuning/peft-lora); chat templates and loss masking from [Instruction Tuning](/learn/fine-tuning/instruction-tuning). Basic Python and a terminal.",
+  "sims": ["quantization", "lora-params"],
+  "labs": ["lora-budget"],
+  "sources": [
+    { "title": "LoRA: Low-Rank Adaptation of Large Language Models", "authors": "Hu et al.", "year": 2021, "note": "The adapter parameter count used for sizing and adapter file size" },
+    { "title": "QLoRA: Efficient Finetuning of Quantized LLMs", "authors": "Dettmers et al.", "year": 2023, "note": "4-bit NF4 base weights, double quantisation, paged optimizers; why it needs CUDA kernels" },
+    { "title": "Scaling Laws for Neural Language Models", "authors": "Kaplan et al.", "year": 2020, "note": "The approximate 6N training FLOPs per token behind the 4N LoRA estimate" },
+    { "title": "SmolLM2: When Smol Goes Big -- Data-Centric Training of a Small Language Model", "authors": "Allal et al.", "year": 2025, "note": "The 135M and 360M models used for CPU runs" },
+    { "title": "TRL documentation: SFT Trainer and SFTConfig", "authors": "Hugging Face", "year": 2026, "note": "Argument names used here (max_length, use_cpu, fp16/bf16, peft_config, quantization_config, completion-only loss), checked against v1.17" },
+    { "title": "PEFT documentation: LoraConfig", "authors": "Hugging Face", "year": 2026, "note": "target_modules=\"all-linear\", saving and reloading adapters" }
+  ]
+}

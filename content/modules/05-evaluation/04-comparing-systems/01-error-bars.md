@@ -8,6 +8,10 @@ Before you start
 You need the idea that an eval score is an average over a sample. If a pass rate of 82% on 50 examples feels solid to you, this topic is where that feeling gets tested.
 ```
 
+```predict
+{"q":"A system passes 82% of a 50-example eval set. Roughly how wide is the 95% confidence interval on its true pass rate?","options":["About ±1 point","About ±3 points","About ±11 points","About ±25 points"],"answer":2,"reveal":"About ±11 points, 71% to 93%. Getting down to about ±3 points takes 800 examples, because the width shrinks with $\\sqrt{n}$. The steps under \"The maths\" compute all three sample sizes."}
+```
+
 Flip a fair coin 10 times and you will often see 6 or 7 heads. Nobody concludes the coin is biased, because we know a small sample wobbles. An eval set is a small sample of all the inputs your system could face, and the pass rate you compute from it wobbles in exactly the same way. A different 50 questions would have given a different score.
 
 The **standard error** (SE) measures that wobble: roughly how far a measured pass rate typically lands from the true one. A **confidence interval** (CI) turns it into a range that, over many repeated experiments, would contain the true value a stated fraction of the time (95% for the usual interval).

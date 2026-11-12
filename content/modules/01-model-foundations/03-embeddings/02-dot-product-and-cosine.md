@@ -1,5 +1,5 @@
 ---
-title: Similarity: dot product and cosine
+title: "Similarity: dot product and cosine"
 minutes: 8
 ---
 

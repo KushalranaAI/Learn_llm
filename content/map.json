@@ -1,0 +1,291 @@
+{
+  "_about": "The course map. Modules: grid position on the roadmap (col, row; row 1 is the spine), soft prerequisites. Lessons: soft prerequisites as module/lesson ids; they never lock anything, they become 'builds on' hints and the source of 'From earlier' recall. practice: hands-on code lessons; finishing them counts as review of the theory lessons they build on, and goals with noCode hide them. Goals are filters over the same map.",
+  "modules": {
+    "model-foundations": {
+      "col": 0,
+      "row": 1,
+      "requires": []
+    },
+    "training-and-adaptation": {
+      "col": 1,
+      "row": 1,
+      "requires": [
+        "model-foundations"
+      ]
+    },
+    "fine-tuning": {
+      "col": 2,
+      "row": 1,
+      "requires": [
+        "training-and-adaptation"
+      ]
+    },
+    "evaluation": {
+      "col": 4,
+      "row": 1,
+      "requires": [
+        "model-foundations"
+      ]
+    },
+    "prompt-and-context": {
+      "col": 1,
+      "row": 0,
+      "requires": [
+        "model-foundations"
+      ],
+      "branch": true
+    },
+    "inference-and-serving": {
+      "col": 1,
+      "row": 2,
+      "requires": [
+        "model-foundations"
+      ],
+      "branch": true
+    },
+    "post-training": {
+      "col": 3,
+      "row": 1,
+      "requires": [
+        "fine-tuning"
+      ]
+    }
+  },
+  "practice": [
+    "model-foundations/run-it-yourself",
+    "model-foundations/attention-in-code",
+    "model-foundations/train-a-tiny-gpt",
+    "model-foundations/modern-architecture",
+    "model-foundations/scaling-the-training-loop",
+    "model-foundations/mixture-of-experts",
+    "fine-tuning/run-fine-tuning-yourself",
+    "fine-tuning/sft-with-lora-step-by-step",
+    "fine-tuning/preference-optimization-methods",
+    "fine-tuning/grpo-hands-on",
+    "fine-tuning/fine-tuning-embedding-models",
+    "post-training/sft-from-scratch",
+    "post-training/reward-models",
+    "post-training/rlhf-with-ppo",
+    "post-training/grpo-from-scratch"
+  ],
+  "lessons": {
+    "model-foundations/what-is-an-llm": [],
+    "model-foundations/how-networks-learn": [
+      "model-foundations/what-is-an-llm"
+    ],
+    "model-foundations/tokenization": [
+      "model-foundations/what-is-an-llm"
+    ],
+    "model-foundations/embeddings": [
+      "model-foundations/how-networks-learn",
+      "model-foundations/tokenization"
+    ],
+    "model-foundations/attention": [
+      "model-foundations/embeddings"
+    ],
+    "model-foundations/transformer-block": [
+      "model-foundations/attention"
+    ],
+    "model-foundations/run-it-yourself": [
+      "model-foundations/what-is-an-llm"
+    ],
+    "model-foundations/attention-in-code": [
+      "model-foundations/run-it-yourself",
+      "model-foundations/attention",
+      "model-foundations/transformer-block"
+    ],
+    "model-foundations/sampling": [
+      "model-foundations/transformer-block"
+    ],
+    "model-foundations/train-a-tiny-gpt": [
+      "model-foundations/attention-in-code",
+      "model-foundations/tokenization",
+      "model-foundations/sampling",
+      "model-foundations/how-networks-learn"
+    ],
+    "model-foundations/context-and-kv-cache": [
+      "model-foundations/attention",
+      "model-foundations/sampling"
+    ],
+    "model-foundations/modern-architecture": [
+      "model-foundations/train-a-tiny-gpt",
+      "model-foundations/context-and-kv-cache"
+    ],
+    "model-foundations/scaling-the-training-loop": [
+      "model-foundations/train-a-tiny-gpt"
+    ],
+    "model-foundations/mixture-of-experts": [
+      "model-foundations/modern-architecture"
+    ],
+    "model-foundations/limits": [
+      "model-foundations/sampling"
+    ],
+    "training-and-adaptation/pretraining-data": [
+      "model-foundations/tokenization"
+    ],
+    "training-and-adaptation/scaling-laws": [
+      "training-and-adaptation/pretraining-data"
+    ],
+    "training-and-adaptation/training-at-scale": [
+      "training-and-adaptation/scaling-laws"
+    ],
+    "training-and-adaptation/distillation": [
+      "training-and-adaptation/pretraining-data"
+    ],
+    "training-and-adaptation/multimodal": [
+      "model-foundations/embeddings",
+      "model-foundations/attention"
+    ],
+    "fine-tuning/instruction-tuning": [
+      "training-and-adaptation/pretraining-data"
+    ],
+    "fine-tuning/peft-lora": [
+      "fine-tuning/instruction-tuning"
+    ],
+    "fine-tuning/preference-tuning": [
+      "fine-tuning/instruction-tuning"
+    ],
+    "fine-tuning/start-here": [
+      "fine-tuning/instruction-tuning",
+      "fine-tuning/peft-lora"
+    ],
+    "fine-tuning/run-fine-tuning-yourself": [
+      "fine-tuning/start-here"
+    ],
+    "fine-tuning/sft-with-lora-step-by-step": [
+      "fine-tuning/run-fine-tuning-yourself",
+      "fine-tuning/instruction-tuning",
+      "fine-tuning/peft-lora"
+    ],
+    "fine-tuning/preference-optimization-methods": [
+      "fine-tuning/sft-with-lora-step-by-step",
+      "fine-tuning/preference-tuning"
+    ],
+    "fine-tuning/grpo-hands-on": [
+      "fine-tuning/preference-optimization-methods"
+    ],
+    "fine-tuning/fine-tuning-embedding-models": [
+      "fine-tuning/run-fine-tuning-yourself",
+      "model-foundations/embeddings"
+    ],
+    "evaluation/success-criteria": [
+      "model-foundations/what-is-an-llm"
+    ],
+    "evaluation/reference-scoring": [
+      "evaluation/success-criteria"
+    ],
+    "evaluation/llm-as-judge": [
+      "evaluation/reference-scoring"
+    ],
+    "evaluation/comparing-systems": [
+      "evaluation/success-criteria"
+    ],
+    "evaluation/error-analysis": [
+      "evaluation/comparing-systems"
+    ],
+    "evaluation/benchmarks-and-leaderboards": [
+      "evaluation/comparing-systems",
+      "evaluation/llm-as-judge"
+    ],
+    "inference-and-serving/measuring-inference": [
+      "model-foundations/context-and-kv-cache"
+    ],
+    "inference-and-serving/memory-and-compute": [
+      "inference-and-serving/measuring-inference"
+    ],
+    "inference-and-serving/batching": [
+      "inference-and-serving/memory-and-compute"
+    ],
+    "inference-and-serving/quantization": [
+      "inference-and-serving/memory-and-compute"
+    ],
+    "inference-and-serving/caching": [
+      "inference-and-serving/batching"
+    ],
+    "inference-and-serving/speculative-and-parallel": [
+      "inference-and-serving/batching"
+    ],
+    "prompt-and-context/prompt-anatomy": [
+      "model-foundations/tokenization",
+      "model-foundations/sampling"
+    ],
+    "prompt-and-context/few-shot-and-structured": [
+      "prompt-and-context/prompt-anatomy"
+    ],
+    "prompt-and-context/context-selection": [
+      "prompt-and-context/prompt-anatomy",
+      "model-foundations/context-and-kv-cache"
+    ],
+    "post-training/sft-from-scratch": [
+      "model-foundations/scaling-the-training-loop",
+      "fine-tuning/instruction-tuning"
+    ],
+    "post-training/reward-models": [
+      "post-training/sft-from-scratch",
+      "fine-tuning/preference-tuning"
+    ],
+    "post-training/rlhf-with-ppo": [
+      "post-training/reward-models",
+      "fine-tuning/preference-tuning"
+    ],
+    "post-training/grpo-from-scratch": [
+      "post-training/rlhf-with-ppo",
+      "fine-tuning/grpo-hands-on"
+    ]
+  },
+  "goals": [
+    {
+      "id": "all",
+      "title": "Everything",
+      "text": "The full recommended path, branches included.",
+      "modules": []
+    },
+    {
+      "id": "understand",
+      "title": "Understand",
+      "text": "How LLMs work and are trained, no code: code lessons are hidden.",
+      "modules": [
+        "model-foundations",
+        "training-and-adaptation",
+        "fine-tuning",
+        "evaluation",
+        "inference-and-serving",
+        "prompt-and-context"
+      ],
+      "noCode": true
+    },
+    {
+      "id": "build",
+      "title": "Build",
+      "text": "Write and train a GPT from scratch in PyTorch, then align it with SFT, a reward model, PPO and GRPO.",
+      "modules": [
+        "model-foundations",
+        "training-and-adaptation",
+        "post-training"
+      ]
+    },
+    {
+      "id": "fine-tune",
+      "title": "Fine-tune",
+      "text": "Adapt real models with SFT, LoRA, DPO and GRPO, and measure the result.",
+      "modules": [
+        "model-foundations",
+        "fine-tuning",
+        "post-training",
+        "evaluation"
+      ]
+    },
+    {
+      "id": "apply",
+      "title": "Apply",
+      "text": "Prompt, serve and evaluate models you did not train: no code lessons.",
+      "modules": [
+        "model-foundations",
+        "prompt-and-context",
+        "inference-and-serving",
+        "evaluation"
+      ],
+      "noCode": true
+    }
+  ]
+}

@@ -1,11 +1,10 @@
 "use client";
-// Directive blocks used inside topic markdown (see CONTENT_GUIDE.md): steps, callouts, embedded sims, lab and sandbox cards.
+// Directive blocks used inside topic markdown (see CONTENT_GUIDE.md): steps, callouts, embedded sims and lab cards.
 import Link from "next/link";
 import { type ReactNode, useState } from "react";
 import Icon from "@/components/ui/Icon";
 import { getLab } from "@/labs";
 import { markSimTried } from "@/lib/progress";
-import { getScenario } from "@/sandbox/scenarios";
 import { getSim } from "@/sims";
 import type { Params } from "@/sims/types";
 import { SimPanel } from "@/sims/ui";
@@ -91,15 +90,3 @@ export function LabCard({ raw }: { raw: string }) {
   );
 }
 
-/** ```sandbox — the scenario id. */
-export function SandboxCard({ raw }: { raw: string }) {
-  const sc = getScenario(raw.trim());
-  return (
-    <Link href={sc ? `/sandbox?s=${sc.id}` : "/sandbox"} className="link-card practice">
-      <span className="badge"><Icon name="boxes" size={14} /> Sandbox</span>
-      <b>{sc?.title ?? "Try it in the sandbox"}</b>
-      <span className="muted">{sc?.summary ?? "Build the system yourself and push traffic through it."}</span>
-      <Icon name="arrow-right" size={16} />
-    </Link>
-  );
-}

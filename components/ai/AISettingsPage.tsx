@@ -16,7 +16,7 @@ export default function AISettingsPage() {
       <header className="page-head">
         <p className="eyebrow"><Icon name="sparkles" size={13} /> Optional</p>
         <h1>AI tutor</h1>
-        <p className="lead">Bring your own key for a tutor that can see the topic, simulation, lab step or sandbox design you are working on. Everything in the course works the same without it.</p>
+        <p className="lead">Bring your own key for a tutor that can see the topic, simulation or lab step you are working on. Everything in the course works the same without it.</p>
         <div className="row" style={{ marginTop: 14 }}>
           <span className={`ai-chip ${ready ? "on" : ""} ${locked ? "locked" : ""}`} role="status">
             <Icon name={locked ? "lock" : "sparkles"} size={14} />
@@ -38,7 +38,7 @@ export default function AISettingsPage() {
             <h4>What you get</h4>
             <ul>
               <li><b>Ask AI</b>: the round button at the bottom right (or <kbd className="kbd">Ctrl /</kbd>). One conversation per page.</li>
-              <li><b>Explain with AI</b> under simulation results, quiz feedback and on the sandbox. Nothing is sent until you click.</li>
+              <li><b>Explain with AI</b> under simulation results, and next to quiz feedback. Nothing is sent until you click.</li>
               <li>Highlight any text and press <b>Explain</b>.</li>
             </ul>
           </div>

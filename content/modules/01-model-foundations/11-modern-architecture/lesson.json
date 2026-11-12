@@ -1,0 +1,23 @@
+{
+  "title": "Modernising the Architecture: RMSNorm, RoPE, SwiGLU and the KV Cache",
+  "summary": "Upgrade the tiny GPT into a Llama-style model one component at a time: RMSNorm for LayerNorm, rotary embeddings for the learned position table, a SwiGLU feed-forward network, then a KV cache, a sliding window with attention sinks and a rolling buffer for fast, bounded-memory generation. Each change is derived, worked by hand and implemented in PyTorch.",
+  "objectives": [
+    "Implement RMSNorm and RoPE in PyTorch and verify that rotated query-key scores depend only on relative position",
+    "Implement a SwiGLU feed-forward network and size its hidden layer at about 8d/3 to match a 4d GELU FFN's parameters",
+    "Add a KV cache to attention, split generation into prefill and decode, and prove it correct by comparing greedy outputs with and without the cache",
+    "Build a sliding-window mask with attention sinks and explain why evicting the first tokens breaks a streaming model",
+    "Implement a circular rolling-buffer cache and explain why slot order does not affect attention"
+  ],
+  "prerequisites": "You should have built the baseline model in [Attention in Code](/learn/model-foundations/attention-in-code) and [Train a Tiny GPT](/learn/model-foundations/train-a-tiny-gpt). The theory behind each upgrade is in [The Transformer Block](/learn/model-foundations/transformer-block) (LayerNorm and RMSNorm, the feed-forward network, position information) and [Context Windows, Prefill and the KV Cache](/learn/model-foundations/context-and-kv-cache). This lesson follows `llm_from_scratch/part_3/`.",
+  "sims": ["attention-heatmap", "transformer-params", "latency-breakdown", "kv-cache-memory"],
+  "labs": ["fit-the-kv-cache"],
+  "sources": [
+    { "title": "Root Mean Square Layer Normalization", "authors": "Biao Zhang and Rico Sennrich", "year": 2019, "note": "RMSNorm: re-scaling without re-centring" },
+    { "title": "RoFormer: Enhanced Transformer with Rotary Position Embedding", "authors": "Su et al.", "year": 2021, "note": "Rotary position embedding and the relative-position property of rotated dot products" },
+    { "title": "GLU Variants Improve Transformer", "authors": "Noam Shazeer", "year": 2020, "note": "SwiGLU and the 2/3 hidden-size reduction that keeps parameters matched" },
+    { "title": "Llama 2: Open Foundation and Fine-Tuned Chat Models", "authors": "Touvron et al.", "year": 2023, "note": "The RMSNorm, RoPE and SwiGLU architecture the modern model follows" },
+    { "title": "Mistral 7B", "authors": "Jiang et al.", "year": 2023, "note": "Sliding-window attention, the rolling-buffer cache and chunked prefill" },
+    { "title": "Efficient Streaming Language Models with Attention Sinks", "authors": "Xiao et al.", "year": 2023, "note": "StreamingLLM: why the first tokens act as attention sinks, and positions assigned within the cache" },
+    { "title": "GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints", "authors": "Ainslie et al.", "year": 2023, "note": "Grouped-query attention, used by the modern attention module to shrink the cache" }
+  ]
+}

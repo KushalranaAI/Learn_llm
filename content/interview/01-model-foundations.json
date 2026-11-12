@@ -334,6 +334,105 @@
       ]
     },
     {
+      "slug": "run-it-yourself",
+      "title": "Running It Yourself",
+      "lesson": "run-it-yourself",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "How much memory does training a model with AdamW in fp32 need per parameter, before activations, and where does the number come from?",
+          "a": "About **16 bytes per parameter**: 4 for the fp32 weight, 4 for its gradient, and 8 for AdamW's two moment estimates $m$ and $v$ (4 bytes each). So a 57.9M-parameter model needs $57.9\\text{M} \\times 16 \\approx 0.93$ GB of model states. Mixed precision with autocast does not change this, because the parameters and optimizer states stay in fp32; it only shrinks activations. Activations come on top and scale with the tokens per micro-batch $B \\cdot n$, so for small models with a large vocabulary they can be several times the model states: about 5.6 GB at $B = 32$, $n = 256$, $V = 32{,}000$ for that same model."
+        },
+        {
+          "level": "junior",
+          "q": "Why install the CPU-only PyTorch wheel before running `pip install -r requirements.txt` on a Linux laptop without a GPU?",
+          "a": "On Linux, the default PyPI build of a pinned version such as `torch==2.8.0` is the CUDA build, which also pulls in `nvidia-*` packages totalling several gigabytes. None of it is usable without an NVIDIA GPU. Installing first with `pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cpu` gives `2.8.0+cpu`, a much smaller wheel. A version pin with no local label also matches `2.8.0+cpu`, so the requirements file then sees torch as already satisfied and installs only the rest. Done the other way round, you download the large build first and are left with orphaned NVIDIA packages after swapping torch. On Windows and macOS the PyPI build is already CPU-only, so order matters less."
+        },
+        {
+          "level": "mid",
+          "q": "A model's default training config peaks at about 8.25 GB of RAM on a CPU. How would you make it run on an 8 GB laptop without changing what it learns per optimizer step?",
+          "a": "Split the batch. Peak memory is model states ($16N$, fixed) plus activations, which scale with the micro-batch $B$. Going from `--batch_size 32 --grad_accum_steps 4` to `--batch_size 8 --grad_accum_steps 16` keeps the effective batch at $8 \\times 16 = 128$ sequences, the same tokens per optimizer step, while cutting activations by about 4. For the repo's 57.9M model that is $0.93 + 5.56/4 \\approx 2.3$ GB plus PyTorch overhead; the measured peak was 3.2 GB. Time per optimizer step stays roughly the same because the same tokens are processed, just in more pieces. Reducing `--steps` would not help: steps change duration, not peak memory. If that is still too much, shrink the model or vocabulary instead."
+        },
+        {
+          "level": "mid",
+          "q": "How do you estimate how long a training run will take before launching it, and how do you check the estimate?",
+          "a": "Use $T_{\\text{step}} \\approx 6 N_{\\text{mm}} \\cdot \\text{tokens per step} / \\text{achieved FLOP/s}$, where $N_{\\text{mm}}$ counts matmul parameters (exclude the embedding lookup) and 6 covers forward (2) and backward (4). For a 41.6M-matmul-parameter model at 32,768 tokens per step, that is $8.2 \\times 10^{12}$ FLOPs per step. A laptop CPU measured about 0.34 TFLOP/s, so 24 s per step and 2 hours for 300 steps; a T4 at an assumed 15 TFLOP/s would take about 3 minutes. The achieved rate is the uncertain part, so always run 20 to 50 steps, read seconds per step from the log, and multiply by the total. Use a separate output folder for that test so the real run does not resume from it."
+        },
+        {
+          "level": "mid",
+          "q": "You train on free Colab and the session disconnects after two hours. How should you have set the run up, and how do you resume?",
+          "a": "Set it up so the VM is disposable. Copy the code to `/content` for fast access, but point `--out` at a mounted Drive folder such as `/content/drive/MyDrive/lfs_runs/part4`, so checkpoints, the tokenizer and TensorBoard logs survive. Choose `--save_every` so that the work lost, at most $k \\times t$ for interval $k$ and step time $t$, is acceptable: 50 steps at 0.55 s is under 30 s. To resume, open a new session, select the T4 runtime, mount Drive, copy the code again and run the identical command. Part 4's `train.py` finds `model_last.pt` in `--out`, restores model, optimizer, scheduler, scaler and tokenizer, prints `[resume] Loaded checkpoint at step k`, and continues to `--steps`. Do not `pip install -r requirements.txt` on Colab; it would replace Colab's CUDA PyTorch."
+        },
+        {
+          "level": "mid",
+          "q": "Colab Pro sells 100 compute units for US\\$9.99. How do you compare it with renting a GPU by the hour?",
+          "a": "Convert units to an hourly price: $\\text{price per hour} = \\text{units per hour} \\times \\$9.99/100$. With burn rates reported in early 2026 (about 1.2 units/h for a T4, 1.7 for an L4, 5.4 for an A100 40GB), that is roughly \\$0.12, \\$0.17 and \\$0.54 per hour, or about 83, 59 and 18.5 hours per 100 units. Marketplace rentals in late 2026 were about \\$0.35–0.70/h for a 24 GB RTX 4090 and \\$0.50–1.40/h for an 80 GB A100. Compare on the job, not the sticker: total cost is (setup + run + idle hours) × price, and Colab adds session limits and possible pre-emption, while a pod adds storage charges and the risk of forgetting to stop it. Rates are not guaranteed, so check current figures before budgeting."
+        },
+        {
+          "level": "senior",
+          "q": "A team member left a rented A100 pod running over a weekend after a two-hour job and the bill was ten times the job's cost. What process would you put in place?",
+          "a": "Treat idle time as the main cost. At \\$1.30/h, 2.5 hours of real work costs about \\$3.25 and 60 idle hours about \\$78. Controls: (1) Debug on a laptop or free notebook first, with `--steps 20`, so the pod only runs a known-good command. (2) Launch the job so it ends the pod when it finishes: most providers expose a CLI or API call to stop an instance, and it can be appended to the training command. (3) Run inside `tmux` or `nohup` and checkpoint often, so nobody keeps a pod alive just to watch it. (4) Copy checkpoints off immediately, then stop and delete the pod and its volume, because storage keeps billing after a stop. (5) Use prepaid credit or spending limits, plus a billing alert. (6) Log every run with start and stop times so idle hours show up in review."
+        },
+        {
+          "level": "senior",
+          "q": "A learner's part 3 demo shows the cached and uncached generations diverging after about 80 tokens with `--sliding_window 64 --sink 4`. How would you decide whether the KV cache is broken?",
+          "a": "Isolate variables. Greedy decoding at temperature 0 is deterministic, so cached and uncached paths should give identical tokens if they compute the same attention. First rerun without the window and sink (`python demo_generate.py --rmsnorm --rope --swiglu --tokens 200`): if the outputs are then identical, the cache reproduces full recomputation. A divergence that appears only after the sequence outgrows the 64-token window means the two paths apply the window or sink differently (for example, cropping the key list for a whole block of queries instead of masking per query, or position offsets), not that keys and values are stored wrongly. An early version of the repo had exactly this bug. To confirm, compare logits at the first differing step and check which keys each path attends to. A unit test that compares the two paths token by token, with and without the window, turns this into a regression check."
+        }
+      ]
+    },
+    {
+      "slug": "attention-in-code",
+      "title": "Attention in PyTorch",
+      "lesson": "attention-in-code",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What does `nn.Linear(d_in, d_out)` compute, what shape is its weight, and what happens when you pass it a 3-D tensor?",
+          "a": "It computes $y = xW^{\\top} + b$. The weight is stored output-first, with shape $(d_\\text{out}, d_\\text{in})$, and the bias has length $d_\\text{out}$, so it holds $d_\\text{in} \\cdot d_\\text{out} + d_\\text{out}$ parameters.\n\nThe layer acts only on the **last axis**. Every leading axis is treated as more rows, so an input of shape $(B, n, d_\\text{in})$ becomes $(B, n, d_\\text{out})$ with the same matrix applied to every token of every sequence. That is why the Q/K/V projections and the feed-forward network need no reshaping: `nn.Linear(768, 2304)` turns $(8, 1024, 768)$ into $(8, 1024, 2304)$ directly. A common confusion is to expect the weight to be $(d_\\text{in}, d_\\text{out})$, the mathematical $W$ in $y = xW$; PyTorch stores its transpose."
+        },
+        {
+          "level": "junior",
+          "q": "How is the causal mask implemented in PyTorch, and why use $-\\infty$ rather than 0?",
+          "a": "Build a boolean matrix with `torch.triu(torch.ones(n, n, dtype=torch.bool), diagonal=1)`. It is `True` strictly above the diagonal, the positions where key $j$ comes after query $i$. Then `scores.masked_fill(mask, float('-inf'))` before the softmax.\n\nThe mask has to act **before** the softmax. Setting a score to 0 does not remove it: $e^0 = 1$, so the future token would still get weight. Setting it to $-\\infty$ gives $e^{-\\infty} = 0$, and the softmax renormalises the remaining weights so each row still sums to 1. Zeroing the weights *after* the softmax is also wrong, because the rows would no longer sum to 1.\n\nUse `diagonal=1`, not `diagonal=0`: masking the diagonal would stop a token attending to itself and leave the first row all $-\\infty$, which produces NaN."
+        },
+        {
+          "level": "mid",
+          "q": "Walk through the tensor shapes in a multi-head attention forward pass, from input to output.",
+          "a": "With batch $B$, length $n$, width $d$, $h$ heads and $d_h = d/h$:\n\n1. Input $(B, n, d)$.\n2. One fused projection `nn.Linear(d, 3d)`: $(B, n, 3d)$.\n3. `view(B, n, 3, h, d_h)` splits the last axis; `unbind(2)` gives Q, K, V each $(B, n, h, d_h)$.\n4. `transpose(1, 2)`: $(B, h, n, d_h)$, so heads act as a batch axis.\n5. Scores `q @ k.transpose(-2, -1) / sqrt(d_h)`: $(B, h, n, n)$. Mask and softmax on the last axis.\n6. Context `w @ v`: $(B, h, n, d_h)$.\n7. `transpose(1, 2).contiguous().view(B, n, d)` merges heads.\n8. Output projection `nn.Linear(d, d)`: $(B, n, d)$.\n\nFor $B=1, n=5, d=12, h=3$ the scores are $(1, 3, 5, 5)$. The only tensor that grows with $n^2$ is the score matrix, which is why it dominates memory at long context."
+        },
+        {
+          "level": "mid",
+          "q": "Why is `.contiguous()` needed before the final `view` in multi-head attention, and what is the difference between `view` and `reshape`?",
+          "a": "`view` reinterprets the existing memory with a new shape. It requires the tensor's memory to be laid out compatibly, which in practice means in row-major order for the axes being merged. `transpose(1, 2)` does not move any data; it only swaps the strides, so the $(B, n, h, d_h)$ tensor is no longer contiguous and `view(B, n, d)` raises a runtime error.\n\n`.contiguous()` copies the data into a fresh row-major buffer, after which `view` works. `reshape` does the same thing automatically: it returns a view when possible and copies when not.\n\nThe practical rule: `view` is useful because it fails loudly when memory order is not what you assumed; `reshape` is convenient but hides whether a copy happened. Neither protects you from the semantic bug of reshaping axes in the wrong order, which keeps a valid shape."
+        },
+        {
+          "level": "mid",
+          "q": "Compare learned and sinusoidal positional encodings as you would implement them in PyTorch.",
+          "a": "A **learned** encoding is `nn.Embedding(max_len, d)` indexed by `torch.arange(n)`: $\\text{max\\_len} \\cdot d$ trainable parameters, 786,432 for GPT-2 small. A **sinusoidal** encoding fills a fixed $(\\text{max\\_len}, d)$ table with $\\sin(p\\,\\omega_i)$ and $\\cos(p\\,\\omega_i)$, $\\omega_i = 10000^{-2i/d}$, and registers it with `register_buffer`: it moves with `.to(device)` and is saved in the `state_dict`, but has no gradient. Both are added to the token embeddings, broadcasting $(1, n, d)$ over the batch.\n\nFor $d = 4$, position 2 gets $(\\sin 2, \\cos 2, \\sin 0.02, \\cos 0.02) = (0.909, -0.416, 0.020, 1.000)$.\n\nBoth have a hard `max_len`: the learned table raises an index error past it, the sinusoidal slice silently returns too few rows and the add fails. Modern models instead use RoPE, applied to queries and keys inside attention."
+        },
+        {
+          "level": "mid",
+          "q": "Count the parameters of one GPT-2 small block ($d = 768$, 12 heads, FFN expansion 4, biases everywhere, LayerNorm).",
+          "a": "- **Attention**: fused QKV weight $768 \\times 2304 = 1{,}769{,}472$ plus bias $2{,}304$; output projection $768^2 = 589{,}824$ plus bias $768$. Total $2{,}362{,}368$.\n- **FFN**: $768 \\times 3072 + 3072 + 3072 \\times 768 + 768 = 4{,}722{,}432$, which is $8d^2 + 5d$.\n- **Two LayerNorms**: $2 \\times 2 \\times 768 = 3{,}072$.\n\nBlock total: $7{,}087{,}872$, close to the rule of thumb $12d^2 = 7{,}077{,}888$. Twelve blocks give about 85M; adding the $50{,}257 \\times 768$ token table and the $1{,}024 \\times 768$ position table reaches GPT-2's 124M.\n\nThe head count never appears: 12 heads of 64 or 6 heads of 128 give identical totals. In code, verify with `sum(p.numel() for p in block.parameters())`."
+        },
+        {
+          "level": "senior",
+          "q": "Your from-scratch GPT trains, but its loss plateaus well above a reference implementation with the same config. Shapes all check out. How do you find the bug?",
+          "a": "Shape-correct but wrong usually means an axis has the right size and the wrong meaning. I would test components in isolation against known answers:\n\n1. **Causality test** on one block: perturb token $k$ and assert outputs at positions $< k$ are unchanged. A wrong mask or a reshape that mixes tokens fails here; a leak would actually make the loss look *too good*, so also check the opposite.\n2. **Row sums**: `w.sum(-1)` must be all ones. A softmax over `dim=1` or `dim=-2` passes shape checks and trains badly.\n3. **Multi-head vs single-head**: copy one head's weights into a plain single-head module and `allclose` the outputs. This catches `view(B, h, n, d_h)` without the transpose, which scrambles tokens across heads.\n4. **Scale**: confirm division by $\\sqrt{d_h}$, not $\\sqrt{d}$ or no scaling.\n5. **Load reference weights** (e.g. GPT-2) into your model and compare logits layer by layer; the first divergent layer locates the bug.\n\nUse distinct sizes ($B=2, n=5, d=16$) so transposed axes fail loudly."
+        },
+        {
+          "level": "senior",
+          "q": "Why do modern transformers use pre-norm instead of the original post-norm arrangement, and what does that change in the code?",
+          "a": "Post-norm computes `x = LN(x + sublayer(x))`; pre-norm computes `x = x + sublayer(LN(x))`.\n\nIn post-norm every LayerNorm sits on the main path, so the gradient reaching layer 1 passes through $L$ normalisations. At initialisation this makes gradients near the output large relative to early layers, and deep post-norm models need a careful learning-rate warm-up to avoid diverging. Pre-norm leaves an untouched identity path through the residual stream: the output is the input plus a sum of sublayer corrections, so gradients flow straight back to the embeddings. That is why GPT-2 and almost all later models use it.\n\nCode consequences: the residual stream is never normalised, so a pre-norm model needs one **final LayerNorm** before the output layer, and the stream's scale grows with depth. Logging `x.std()` per block is a cheap health check; GPT-2 also scales residual-branch initialisation by $1/\\sqrt{L}$ to keep that growth in check."
+        },
+        {
+          "level": "senior",
+          "q": "Training at $n = 4{,}096$ runs out of GPU memory in your explicit attention implementation, though the weights are small. Diagnose and fix.",
+          "a": "The culprit is the score tensor $(B, h, n, n)$. With $B = 8$, $h = 12$, $n = 4{,}096$ in fp32 it has $8 \\cdot 12 \\cdot 4096^2 \\approx 1.6$ billion elements, about 6.4 GB, and autograd keeps the scores *and* the softmax weights (and a dropout mask, if used) for the backward pass. The activations $(B, n, d)$ by comparison are about 100 MB at $d = 768$. Quadrupling $n$ multiplies this tensor by 16.\n\nFixes, in order of preference:\n\n1. Replace the explicit code with `F.scaled_dot_product_attention(q, k, v, is_causal=True)`, which dispatches to fused kernels (FlashAttention or memory-efficient attention) that never materialise the $n \\times n$ matrix. Keep the explicit version as a test oracle and check `allclose` on small inputs.\n2. Train in bf16, halving every activation.\n3. Use activation checkpointing per block, trading recomputation for memory.\n4. Reduce micro-batch size and use gradient accumulation to keep the effective batch."
+        }
+      ]
+    },
+    {
       "slug": "sampling",
       "title": "Next-Token Prediction and Sampling",
       "lesson": "sampling",
@@ -391,6 +490,63 @@
       ]
     },
     {
+      "slug": "train-a-tiny-gpt",
+      "title": "Training a tiny GPT",
+      "lesson": "train-a-tiny-gpt",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What is a byte-level tokenizer, and what are its main advantages and costs compared with BPE?",
+          "a": "A byte-level tokenizer uses the UTF-8 bytes of the text as token IDs, so the vocabulary is exactly $V = 256$ and encoding is `list(s.encode(\"utf-8\"))`. Advantages: nothing to train or ship, no out-of-vocabulary text (any string, emoji or binary encodes), and a tiny embedding table ($256 \\times d$), so almost all parameters sit in the transformer blocks. Costs: sequences are much longer. English is about 1 token per character instead of roughly 4 characters per BPE token, and Devanagari is 3 bytes per character, so a 256-token window holds only about 98 characters of Hindi text. Longer sequences mean more compute per character (attention grows with $n^2$) and the model must learn spelling from scratch. It is ideal for a first from-scratch model; production models use BPE built on top of bytes."
+        },
+        {
+          "level": "junior",
+          "q": "In next-token training, how are the inputs x and targets y built from a stream of tokens, and how many predictions does one batch contain?",
+          "a": "Pick a random start $i$ and take a window of $n$ tokens: $x = (u_i, \\dots, u_{i+n-1})$. The target is the same window moved one position right: $y = (u_{i+1}, \\dots, u_{i+n})$, so $y_t$ is the token that follows $x_t$. Stack $B$ such windows into two $(B, n)$ tensors. Because of the causal mask, position $t$ only sees $x_0, \\dots, x_t$, so every position is a separate training example: one window gives $n$ predictions and a batch gives $B \\cdot n$. With $B = 32$ and $n = 256$ that is 8,192 predictions per optimiser step. A useful unit test is `(y[:, :-1] == x[:, 1:]).all()`, and decoding `x[0]` and `y[0]` side by side should show the same text nudged by one character."
+        },
+        {
+          "level": "junior",
+          "q": "Why should a freshly initialised GPT with a 256-token vocabulary report a loss of about 5.55?",
+          "a": "Weights are initialised small (for example $\\mathcal{N}(0, 0.02^2)$), so all output logits are close to zero. Equal logits make the softmax uniform: each of the $V$ tokens gets probability $1/V$. Cross-entropy is $-\\ln p_{\\text{target}} = -\\ln(1/V) = \\ln V$, and $\\ln 256 = 8 \\ln 2 \\approx 5.545$. The repo's default model prints about 5.59 on its first batch. This is the cheapest correctness check you have: a first loss far above $\\ln V$ (say 15) means something produces large logits, such as a bad initialisation or a missing LayerNorm; a loss that collapses toward zero within a few hundred steps usually means the targets leak into the inputs, for example a missing label shift. For GPT-2's 50,257-token vocabulary, expect about 10.8."
+        },
+        {
+          "level": "mid",
+          "q": "Walk through the parameter count of a GPT with V = 256, a 256-position learned position table, L = 4, d = 256, FFN width 4d, biases on the FFN and LayerNorms but not on attention or the head.",
+          "a": "Per block: two LayerNorms at $2d$ each ($4d = 1{,}024$), fused QKV $3d^2 = 196{,}608$, attention output $d^2 = 65{,}536$, FFN up $4d^2 + 4d = 263{,}168$, FFN down $4d^2 + d = 262{,}400$. That is $12d^2 + 9d = 788{,}736$ per block, and $3{,}154{,}944$ for four. Add the token table $Vd = 65{,}536$, the position table $256 \\times 256 = 65{,}536$, the final LayerNorm $2d = 512$ and an untied head $dV = 65{,}536$. Total: 3,352,064, which is what `sum(p.numel() for p in model.parameters())` prints. Embeddings plus head are under 6% because $V$ is tiny; with a 50,000-token BPE vocabulary at the same width, embeddings and head would be about 25.6M parameters and dominate the model."
+        },
+        {
+          "level": "mid",
+          "q": "How do you pass logits of shape (B, n, V) and targets of shape (B, n) to PyTorch's cross_entropy, and what goes wrong if you pass them unreshaped?",
+          "a": "Flatten batch and time together: `F.cross_entropy(logits.view(-1, V), targets.view(-1))`, giving $(Bn, V)$ logits and $(Bn,)$ integer targets. The loss is then the mean of $-\\log p$ over all $B \\cdot n$ predictions, every position weighted equally. If you pass the 3-D tensor directly, PyTorch interprets it as $(B, C, \\dots)$ with classes in dimension 1, so it treats the sequence length $n$ as the number of classes. Usually that raises a shape error, but if $n = V$ (both 256 in the default byte-level config) the call can succeed and compute a meaningless loss. Alternatives are `logits.transpose(1, 2)` to get $(B, V, n)$, or `.reshape` if the tensor is not contiguous. Targets must be class indices of dtype long, not one-hot vectors."
+        },
+        {
+          "level": "mid",
+          "q": "Explain what AdamW does differently from plain SGD and from Adam, and what the repo's settings (lr 3e-4, betas 0.9/0.95, weight decay 0.1) imply.",
+          "a": "SGD moves each weight by $\\eta g$. Adam keeps running averages of the gradient ($m$, with $\\beta_1$) and of its square ($v$, with $\\beta_2$) and steps by $\\eta\\, \\hat m / (\\sqrt{\\hat v} + \\epsilon)$, so each parameter moves by roughly $\\eta$ regardless of its raw gradient scale; that matters in transformers where embeddings, attention and norms have very different gradient sizes. AdamW applies weight decay directly as $-\\eta \\lambda \\theta$ rather than adding $\\lambda\\theta$ to the gradient, where Adam's normalisation would rescale it. With $\\eta = 3\\times10^{-4}$ and $\\lambda = 0.1$, each step shrinks weights by a factor $1 - 3\\times10^{-5}$, about 6% over 2,000 steps. $\\beta_2 = 0.95$ instead of 0.999 makes $v$ react faster to gradient spikes, a common choice for LLM training. Cost: two extra fp32 tensors per parameter."
+        },
+        {
+          "level": "mid",
+          "q": "What does gradient clipping by global norm do, where does it go in the loop, and what should you log about it?",
+          "a": "After `loss.backward()` and before `opt.step()`, compute the norm of all gradients taken together, $\\|g\\| = \\sqrt{\\sum_i g_i^2}$. If it exceeds a threshold $c$ (1.0 in the repo), multiply every gradient by $c / \\|g\\|$; otherwise leave them alone. With $\\|g\\| = 4$ and $c = 1$, everything is scaled by 0.25. The direction is preserved and only the step length is capped, so one unusual batch cannot throw the weights far away. `clip_grad_norm_` returns the pre-clip norm, and you should log it: occasional spikes are what clipping is for, but a norm above $c$ on almost every step means the effective learning rate is lower than configured, and a sudden sustained rise often precedes a loss spike or NaN. With mixed precision, gradients must be unscaled (`scaler.unscale_`) before clipping."
+        },
+        {
+          "level": "senior",
+          "q": "A colleague's tiny GPT reaches a training loss of 0.02 after 300 steps on a 250 KB text file, but its samples are gibberish. How do you debug it?",
+          "a": "A loss near zero that fast is not learning; it is a leak. First suspect the label shift: if `y` equals `x`, each position's target is its own input, which the model copies trivially. Check with `(y[:, :-1] == x[:, 1:]).all()` and by decoding `x[0]` and `y[0]` side by side. Second, check the causal mask: if attention is not causal (for example `is_causal=False`, or a mask with the wrong orientation), position $t$ can read $x_{t+1} = y_t$, and the loss collapses the same way. A direct test: change the token at position $t+1$ and confirm that the logits at position $t$ do not change. Third, confirm the first loss was about $\\ln V \\approx 5.55$. Finally, look at validation loss: a leak lowers both splits, whereas genuine memorisation lowers only the training loss."
+        },
+        {
+          "level": "senior",
+          "q": "Training loss keeps falling but validation loss has flattened at 1.64 while the train/val gap has grown from 0.01 to 0.15. The model has 478k parameters and the training set is 249 KB. What is happening and what would you change?",
+          "a": "The model is moving from learning transferable patterns to memorising the training bytes. A useful signal is the ratio of improvements per evaluation interval: if training falls by 0.05 while validation falls by 0.008, most of the new fitting is specific to the training set. At about 66 passes over the data this is expected. Options in rough order: keep the best-validation checkpoint (early stopping); add data, which is the real fix; add regularisation such as dropout 0.1 or stronger weight decay; use a smaller model or fewer steps. Also check how much of the gap is distribution shift rather than overfitting: a contiguous split can put a different work (here a verse drama) in validation. The trend of the gap says more than its absolute size, and differences under about 0.01 are within the noise of a 50-batch estimate."
+        },
+        {
+          "level": "senior",
+          "q": "Your sampler's top_p = 0.9 seems to produce less diverse text than expected. The code uses mask = cumsum > top_p on the sorted probabilities. Is there a bug, and how would you fix and test it?",
+          "a": "Yes, an off-by-one relative to the nucleus definition. Nucleus sampling keeps the smallest set of top tokens whose total probability reaches $p$, which includes the token whose addition crosses $p$. `cumsum > top_p` masks that crossing token too, so the kept mass is always below $p$. With sorted probabilities $(0.609, 0.224, 0.136, 0.030)$ and $p = 0.9$, the running totals are $0.609, 0.833, 0.969$: the textbook keeps three tokens, this mask keeps two. Fix: `mask = (cumsum - probs) > top_p`, which tests the mass before each token, and still force `mask[..., 0] = False`. Test with that four-token example and assert the kept set size, plus edge cases: $p$ just above the top probability, $p = 1.0$ (keep everything) and ties. Also check whether a default `top_k = 50` is applied first, which truncates further."
+        }
+      ]
+    },
+    {
       "slug": "context-and-kv-cache",
       "title": "Context Windows, Prefill and the KV Cache",
       "lesson": "context-and-kv-cache",
@@ -444,6 +600,167 @@
           "level": "junior",
           "q": "How many tokens of KV cache fit in 24 GB for Llama-3-8B in fp16, after loading weights?",
           "a": "Weights: about 8B parameters at 2 bytes, roughly 16 GB. That leaves about 8 GB (in practice a bit less, for activations and framework overhead).\n\nKV cache per token for Llama-3-8B: $2 \\times 32 \\times 8 \\times 128 \\times 2 = 131{,}072$ bytes = 128 KiB.\n\nTokens that fit: $8 \\times 2^{30} / 2^{17} = 65{,}536$ tokens, if the full 8 GiB were available. That could be 8 sequences at the 8,192-token context, or 32 at 2,048. Realistically, reserve 10 to 20 percent for activations and fragmentation, giving around 50,000 to 55,000 tokens.\n\nWith a full multi-head model of the same shape (32 KV heads), only about a quarter as many would fit, which shows why GQA matters on smaller GPUs."
+        }
+      ]
+    },
+    {
+      "slug": "modern-architecture",
+      "title": "Modern Architecture in Code",
+      "lesson": "modern-architecture",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What does RMSNorm do differently from LayerNorm, and why do Llama-style models use it?",
+          "a": "LayerNorm subtracts each token's mean, divides by its standard deviation, then applies a learned gain $\\gamma$ and bias $\\beta$ ($2d$ parameters). RMSNorm skips the mean subtraction and the bias: $y_i = \\gamma_i x_i / \\sqrt{\\tfrac{1}{d}\\sum_j x_j^2 + \\epsilon}$, with $d$ parameters.\n\nBoth are invariant to rescaling the input, which is the property a pre-norm block needs: each sub-layer sees inputs of a standard size however large the residual stream grows. RMSNorm drops re-centring, which turned out to contribute little. It needs one reduction over the vector instead of two and reads no bias, and normalisation is a memory-bound operation run twice per layer, so the saving is real if modest. Quality is about the same, which is why Llama, Mistral and most open models use it. Example: $(1, 2, 3, 6)$ has RMS $\\sqrt{12.5} \\approx 3.54$, so RMSNorm gives $(0.28, 0.57, 0.85, 1.70)$."
+        },
+        {
+          "level": "junior",
+          "q": "In a KV cache, why are keys and values cached but not queries?",
+          "a": "In a causal decoder, the key and value of token $t$ depend only on tokens $1..t$, so appending new tokens never changes them. Every later token needs them: each new query is scored against all earlier keys and mixes all earlier values.\n\nA query is the opposite. Token $t$'s query is used once, to compute token $t$'s own attention output, and no later token ever reads an earlier token's query. So it is computed, used and discarded.\n\nIn code the cache per layer is two tensors of shape $(B, h_{kv}, t, d_h)$. Each decode step projects only the newest token, concatenates its $\\mathbf{k}, \\mathbf{v}$ onto the cache and attends with a single query of shape $(B, h, 1, d_h)$. Generating $N$ tokens after a $P$-token prompt then processes $P + N$ positions instead of $\\sum_{j<N}(P + j)$."
+        },
+        {
+          "level": "mid",
+          "q": "Show why RoPE makes the attention score depend only on relative position.",
+          "a": "RoPE splits a head's query and key into $d_h/2$ pairs and rotates pair $i$ of a token at position $m$ by angle $m\\theta_i$, with $\\theta_i = 10000^{-2i/d_h}$.\n\nTreat a pair as a complex number. Rotation by $\\phi$ is multiplication by $e^{i\\phi}$, and the 2-D dot product is $\\operatorname{Re}(q\\bar{k})$. For a query at $m$ and key at $n$:\n\n$$\\operatorname{Re}(q e^{im\\theta}\\,\\overline{k e^{in\\theta}}) = \\operatorname{Re}(q\\bar{k}\\,e^{i(m-n)\\theta})$$\n\nOnly $m - n$ survives. Summing over pairs, the score is a function of the content and the offset. Example: $d_h = 4$, $\\mathbf{q} = \\mathbf{k} = (1,0,1,0)$, offset 2 gives $\\cos 2 + \\cos 0.02 = 0.584$ whether the positions are (5, 3) or (105, 103). A good unit test checks exactly this numerically; shape-only tests pass even with a broken rotation."
+        },
+        {
+          "level": "mid",
+          "q": "Why is a SwiGLU FFN's hidden size usually about 8d/3 rather than 4d?",
+          "a": "SwiGLU computes $W_{\\text{down}}(\\text{SiLU}(W_{\\text{gate}}\\mathbf{x}) \\odot W_{\\text{up}}\\mathbf{x})$: three weight matrices instead of the GELU FFN's two. A GELU FFN of width $4d$ has $2 \\cdot d \\cdot 4d = 8d^2$ weights; SwiGLU of width $f$ has $3df$. Setting $3df = 8d^2$ gives $f = 8d/3$, two thirds of $4d$.\n\nThat keeps parameters and FLOPs matched, so a quality comparison is fair. Implementations round up to a hardware-friendly multiple: Llama-2-7B has $d = 4096$, $8d/3 = 10{,}923$, rounded to a multiple of 256 gives 11,008.\n\nIf you keep $f = 4d$, as the tutorial repo does with `mult=4`, the FFN has $12d^2$ weights, 50% more, and part of any improvement comes from the bigger layer rather than the gating."
+        },
+        {
+          "level": "mid",
+          "q": "In a cached generate loop, what are prefill and decode, and what must change between them in the attention call?",
+          "a": "**Prefill** runs the whole prompt through the model in one pass with no cache, at positions $0..P-1$. It needs the causal mask (`is_causal=True`) because prompt tokens must not see later prompt tokens. It returns a filled cache per layer.\n\n**Decode** feeds only the newest token, with `start_pos` set to the cache length so RoPE rotates it at the right position. Its single query attends to every cached key, all of which are in its past, so no mask is needed.\n\nThe subtle point: PyTorch's `is_causal=True` aligns to the top-left when query and key lengths differ, so leaving it on during decode would let the new token see only the first cached key. Code therefore switches it off when a cache exists, and any multi-token step with a cache (chunked prefill, speculative verification) needs an explicit mask allowing key $j$ for query $i$ when $j \\le t + i$."
+        },
+        {
+          "level": "mid",
+          "q": "What is an attention sink and why does a streaming model need to keep it?",
+          "a": "Softmax weights sum to 1, so a head with nothing useful to read for a token must still put weight somewhere. In training the first token is visible to every query, so heads learn to park surplus weight there, with a value that contributes little. The first few tokens become **attention sinks**.\n\nIf a sliding window evicts them, that weight is redistributed over the real tokens. Example: scores of 4 on the sink and 0 on four window keys give the window keys 0.017 each; without the sink they get 0.25 each, about 15 times more. Every head that relied on the sink now injects a large average it meant to ignore, and generation collapses.\n\nStreamingLLM showed that keeping about 4 initial tokens in the cache plus a recent window lets models trained with full attention stream far beyond their training length."
+        },
+        {
+          "level": "mid",
+          "q": "How does a circular rolling-buffer KV cache work, and why doesn't the scrambled slot order break attention?",
+          "a": "Allocate $s + W$ slots once ($s$ sinks, window $W$). Token at position $p$ goes to slot $p$ if $p < s$, else $s + ((p - s) \\bmod W)$, overwriting the oldest window entry. Example: $s = 2$, $W = 4$, position 13 goes to slot $2 + 11 \\bmod 4 = 5$. Memory is fixed at $2 L h_{kv} d_h b (s + W)$ bytes per sequence, and each step writes one slot instead of copying the cache as `torch.cat` does.\n\nSlots end up out of time order, but attention is a softmax-weighted sum over a set of (key, value) pairs, so permuting the pairs together changes nothing. Position lives in the keys, which RoPE rotated before caching, and a single decode query needs no mask because every cached token is in its past. Tested against a cat-and-crop cache, outputs match to $10^{-6}$."
+        },
+        {
+          "level": "senior",
+          "q": "You add a KV cache to your model. Greedy generation with the cache diverges from the uncached version after the first token. Shapes are all correct. How do you debug it?",
+          "a": "Divergence right after the first token points to the first decode step, since prefill is the same computation as the uncached pass. Check in order:\n\n1. **`start_pos`.** The new token must be rotated at position = cache length, not 0. With RoPE a wrong position silently changes every score.\n2. **Double rotation.** Cached keys are already rotated. If code rotates the concatenated `k_all`, old keys get rotated twice.\n3. **Masking.** With `is_causal=True` and 1 query vs $t+1$ keys, PyTorch aligns top-left, so the query sees only key 0. Decode should use no mask.\n4. **Concatenation axis and order.** Concatenate on the sequence dim (2 for $(B, h, t, d_h)$), old before new.\n5. **GQA.** Cache compact $h_{kv}$ heads; expand with `repeat_interleave`, matching how the uncached path expands.\n\nCompare layer-1 attention outputs for the last position between both paths in fp32; the first layer that differs localises the bug."
+        },
+        {
+          "level": "senior",
+          "q": "You serve a 7B model with 32 layers, 8 KV heads of dim 128, bf16, and users hold very long chats. Memory runs out. Would you switch to sliding-window attention with a rolling buffer? Discuss the trade-offs.",
+          "a": "Per token the cache is $2 \\times 32 \\times 8 \\times 128 \\times 2 = 128$ KiB. A 32K-token chat holds 4 GiB; with $W = 4096$ a rolling buffer caps it at 512 MiB, an 8× saving that never grows, so admission control becomes simple.\n\nBut it changes the model. Tokens outside the window are only reachable indirectly through stacked layers (reach about $L \\cdot W$), and recall of a specific fact from 20K tokens back degrades. A model trained with full attention needs attention sinks to stream at all, and still loses distant recall. If the model was trained with a window (Mistral 7B), the buffer is free quality-wise.\n\nAlternatives that keep exact attention: FP8 KV cache (2×), paged allocation to stop fragmentation, prefix caching for shared system prompts, offloading idle sessions. Choose the window only if the product tolerates forgetting distant content; measure on long-context evals first."
+        },
+        {
+          "level": "senior",
+          "q": "You port a Llama checkpoint into your from-scratch modern model. It loads without errors but generates gibberish. What architecture mismatches would you look for?",
+          "a": "Loading succeeds whenever shapes match, so look for conventions that shapes do not encode:\n\n1. **RoPE pairing.** Interleaved pairs $(0,1),(2,3)$ versus split halves $(0, d_h/2)$. Hugging Face Llama uses split halves; mixing them scrambles every score.\n2. **RoPE base.** Llama 2 uses 10,000, Llama 3 uses 500,000. A hardcoded base (an earlier version of the tutorial repo ignored its `base` argument) breaks the latter.\n3. **SwiGLU roles.** Meta's code names the gate `w1`, up `w3`, down `w2`; a tutorial may use `w1` for up and `w2` for the gate. Map by role.\n4. **Final norm.** Llama has an RMSNorm before the head; a model using `nn.Identity` there skips its weights.\n5. **Norm epsilon and dtype.** Use the checkpoint's $\\epsilon$ ($10^{-5}$ or $10^{-6}$) and compute statistics in fp32.\n6. **GQA expansion order** must match how KV heads were grouped.\n\nTest layer by layer against the reference implementation on one input."
+        }
+      ]
+    },
+    {
+      "slug": "scaling-the-training-loop",
+      "title": "Scaling the Training Loop",
+      "lesson": "scaling-the-training-loop",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What is gradient accumulation, and why do you divide the loss by the number of accumulation steps?",
+          "a": "Gradient accumulation runs $k$ small **micro-batches** forward and backward before taking one optimizer step, so you get the gradient of a large batch while only ever holding one micro-batch of activations in memory. It works because PyTorch's `backward()` adds into `.grad` instead of overwriting it.\n\nThe big-batch loss is the **mean** of the micro-batch losses, $\\mathcal{L} = \\frac{1}{k}\\sum_j \\mathcal{L}_j$, so each micro-batch must contribute $\\nabla(\\mathcal{L}_j / k)$. Without the division `.grad` holds the sum, $k$ times too big. With SGD that multiplies the step by $k$. With Adam the update barely changes (it is scale-invariant), but the gradient norm is $k$ times larger, so clipping fires constantly. After the $k$-th backward: clip, `step()`, `zero_grad()`, and advance the schedule once. Example: micro-batch 32, $k = 4$, $n = 256$ gives 128 sequences or 32,768 tokens per optimizer step."
+        },
+        {
+          "level": "junior",
+          "q": "A freshly initialised language model with a 32,000-token vocabulary logs a first training loss of about 10.4. Is that good, bad or expected, and why?",
+          "a": "Expected. A randomly initialised model has near-uniform output probabilities, about $1/V$ for every token, so the cross-entropy is about $-\\ln(1/V) = \\ln V$. For $V = 32{,}000$, $\\ln 32{,}000 \\approx 10.37$.\n\nThis is one of the cheapest sanity checks in training. A first loss much **higher** than $\\ln V$ suggests the initialisation is too large (confident wrong predictions). A first loss near $\\ln 256 \\approx 5.55$ when you think you are using a 32k BPE vocabulary suggests the output layer is still byte-sized or the targets are byte IDs. A first loss near 0 almost always means the targets leak into the inputs, for example a missing shift-by-one between `x` and `y`. Check this number before reading anything else on the curve."
+        },
+        {
+          "level": "mid",
+          "q": "Why does a 32k BPE vocabulary make a small model's embedding and output layers so expensive? Give numbers for d = 512, L = 6.",
+          "a": "The input embedding and the untied output head are each $V \\times d$, so they cost $2Vd$ parameters, independent of depth. The transformer blocks cost about $16Ld^2$ (attention $4d^2$ plus a SwiGLU feed-forward of $12d^2$).\n\nFor $d = 512$, $L = 6$: vocabulary $2 \\times 32{,}000 \\times 512 = 32.8$M; blocks $16 \\times 6 \\times 512^2 = 25.2$M. The vocabulary is 57% of a 58M model. Activations hurt too: logits for $B = 32$, $n = 256$ are $32 \\times 256 \\times 32{,}000 = 262$M values, about 1 GB in FP32, often the largest single tensor.\n\nWhat you buy is shorter sequences: at about 4 bytes per token, 256 positions cover about 1 KB of text instead of 256 bytes. For small models, vocabularies of 8k to 16k, tied embeddings, or a chunked loss that never materialises all logits are common responses."
+        },
+        {
+          "level": "mid",
+          "q": "Walk through a correct FP16 training step with autocast and GradScaler, including gradient clipping. What changes for BF16?",
+          "a": "FP16 order:\n\n1. Forward inside `torch.autocast(\"cuda\", dtype=torch.float16)`. Matmuls run in FP16; softmax and cross-entropy are upcast to FP32; parameters stay FP32.\n2. `scaler.scale(loss / k).backward()`: multiplies by the scale $S$ (default $2^{16}$) so small gradients do not underflow below FP16's $\\approx 6\\times10^{-8}$.\n3. On the optimizer step: `scaler.unscale_(optim)`, then `clip_grad_norm_`, then `scaler.step(optim)` (skipped if any gradient is inf/NaN), then `scaler.update()` (halve $S$ on overflow, double after 2,000 clean steps), then `zero_grad()`.\n\nThe classic bug is clipping before unscaling: the measured norm is $S$ times too large, so every step is clipped to almost nothing.\n\nBF16 has FP32's 8 exponent bits, so nothing underflows: drop the scaler entirely, use `dtype=torch.bfloat16`, and call `backward()`, clip and `step()` as normal."
+        },
+        {
+          "level": "mid",
+          "q": "Your training script calls the learning-rate scheduler after optimizer.step(). With linear warmup, why can this matter for the very first update?",
+          "a": "The optimizer uses whatever `lr` is in its param groups at the moment `step()` runs. If the scheduler only writes its value after the step, the first update uses the learning rate the optimizer was **constructed** with, usually the peak, and warmup only starts at step 2.\n\nFor Adam the first step is the worst one to take at full rate. After bias correction $\\hat m_1 = g_1$ and $\\hat v_1 = g_1^2$, so the update is $\\eta\\, g_1/|g_1| = \\pm\\eta$ for **every** parameter, however small its gradient. With $\\eta = 3\\times10^{-4}$ every weight moves by $3\\times10^{-4}$ at once, exactly the kind of large, uninformed step warmup exists to prevent.\n\nFixes: construct the optimizer with `lr = schedule(1)`, call the scheduler before `step()`, or use `LambdaLR`, which sets the initial lr from the schedule at construction."
+        },
+        {
+          "level": "mid",
+          "q": "What must a training checkpoint contain to resume exactly, and roughly how big is it per parameter?",
+          "a": "To resume as if the run never stopped you need:\n\n- **Model weights** (FP32, 4 bytes/param).\n- **Optimizer state**: AdamW's $m$ and $v$ (4 + 4 bytes/param) and step counts.\n- **Scheduler position**, otherwise warmup and the cosine restart.\n- **GradScaler state** (scale, growth counter) for FP16.\n- **Global step**, **RNG states** (torch, CUDA, NumPy, Python) and the **data position** in the epoch.\n- **Model config and tokenizer**, to rebuild the right architecture and decode outputs.\n\nGradients are not needed: a checkpoint is taken on an optimizer-step boundary, and the next step zeroes and recomputes them. So a checkpoint is about 12 bytes per parameter, three times a weights-only file: 695 MB for a 58M model, 84 GB for 7B. Write it to a temp file and `os.replace` it into place so a crash mid-write never corrupts the last good checkpoint, and keep a few rolling copies to roll back past loss spikes."
+        },
+        {
+          "level": "senior",
+          "q": "A colleague's run was preempted at step 150 of 300 and resumed. It finished without errors, but its final loss is noticeably worse than an identical uninterrupted run. How do you debug it?",
+          "a": "Treat it as missing state and compare the two runs' logged curves around step 150.\n\n- **Learning rate**: if lr drops sharply at 151 and climbs back to the peak about $T_w$ steps later, the scheduler state was not restored. A common cause is a save routine that writes `scheduler.state_dict() if hasattr(...) else None` for a custom scheduler with no `state_dict`. The run then ends mid-decay (around $1.7\\times10^{-4}$ instead of 0 in a 300-step cosine), missing the low-lr tail.\n- **Loss spike at 151**: optimizer moments lost; Adam's first fresh update moves every weight by about $\\eta$.\n- **Loss suspiciously low after resume, then worse validation**: the loader replayed the start of the epoch because the seed was reset rather than RNG and data position restored.\n- **Skipped steps or a scale reset** on FP16: scaler state missing (minor).\n\nThe lasting fix is a resume test in CI: 200 straight steps versus 100 + resume + 100, with curves expected to overlap."
+        },
+        {
+          "level": "senior",
+          "q": "A small GPT trains at 7% MFU on one A100 with BF16 autocast. How do you estimate MFU, and where would you look for the missing throughput?",
+          "a": "MFU $= 6N \\cdot \\text{tokens/s} / \\text{peak}$. For $N = 58$M at 65,536 tokens/s: $6 \\times 5.8\\times10^7 \\times 65{,}536 \\approx 22.8$ TFLOPS, against 312 TFLOPS peak, about 7%. Measure tokens/s with `torch.cuda.synchronize()` before reading the clock, since CUDA is asynchronous.\n\nWhere time goes, in rough order of payoff:\n\n- **Small matmuls and kernel-launch overhead**: with $d = 512$ the GPU is underfed. Raise the micro-batch (lower $k$ to keep the effective batch), and try `torch.compile` to fuse elementwise ops.\n- **Host syncs**: `.item()` on every micro-batch, logging or sampling inside the hot loop.\n- **Data loading**: Python `Dataset` indexing per window; use pinned memory, workers, or precomputed batches.\n- **The LM head and softmax over $V$**: a large share of FLOPs and memory for a small model; a smaller vocabulary or fused cross-entropy helps.\n- **Attention**: ensure a fused kernel (`scaled_dot_product_attention`) is used.\n\nAlso check TF32 is enabled for leftover FP32 matmuls."
+        },
+        {
+          "level": "senior",
+          "q": "You switch a project from a byte-level tokenizer to a 16k BPE tokenizer. The BPE model's validation loss is 3.1 versus 1.0 for the byte model. A manager concludes BPE made things worse. How do you respond, and how would you design a fair comparison?",
+          "a": "The two numbers are in different units. Cross-entropy is reported per **token**, and a BPE token covers several bytes, so each prediction carries more information and a higher per-token loss is expected.\n\nConvert both to **bits per byte**: $\\text{bpb} = \\mathcal{L} / (\\ln 2 \\cdot \\bar b)$, where $\\bar b$ is average bytes per token on the validation set. The byte model: $1.0 / 0.693 = 1.44$ bpb. If the BPE tokenizer averages 3.5 bytes per token: $3.1 / (0.693 \\times 3.5) \\approx 1.28$ bpb, so BPE is better.\n\nFor a fair comparison: same validation text (measured in bytes, not tokens), the same training compute or tokens-equivalent bytes, an equal context in bytes or an explicit note that BPE sees more text per window, and the same model body so differences come from the tokenizer. Also report the parameter change, since a 16k vocabulary adds $2 \\times 16{,}000 \\times d$ parameters, which is large for a small model."
+        }
+      ]
+    },
+    {
+      "slug": "mixture-of-experts",
+      "title": "Mixture of Experts",
+      "lesson": "mixture-of-experts",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What is the difference between total and active parameters in a mixture-of-experts model?",
+          "a": "**Total parameters** are everything the model stores: all $N$ experts in every MoE layer, plus attention, embeddings and the routers. **Active parameters** are the ones a single token actually passes through: the shared parts plus only the $k$ experts the router picks in each layer.\n\nTotal parameters set memory (every expert must be resident because any token might choose it). Active parameters set compute: forward FLOPs per token are about $2 \\times P_{\\text{active}}$.\n\nMixtral 8x7B is the standard example: about 46.7B total but only about 12.9B active with top-2 of 8 experts. It needs roughly 93 GB for bf16 weights, like a 47B dense model, yet does the arithmetic of a 13B model, about 26 GFLOPs per token."
+        },
+        {
+          "level": "junior",
+          "q": "Which part of a transformer block does a mixture-of-experts layer replace, and what stays the same?",
+          "a": "It replaces the **feed-forward network** (FFN/MLP) sub-layer. Each expert is itself an ordinary FFN, for example a SwiGLU block mapping $d \\to d_{ff} \\to d$, and a small router (a $d \\times N$ linear layer) chooses which experts each token uses.\n\nEverything else is unchanged: the residual stream, the norms, self-attention, the embeddings and the output head. In the block, the MoE layer sits exactly where the dense FFN sat, after the second norm and before the second residual add, and it maps $(B, n, d)$ to $(B, n, d)$.\n\nThe one interface change is that the MoE layer also returns an auxiliary load-balancing loss, which the block must pass up so the training loop can add it to the language-modelling loss."
+        },
+        {
+          "level": "mid",
+          "q": "Walk through top-2 routing for one token with router logits $(2.0, 1.0, 0.5, -1.0)$.",
+          "a": "1. **Softmax** over all four: $e^{\\mathbf{z}} = (7.39, 2.72, 1.65, 0.37)$, sum $12.12$, so $\\mathbf{p} = (0.609, 0.224, 0.136, 0.030)$.\n2. **Top-2**: experts 0 and 1. Experts 2 and 3 are not run for this token.\n3. **Renormalise**: $g_0 = 0.609/0.834 = 0.731$, $g_1 = 0.269$. Equivalently, softmax over only the chosen logits: $e^2/(e^2 + e^1) = 0.731$. The other logits cancel.\n4. **Combine**: $\\mathbf{y} = 0.731\\,E_0(\\mathbf{x}) + 0.269\\,E_1(\\mathbf{x})$.\n\nThe router learns only through $g_0$ and $g_1$; the top-$k$ choice itself has no gradient. If you skip renormalisation, the weights sum to 0.834 and the output is scaled down, which some implementations (including Switch for $k=1$) do on purpose."
+        },
+        {
+          "level": "mid",
+          "q": "What is routing collapse, and how does the Switch Transformer auxiliary loss prevent it?",
+          "a": "**Collapse** is a rich-get-richer loop: an expert that is picked slightly more often gets more gradient, improves, and attracts even more tokens, until a few experts do all the work. You pay memory for $N$ experts and get the capacity of one or two, and the GPU hosting the popular expert becomes a bottleneck.\n\nThe Switch loss is $\\mathcal{L}_{\\text{aux}} = \\alpha N \\sum_i f_i P_i$, where $f_i$ is the fraction of tokens whose top choice is expert $i$ and $P_i$ is the mean router probability for expert $i$. It equals 1 (times $\\alpha$) under uniform routing and grows with imbalance; fully collapsed onto one expert with $P_0 = 0.7$ and $N = 4$ gives 2.8.\n\n$f_i$ is a count with no gradient, so the push comes through $P_i$: $\\partial \\mathcal{L}/\\partial P_i = \\alpha N f_i$, hardest on the most loaded experts. Typical $\\alpha$ is about 0.01."
+        },
+        {
+          "level": "mid",
+          "q": "What is expert capacity, and what happens to tokens that exceed it?",
+          "a": "Many MoE systems give each expert a fixed-size buffer so that shapes are static and work is even across devices:\n\n$$C = \\lceil \\text{cf} \\cdot kT/N \\rceil$$\n\nwhere $T$ is tokens in the batch and cf is the **capacity factor**. With $T = 1024$, $N = 8$, $k = 1$ and cf $= 1.25$, each expert takes at most 160 tokens.\n\nTokens beyond capacity are **dropped**: they skip the expert and pass through the layer on the residual connection unchanged. If expert 3 is sent 300 tokens, 140 of them get no FFN update in that layer.\n\nRaising cf reduces drops but increases padded compute and memory. **Dropless** implementations, such as the companion repo's loop or MegaBlocks-style kernels, process every token with variable-sized batches per expert instead."
+        },
+        {
+          "level": "mid",
+          "q": "An MoE layer receives input of shape $(B, n, d)$. Describe the shapes through dispatch, compute and combine.",
+          "a": "1. **Flatten**: $(B, n, d) \\to (T, d)$ with $T = Bn$. Routing is per token, so sequence structure no longer matters.\n2. **Gate**: logits $(T, N)$, softmax $(T, N)$, then `topk` gives indices and weights, each $(T, k)$.\n3. **Dispatch**: for expert $i$, gather the rows that chose it, $X_{S_i}$ of shape $(|S_i|, d)$. Across experts $\\sum_i |S_i| = kT$, so the average is $kT/N$.\n4. **Compute**: $E_i(X_{S_i})$, shape $(|S_i|, d)$.\n5. **Combine**: multiply by gate weights of shape $(|S_i|, 1)$ (keep the trailing 1 so it broadcasts over $d$) and scatter-add into a zero $(T, d)$ buffer, e.g. with `index_add_`.\n6. **Reshape** back to $(B, n, d)$ and return it with the aux loss.\n\nExample: $B = 8$, $n = 512$, $N = 16$, $k = 2$ gives $T = 4096$ and an average of 512 rows per expert."
+        },
+        {
+          "level": "senior",
+          "q": "You train a small MoE model and the per-expert token histogram shows two of eight experts receiving 85% of tokens after 2,000 steps. What do you check and change?",
+          "a": "First confirm the aux loss is actually in the objective. A common bug is computing it in the gate and dropping it in the block or summing only one layer's. If it is logged, a value well above 1 confirms imbalance.\n\nThen check:\n- **Coefficient**: $\\alpha$ too small (e.g. $10^{-4}$) cannot fight the rich-get-richer loop; try $10^{-2}$. Too large destroys specialisation, so sweep.\n- **Gate weights with $k = 1$**: if they are renormalised, the weight is always 1 and the router gets gradient only from the aux loss.\n- **Router precision**: compute logits and softmax in fp32; bf16 noise flips winners. Add a router z-loss if logits grow large.\n- **Initialisation**: a small-std router init keeps early probabilities near uniform.\n- **Learning rate**: a high LR or no warmup amplifies early imbalance.\n\nAlternatively, use bias-based balancing as in DeepSeek-V3, which adjusts per-expert selection biases instead of adding a loss."
+        },
+        {
+          "level": "senior",
+          "q": "Your team serves a 47B-total, 13B-active MoE model and expected decode to be about as fast as a 13B dense model. It runs closer to a 47B model. Explain and suggest what to do.",
+          "a": "Decode is memory-bound: step time follows bytes of weights read, not FLOPs. With top-$k$ of $N$ experts and roughly uniform routing, the expected experts read per layer is $N(1 - ((N-k)/N)^b)$ for batch $b$. For $N = 8$, $k = 2$: 2 at $b = 1$, 7.2 at $b = 8$, and 8.0 at $b = 32$. At any realistic batch every step streams all 47B parameters, just like a dense 47B model.\n\nAlso, each expert sees only about $bk/N$ tokens, so its arithmetic intensity is $N/k = 4$ times lower than a dense layer at the same batch.\n\nOptions: raise the batch so expert reads are amortised over more tokens (the real MoE win is throughput per GPU, not latency); quantise weights to cut bytes read; use expert parallelism so each GPU streams only its experts; use grouped-GEMM kernels. For latency-critical batch-1 use, a 13B dense model may simply be the better choice."
+        },
+        {
+          "level": "senior",
+          "q": "You are designing a 24-layer model with a fixed per-token compute budget. Compare all-MoE, interleaved dense/MoE, and MoE with a shared expert.",
+          "a": "Let one FFN be $P$ parameters, with $N = 8$ and $k = 2$.\n\n- **All MoE**: total $24 \\cdot 8P = 192P$, active $48P$. Most capacity, but every layer needs routing and two all-to-alls, and early layers route less stably.\n- **Interleaved (12 + 12)**: total $12P + 96P = 108P$, active $12P + 24P = 36P$. Half the communication and routing risk, at the cost of less capacity. GShard used every-other-layer MoE.\n- **Shared expert**: each MoE layer adds an always-on expert: $+P$ total and $+P$ active per layer. To hold compute fixed you shrink the routed experts (fine-grained experts, as in DeepSeekMoE). Common knowledge lives once in the shared expert, so routed experts specialise and redundancy drops.\n\nA reasonable default: a few dense layers first, then MoE layers with one shared expert and fine-grained routed experts. Decide with equal-FLOP training runs and measure communication time on the target cluster, since cross-node all-to-all can erase the FLOP savings."
         }
       ]
     },

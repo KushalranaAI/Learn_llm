@@ -8,6 +8,10 @@ Before you start
 You need the idea from the last lesson that a language model is a classifier over a fixed vocabulary of $V$ possible next items. This lesson is about what those items are.
 ```
 
+```predict
+{"q":"Why not give every whole word its own token? With a one-million-word vocabulary and 4,096 numbers per token vector, how big would the input table alone be?","options":["About 4 million parameters","About 41 million parameters","About 4.1 billion parameters, more than half of a 7B model"],"answer":2,"reveal":"About 4.1 billion: one million rows of 4,096 numbers each. That cost, plus words the table would still miss, is why models use sub-word tokens. The next section puts the trade-off in numbers."}
+```
+
 A network only understands numbers, so text has to be cut into pieces and each piece given an integer ID. The question is how big the pieces should be. Cut too small and every sentence becomes a very long sequence. Cut too big and you need an impossibly large dictionary, and still meet words that are not in it.
 
 Picture writing a telegram where you pay per symbol. Spelling every word letter by letter is always possible but long. Having one code for every word in the language is short but the codebook is enormous, and a new name or a typo breaks it. The practical answer is a codebook of common chunks: whole codes for frequent words like *the*, and pieces like *un*, *believ*, *able* that can be combined to spell anything else. Those chunks are **tokens**, and the codebook is the **vocabulary**. The program that cuts text into tokens is the **tokenizer**.

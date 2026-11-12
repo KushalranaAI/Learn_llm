@@ -8,6 +8,15 @@ Before you start
 You should know what a token is and what cross-entropy loss measures for a single prediction. Everything else in this module builds on the one equation in this topic.
 ```
 
+```callout-tip
+Run it yourself
+This module explains how models are trained and adapted. To do it on your own hardware, train a tiny model in [Run it yourself](/learn/model-foundations/run-it-yourself) and fine-tune real ones in [Fine-tuning](/learn/fine-tuning/run-fine-tuning-yourself), both with CPU, free-Colab and rented-GPU options.
+```
+
+```predict
+{"q":"A model gives the four true next tokens probabilities 0.40, 0.25, 0.80 and 0.05. Which accounts for the largest share of its cross-entropy loss?","options":["The 0.80 prediction, the most confident one","All four contribute roughly equally","The single 0.05 surprise, more than half of the total"],"answer":2,"reveal":"The 0.05 surprise: $-\\ln 0.05 \\approx 3.0$ nats out of a total of 5.5. Cross-entropy punishes confident ignorance far more than it rewards easy wins; the worked steps below compute it."}
+```
+
 Imagine learning a language by reading a library one word at a time, covering the next word with your hand and guessing it before you look. At first you guess badly. After millions of pages you can finish most sentences, and to do that well you have quietly learned grammar, facts, arithmetic, the style of legal contracts and the way Python functions usually end.
 
 **Pretraining** is exactly that game played by a network over trillions of tokens. There are no labels written by people. The text supervises itself: every position in every document is a little exam whose answer is the token that actually comes next. This is called **self-supervised learning**, and it is why the quality and makeup of the data matter so much. The model can only become a summary of what it reads.

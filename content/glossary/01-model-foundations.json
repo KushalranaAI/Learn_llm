@@ -142,5 +142,203 @@
     "slug": "hallucination",
     "def": "Fluent model output that is false or not supported by the given sources, arising because the model generates probable text rather than verified text.",
     "lesson": "model-foundations/limits"
+  },
+  {
+    "term": "GPU pod",
+    "slug": "gpu-pod",
+    "def": "A GPU machine or container rented by the hour from a cloud marketplace. It bills for every second it is running, busy or idle, and its storage volume usually keeps billing until deleted.",
+    "lesson": "model-foundations/run-it-yourself"
+  },
+  {
+    "term": "Activation memory",
+    "slug": "activation-memory",
+    "def": "Memory for the intermediate tensors the forward pass keeps so the backward pass can compute gradients. It grows with the tokens per micro-batch (B·n), the model's width and depth, and the vocabulary size of the logits.",
+    "lesson": "model-foundations/run-it-yourself"
+  },
+  {
+    "term": "CPU-only PyTorch wheel",
+    "slug": "cpu-only-pytorch-wheel",
+    "def": "A PyTorch build without CUDA libraries, installed from PyTorch's CPU package index; it is far smaller than the CUDA build and is all a machine without an NVIDIA GPU can use.",
+    "lesson": "model-foundations/run-it-yourself"
+  },
+  {
+    "term": "Virtual environment",
+    "slug": "virtual-environment",
+    "def": "A self-contained folder with its own Python interpreter and installed packages, created with `python -m venv` or conda, so one project's pinned versions cannot break another's.",
+    "lesson": "model-foundations/run-it-yourself"
+  },
+  {
+    "term": "Positional encoding",
+    "slug": "positional-encoding",
+    "def": "A vector that tells the model where a token sits in the sequence, added to the token embedding because attention by itself ignores order. It can be a learned table or a fixed pattern of sines and cosines.",
+    "lesson": "model-foundations/attention-in-code"
+  },
+  {
+    "term": "Layer normalization",
+    "slug": "layer-normalization",
+    "def": "Rescales each token vector to mean 0 and variance 1 across its features, then applies a learned scale and shift. It keeps activations in a stable range inside transformer blocks.",
+    "lesson": "model-foundations/attention-in-code"
+  },
+  {
+    "term": "Pre-norm",
+    "slug": "pre-norm",
+    "def": "The block layout x + sublayer(LayerNorm(x)), where normalisation is applied to the input of each sublayer instead of after the residual add. It leaves a clean identity path through the network and trains more stably than the original post-norm layout.",
+    "lesson": "model-foundations/attention-in-code"
+  },
+  {
+    "term": "GELU",
+    "slug": "gelu",
+    "def": "The Gaussian Error Linear Unit, x times the standard normal CDF of x. A smooth alternative to ReLU used in GPT-style feed-forward networks.",
+    "lesson": "model-foundations/attention-in-code"
+  },
+  {
+    "term": "Feed-forward network",
+    "slug": "feed-forward-network",
+    "def": "The per-token sublayer of a transformer block: widen each vector (usually to 4d), apply a nonlinearity, and project back to d. It holds about two thirds of each block's parameters.",
+    "lesson": "model-foundations/attention-in-code"
+  },
+  {
+    "term": "Byte-level tokenizer",
+    "slug": "byte-level-tokenizer",
+    "def": "A tokenizer whose token IDs are the raw UTF-8 bytes of the text, giving a fixed vocabulary of 256. It can encode any text but produces longer sequences than sub-word tokenizers, especially for non-Latin scripts.",
+    "lesson": "model-foundations/train-a-tiny-gpt"
+  },
+  {
+    "term": "Label shifting",
+    "slug": "label-shifting",
+    "def": "Building next-token targets by moving the input sequence one position to the left, so the target at each position is the token that follows it. It must happen exactly once, in either the data pipeline or the model.",
+    "lesson": "model-foundations/train-a-tiny-gpt"
+  },
+  {
+    "term": "AdamW",
+    "slug": "adamw",
+    "def": "The Adam optimiser with weight decay applied directly to the weights instead of through the gradient. It is the standard optimiser for training transformers.",
+    "lesson": "model-foundations/train-a-tiny-gpt"
+  },
+  {
+    "term": "Gradient clipping",
+    "slug": "gradient-clipping",
+    "def": "Scaling the whole gradient down when its overall norm exceeds a threshold, so one unusual batch cannot produce a huge update. The direction of the gradient is unchanged.",
+    "lesson": "model-foundations/train-a-tiny-gpt"
+  },
+  {
+    "term": "Validation loss",
+    "slug": "validation-loss",
+    "def": "The loss measured on held-out data that is never used for gradient updates. Comparing it with the training loss shows whether a model is learning general patterns or memorising.",
+    "lesson": "model-foundations/train-a-tiny-gpt"
+  },
+  {
+    "term": "Top-k sampling",
+    "slug": "top-k-sampling",
+    "def": "A sampling rule that keeps only the k most likely next tokens, renormalises their probabilities and samples from them. Unlike top-p, the number of candidates is fixed regardless of how confident the model is.",
+    "lesson": "model-foundations/train-a-tiny-gpt"
+  },
+  {
+    "term": "RMSNorm",
+    "slug": "rmsnorm",
+    "def": "A normalisation layer that divides each token's vector by its root-mean-square and multiplies by a learned gain, without subtracting the mean or adding a bias. It is cheaper than LayerNorm and used by Llama-family models.",
+    "lesson": "model-foundations/modern-architecture"
+  },
+  {
+    "term": "Rotary position embedding (RoPE)",
+    "slug": "rotary-position-embedding",
+    "def": "A way of encoding position by rotating pairs of query and key coordinates by angles proportional to the token's position. The resulting attention score depends only on the distance between tokens.",
+    "lesson": "model-foundations/modern-architecture"
+  },
+  {
+    "term": "SwiGLU",
+    "slug": "swiglu",
+    "def": "A gated feed-forward layer that multiplies a SiLU-activated gate projection element-wise with a second projection before projecting back down. Its hidden size is usually about 8d/3 so it has the same parameters as a 4d GELU layer.",
+    "lesson": "model-foundations/modern-architecture"
+  },
+  {
+    "term": "Sliding-window attention",
+    "slug": "sliding-window-attention",
+    "def": "Attention in which each token may only attend to the most recent W tokens. It caps the KV cache and per-step cost, while stacked layers still pass information from further back.",
+    "lesson": "model-foundations/modern-architecture"
+  },
+  {
+    "term": "Attention sink",
+    "slug": "attention-sink",
+    "def": "The first few tokens of a sequence, on which attention heads learn to park surplus softmax weight. Keeping them in the cache is what lets a sliding-window model stream without collapsing.",
+    "lesson": "model-foundations/modern-architecture"
+  },
+  {
+    "term": "Rolling-buffer KV cache",
+    "slug": "rolling-buffer-kv-cache",
+    "def": "A fixed-size KV cache that writes each new token into slot position mod W, overwriting the oldest entry. Memory stays constant no matter how long generation runs.",
+    "lesson": "model-foundations/modern-architecture"
+  },
+  {
+    "term": "Gradient accumulation",
+    "slug": "gradient-accumulation",
+    "def": "Summing the gradients of several small micro-batches before one optimizer step, so a large effective batch fits in limited memory. Each micro-batch loss is divided by the number of micro-batches so the sum equals the big-batch mean.",
+    "lesson": "model-foundations/scaling-the-training-loop"
+  },
+  {
+    "term": "Loss scaling",
+    "slug": "loss-scaling",
+    "def": "Multiplying the loss by a large factor before the backward pass in FP16 training so small gradients do not underflow to zero, then dividing the gradients back before the update. Dynamic loss scaling lowers the factor on overflow and raises it after a run of clean steps.",
+    "lesson": "model-foundations/scaling-the-training-loop"
+  },
+  {
+    "term": "Learning-rate warmup",
+    "slug": "learning-rate-warmup",
+    "def": "Raising the learning rate from near zero to its peak over the first steps of training, so the optimizer's early, poorly estimated updates stay small.",
+    "lesson": "model-foundations/scaling-the-training-loop"
+  },
+  {
+    "term": "Training checkpoint",
+    "slug": "training-checkpoint",
+    "def": "A snapshot on disk that is enough to resume training exactly: weights, optimizer state, scheduler and scaler state, step count, random-number-generator state and data position. It is about three times the size of a weights-only file with AdamW.",
+    "lesson": "model-foundations/scaling-the-training-loop"
+  },
+  {
+    "term": "Model FLOPs utilisation (MFU)",
+    "slug": "model-flops-utilization",
+    "def": "The fraction of the hardware's peak FLOP rate a training run actually uses, estimated as 6 × parameters × tokens per second divided by peak FLOP/s.",
+    "lesson": "model-foundations/scaling-the-training-loop"
+  },
+  {
+    "term": "Bits per byte",
+    "slug": "bits-per-byte",
+    "def": "Cross-entropy expressed per byte of text instead of per token, which makes models with different tokenizers comparable. It equals loss per token divided by (ln 2 × average bytes per token).",
+    "lesson": "model-foundations/scaling-the-training-loop"
+  },
+  {
+    "term": "Mixture of experts (MoE)",
+    "slug": "mixture-of-experts",
+    "def": "A layer with many parallel feed-forward networks (experts) and a router that sends each token to only a few of them. It raises total parameters without raising compute per token.",
+    "lesson": "model-foundations/mixture-of-experts"
+  },
+  {
+    "term": "Active parameters",
+    "slug": "active-parameters",
+    "def": "The parameters a single token actually passes through in an MoE model: the shared layers plus the k chosen experts per layer. They set compute per token, while total parameters set memory.",
+    "lesson": "model-foundations/mixture-of-experts"
+  },
+  {
+    "term": "Gating network (router)",
+    "slug": "gating-network",
+    "def": "The small linear layer in an MoE layer that scores every expert for each token, keeps the top k, and turns their probabilities into mixing weights.",
+    "lesson": "model-foundations/mixture-of-experts"
+  },
+  {
+    "term": "Load-balancing loss",
+    "slug": "load-balancing-loss",
+    "def": "An auxiliary loss added during MoE training that is smallest when tokens are spread evenly across experts. The Switch Transformer version is N times the sum over experts of token fraction times mean router probability.",
+    "lesson": "model-foundations/mixture-of-experts"
+  },
+  {
+    "term": "Expert capacity",
+    "slug": "expert-capacity",
+    "def": "The maximum number of tokens one expert processes per batch, set by a capacity factor times its fair share. Tokens beyond it are dropped and pass through on the residual connection.",
+    "lesson": "model-foundations/mixture-of-experts"
+  },
+  {
+    "term": "Expert parallelism",
+    "slug": "expert-parallelism",
+    "def": "Placing different experts of an MoE layer on different devices and moving tokens to them and back with all-to-all communication.",
+    "lesson": "model-foundations/mixture-of-experts"
   }
 ]

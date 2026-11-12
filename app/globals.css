@@ -686,3 +686,155 @@ a.card:hover, .link-card:hover, a.module-card:hover { border-color: var(--line-2
 .bp-next { margin-left: auto; }
 .bp-math { padding: 12px 16px; background: var(--bg-2); border: 1px solid var(--line); border-left: 3px solid var(--ai); border-radius: var(--r-sm); animation: rise-in 0.3s var(--ease); }
 .bp-math .prose p:last-child { margin-bottom: 0; }
+
+/* ==========================================================================================================
+   Learning loop and roadmap (docs/REDESIGN.md): confidence before reveal, predict blocks, "from earlier"
+   recall, soft prerequisites, the roadmap's module and lesson maps. Tokens only, no raw colours.
+   ========================================================================================================== */
+
+/* confidence step and prediction */
+.quiz-option.picked { border-color: var(--accent); background: var(--accent-soft); }
+.quiz-option.picked .quiz-letter { background: var(--accent); color: var(--on-accent); }
+.quiz-conf { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; padding: 10px 12px; border-radius: var(--r-sm); border: 1px dashed var(--accent-line); background: var(--bg-2); }
+.quiz-conf > span { color: var(--text-2); font-size: 0.86rem; margin-right: 4px; }
+.quiz-feedback.neutral { background: var(--accent-soft); border: 1px solid var(--accent-line); }
+.predict { margin: 1.8em 0 0.6em; padding: 20px; border-radius: var(--r-lg); border: 1px solid var(--accent-line); background: linear-gradient(180deg, var(--accent-soft), transparent 70%), var(--panel); }
+.predict .quiz-head { color: var(--accent-strong); }
+
+/* "from earlier" */
+.recall { margin-top: 2.2em; }
+.recall .quiz { border-style: dashed; background: var(--bg-2); }
+.recall .quiz-head { color: var(--text-2); }
+.recall-src { display: flex; gap: 6px; align-items: center; margin: 6px 4px 0; }
+
+/* soft prerequisites */
+.builds-on { display: flex; gap: 12px; align-items: flex-start; margin: 14px 0 18px; padding: 12px 14px; border-radius: var(--r); border: 1px solid var(--line-2); background: var(--panel); color: var(--text-2); font-size: 0.9rem; }
+.builds-on > svg { flex: none; margin-top: 2px; color: var(--warm); }
+.builds-on b { color: var(--text); font-weight: 600; }
+.builds-on ul { list-style: none; margin: 8px 0 4px; padding: 0; display: grid; gap: 6px; }
+.builds-on li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.builds-on li .chip-btn { padding: 2px 9px; font-size: 0.76rem; }
+.builds-on p { margin: 4px 0 0; }
+.builds-on.ok { border: 0; background: transparent; padding: 0; margin: 10px 0 16px; align-items: center; }
+.builds-on.ok > svg { color: var(--accent-strong); margin: 0; }
+
+/* keyboard hint in the topic footer */
+.topic-end .kbd-hint { margin-left: auto; margin-right: 8px; }
+kbd { font-family: var(--font-mono), monospace; font-size: 0.74rem; padding: 1px 6px; border-radius: 5px; border: 1px solid var(--line-2); border-bottom-width: 2px; background: var(--bg-2); color: var(--text-2); }
+@media (max-width: 720px) { .topic-end .kbd-hint { display: none; } }
+
+/* roadmap: goal filter and next step */
+.goal-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 26px 0 18px; }
+.goal-chip { font: inherit; font-size: 0.86rem; font-weight: 550; padding: 7px 14px; border-radius: 99px; border: 1px solid var(--line-2); background: var(--panel); color: var(--text-2); cursor: pointer; transition: border-color 0.15s, background 0.15s, color 0.15s; }
+.goal-chip:hover { color: var(--text); border-color: var(--faint); }
+.goal-chip.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-strong); }
+.goal-text { margin-left: 6px; }
+.next-strip { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.6fr) minmax(0, 1fr); gap: 14px; }
+.next-card { display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; }
+.next-row { display: flex; align-items: center; gap: 10px; padding: 7px 8px; margin: 0 -8px; border-radius: var(--r-sm); color: var(--text); }
+.next-row:hover { background: var(--panel-2); }
+.review-card { align-items: flex-start; transition: border-color 0.15s, transform 0.15s; }
+.review-card:hover { border-color: var(--accent-line); transform: translateY(-2px); }
+@media (max-width: 900px) { .next-strip { grid-template-columns: minmax(0, 1fr); } }
+
+/* maps: shared */
+.map-scroll { overflow-x: auto; padding: 6px 2px 10px; }
+.module-map, .lesson-map { position: relative; margin: 0 auto; }
+.map-edges { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+.map-edges .edge { fill: none; stroke: var(--wire-live); stroke-width: 1.6; }
+.map-edges .edge.branch { stroke: var(--wire); stroke-dasharray: 5 5; }
+.due-dot { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 99px; background: var(--warm); color: var(--bg); font-size: 0.7rem; font-weight: 700; font-family: var(--font-mono), monospace; }
+
+/* module nodes */
+.mnode { position: absolute; display: flex; flex-direction: column; gap: 6px; text-align: left; font: inherit; color: var(--text); padding: 12px 14px; border-radius: var(--r); border: 1px solid var(--line-2); background: var(--panel); cursor: pointer; transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s, opacity 0.15s; }
+.mnode:hover { transform: translateY(-2px); border-color: var(--faint); }
+.mnode:focus-visible { outline: none; box-shadow: var(--ring); }
+.mnode.sel { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), var(--shadow); }
+.mnode.branch { border-style: dashed; }
+.mnode.branch.sel { border-style: solid; }
+.mnode.dim { opacity: 0.38; }
+.mnode-top { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; }
+.mnode-top .due-dot, .mnode-top .accent-text { margin-left: auto; }
+.mnode-top .due-dot + .accent-text { margin-left: 0; }
+.mnode-tag { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); border: 1px solid var(--line-2); border-radius: 99px; padding: 0 7px; }
+.mnode-title { font-size: 0.93rem; font-weight: 650; line-height: 1.25; letter-spacing: -0.01em; }
+.mnode-bar { display: block; height: 4px; border-radius: 99px; background: var(--panel-3); overflow: hidden; margin-top: auto; }
+.mnode-bar i { display: block; height: 100%; background: var(--accent); border-radius: inherit; }
+.module-list, .lesson-list { display: none; }
+
+/* lesson nodes: five states */
+.lnode { position: absolute; border-radius: var(--r); border: 1px solid var(--line-2); background: var(--panel); transition: border-color 0.15s, transform 0.15s; }
+.lnode:hover { transform: translateY(-2px); border-color: var(--faint); }
+.lnode-link { display: flex; flex-direction: column; gap: 5px; height: 100%; padding: 10px 12px; color: var(--text); border-radius: inherit; }
+.lnode-link:focus-visible { outline: none; box-shadow: var(--ring); }
+.lnode-top { display: flex; align-items: center; gap: 7px; font-size: 0.76rem; }
+.lnode-kinds { display: inline-flex; gap: 4px; color: var(--muted); margin-left: auto; }
+.lnode-top .due-dot { margin-left: 2px; }
+.lnode-title { font-size: 0.88rem; font-weight: 600; line-height: 1.25; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.lnode-meta { margin-top: auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lnode-skip { position: absolute; right: 8px; bottom: 7px; font: inherit; font-size: 0.7rem; padding: 1px 8px; border-radius: 99px; border: 1px solid var(--line-2); background: var(--panel-2); color: var(--muted); cursor: pointer; opacity: 0; transition: opacity 0.15s; }
+.lnode:hover .lnode-skip, .lnode-skip:focus-visible { opacity: 1; }
+.lnode.s-later { border-style: dashed; background: var(--bg-2); }
+.lnode.s-later .lnode-title { color: var(--text-2); }
+.lnode.s-later .lnode-state { color: var(--faint); }
+.lnode.s-ready .lnode-state { color: var(--text-2); }
+.lnode.s-started { border-color: var(--accent-line); }
+.lnode.s-started .lnode-state { color: var(--accent-strong); }
+.lnode.s-complete { border-color: var(--accent-line); background: linear-gradient(180deg, var(--accent-soft), transparent), var(--panel); }
+.lnode.s-complete .lnode-state { color: var(--accent); }
+.lnode.s-mastered { border-color: var(--accent); background: linear-gradient(180deg, var(--accent-soft), var(--accent-soft)), var(--panel); }
+.lnode.s-mastered .lnode-state { color: var(--accent-strong); }
+.lnode.current { box-shadow: 0 0 0 2px var(--accent), var(--shadow); }
+.map-legend { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 18px; color: var(--text-2); font-size: 0.8rem; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.legend-item.s-later svg { color: var(--faint); }
+.legend-item.s-started svg, .legend-item.s-mastered svg { color: var(--accent-strong); }
+.legend-item.s-complete svg { color: var(--accent); }
+
+/* calibration chart (My progress) */
+.calib { display: grid; gap: 10px; margin-top: 12px; }
+.calib-row { display: grid; grid-template-columns: 76px 1fr 72px; gap: 10px; align-items: center; font-size: 0.85rem; }
+.calib-bar { height: 10px; border-radius: 99px; background: var(--panel-3); overflow: hidden; }
+.calib-bar i { display: block; height: 100%; background: var(--accent); border-radius: inherit; }
+
+/* phones: maps become lists */
+@media (max-width: 760px) {
+  .module-map-wrap, .lesson-map-wrap { display: none; }
+  .module-list, .lesson-list { display: grid; gap: 10px; }
+  .module-list .mnode, .lesson-list .lnode { position: relative; }
+  .lesson-list .lnode { min-height: 78px; }
+  .lnode-skip { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mnode, .lnode, .review-card { transition: none; }
+  .mnode:hover, .lnode:hover, .review-card:hover { transform: none; }
+}
+
+/* the teaching loop has five steps */
+@media (min-width: 981px) { .how-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+
+/* map cards: rows never shrink, so the progress bar and the second title line always show */
+.mnode > *, .lnode-link > * { flex-shrink: 0; }
+.lnode-title { line-height: 1.3; }
+
+/* no-code goals: code lessons stay on the map, marked optional */
+.lnode.optional { opacity: 0.45; }
+.lnode.optional:hover { opacity: 0.85; }
+.lnode-optional { position: absolute; top: -9px; left: 12px; font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.08em; padding: 0 7px; border-radius: 99px; background: var(--bg); border: 1px solid var(--line-2); color: var(--muted); }
+
+/* code drills: put the lines in order, find the bug */
+.drill { margin: 1.8em 0 0.6em; padding: 20px; border-radius: var(--r-lg); border: 1px solid var(--line); background: var(--panel); }
+.parsons { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; counter-reset: pl; }
+.parsons li { display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 12px; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--code-bg); }
+.parsons li code { flex: 1; min-width: 0; white-space: pre; overflow-x: auto; font-family: var(--font-mono), monospace; font-size: 0.84rem; color: var(--text); background: none; padding: 0; }
+.parsons li.ok { border-color: var(--good); }
+.parsons li.bad { border-color: var(--bad); }
+.parsons-move { display: inline-flex; gap: 2px; flex: none; }
+.bughunt { display: grid; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--code-bg); overflow-x: auto; }
+.bug-line { display: flex; align-items: baseline; gap: 12px; text-align: left; font: inherit; padding: 3px 12px; border: 0; border-left: 3px solid transparent; background: transparent; color: var(--text); cursor: pointer; }
+.bug-line:hover:not(:disabled) { background: var(--panel-2); }
+.bug-line:disabled { cursor: default; }
+.bug-line code { white-space: pre; font-family: var(--font-mono), monospace; font-size: 0.84rem; background: none; padding: 0; color: inherit; }
+.bug-n { flex: none; width: 22px; text-align: right; color: var(--faint); font-family: var(--font-mono), monospace; font-size: 0.76rem; }
+.bug-line.ok { background: var(--accent-soft); border-left-color: var(--good); }
+.bug-line.bad { background: var(--panel-2); border-left-color: var(--bad); }

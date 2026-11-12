@@ -1,0 +1,23 @@
+{
+  "title": "Train a Tiny GPT End to End",
+  "summary": "Put the transformer block to work: a byte-level tokenizer, shifted batches, a 3.35-million-parameter GPT, cross-entropy, an AdamW loop with gradient clipping, a sampler and a validation check. By the end you can train a model on a laptop and read what it writes.",
+  "objectives": [
+    "Build a byte-level tokenizer and explain why UTF-8 makes Hindi cost about 2.6 tokens per character",
+    "Produce (x, y) batches by shifting a random window one position and compute tokens per step as B·n",
+    "Assemble embeddings, transformer blocks, a final norm and an LM head into a GPT and count its parameters by hand",
+    "Write a training loop with AdamW and gradient clipping, and check that the first loss is close to ln V",
+    "Generate text with temperature, top-k and top-p, and use validation loss and perplexity to spot overfitting"
+  ],
+  "prerequisites": "This lesson assumes the transformer block you built in [Attention in code](/learn/model-foundations/attention-in-code). The theory it turns into code comes from [How a network learns](/learn/model-foundations/how-networks-learn) (loss, gradient descent, overfitting), [Tokenization](/learn/model-foundations/tokenization) (bytes and UTF-8) and [Sampling](/learn/model-foundations/sampling) (temperature, top-k, top-p, perplexity). You need Python and PyTorch installed; a CPU is enough for the small config.",
+  "sims": ["transformer-params", "sampling", "gradient-descent"],
+  "labs": [],
+  "sources": [
+    { "title": "Language Models are Unsupervised Multitask Learners", "authors": "Radford et al.", "year": 2019, "note": "GPT-2: the decoder-only architecture with learned position embeddings that this tiny model follows" },
+    { "title": "Attention Is All You Need", "authors": "Vaswani et al.", "year": 2017, "note": "The transformer block stacked inside the model" },
+    { "title": "Adam: A Method for Stochastic Optimization", "authors": "Kingma and Ba", "year": 2015, "note": "The first- and second-moment averages and bias correction" },
+    { "title": "Decoupled Weight Decay Regularization", "authors": "Loshchilov and Hutter", "year": 2019, "note": "AdamW: applying weight decay directly to the weights rather than through the gradient" },
+    { "title": "On the difficulty of training recurrent neural networks", "authors": "Pascanu, Mikolov and Bengio", "year": 2013, "note": "Gradient-norm clipping against exploding gradients" },
+    { "title": "The Curious Case of Neural Text Degeneration", "authors": "Holtzman, Buys, Du, Forbes and Choi", "year": 2020, "note": "Nucleus (top-p) sampling, defined as the smallest set reaching probability p" },
+    { "title": "ByT5: Towards a Token-Free Future with Pre-trained Byte-to-Byte Models", "authors": "Xue et al.", "year": 2022, "note": "Training transformers directly on UTF-8 bytes with a 256-value vocabulary" }
+  ]
+}

@@ -60,48 +60,6 @@
     "lesson": "training-and-adaptation/training-at-scale"
   },
   {
-    "term": "Supervised fine-tuning (SFT)",
-    "slug": "supervised-fine-tuning",
-    "def": "Training a pretrained model on prompt-response pairs with next-token loss on the response, which teaches it to follow instructions in a chat format.",
-    "lesson": "training-and-adaptation/instruction-tuning"
-  },
-  {
-    "term": "Loss masking",
-    "slug": "loss-masking",
-    "def": "Excluding prompt tokens from the loss during SFT so that only the response tokens, including the end-of-turn token, produce gradients.",
-    "lesson": "training-and-adaptation/instruction-tuning"
-  },
-  {
-    "term": "Reward model",
-    "slug": "reward-model",
-    "def": "A network that scores a response with one scalar, trained on preference pairs with the Bradley-Terry loss $-\\log\\sigma(r_w - r_l)$.",
-    "lesson": "training-and-adaptation/preference-tuning"
-  },
-  {
-    "term": "RLHF",
-    "slug": "rlhf",
-    "def": "Reinforcement learning from human feedback: optimising a policy against a learned reward model while a KL penalty keeps it close to a reference model.",
-    "lesson": "training-and-adaptation/preference-tuning"
-  },
-  {
-    "term": "Direct Preference Optimization (DPO)",
-    "slug": "dpo",
-    "def": "A loss that trains directly on chosen and rejected pairs, $-\\log\\sigma(\\beta[\\Delta_w - \\Delta_l])$, equivalent to the KL-regularised RLHF objective without a reward model or RL loop.",
-    "lesson": "training-and-adaptation/preference-tuning"
-  },
-  {
-    "term": "LoRA",
-    "slug": "lora",
-    "def": "Low-rank adaptation: freeze a weight matrix $W_0$ and learn $\\Delta W = \\frac{\\alpha}{r}BA$, adding only $r(d_{\\text{in}} + d_{\\text{out}})$ trainable parameters per matrix.",
-    "lesson": "training-and-adaptation/peft-lora"
-  },
-  {
-    "term": "QLoRA",
-    "slug": "qlora",
-    "def": "LoRA on top of a frozen base quantised to 4-bit NF4 with double-quantised block scales, about 4.127 bits per weight, so large models fine-tune on small GPUs.",
-    "lesson": "training-and-adaptation/peft-lora"
-  },
-  {
     "term": "Knowledge distillation",
     "slug": "knowledge-distillation",
     "def": "Training a small student to match a larger teacher's temperature-softened output distribution with a $T^2$-scaled KL loss, or to imitate text the teacher generated.",

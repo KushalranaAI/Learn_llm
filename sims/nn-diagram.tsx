@@ -124,7 +124,7 @@ export default function NeuralNetDiagram({
               return (
                 <g key={i} className="nn-node" style={{ animationDelay: `${l * 0.45 + 0.25}s` }} data-pass={pass}>
                   <circle cx={x(l)} cy={y(l, i)} r={r} fill="var(--bg-2)" stroke="var(--line-2)" strokeWidth={1.5} strokeDasharray={n.bias ? "3 3" : undefined} />
-                  <circle key={`f${pass}`} cx={x(l)} cy={y(l, i)} r={r - 1.5} fill={`url(#g${uid})`} fillOpacity={b} className="nn-fill" style={{ animationDelay: `${(backward ? L - 1 - l : l) * 0.45 + 0.2}s` }} />
+                  <circle key={`f${pass}`} cx={x(l)} cy={y(l, i)} r={r - 1.5} fill={`url(#g${uid})`} fillOpacity={Math.round(b * 1e4) / 1e4} className="nn-fill" style={{ animationDelay: `${(backward ? L - 1 - l : l) * 0.45 + 0.2}s` }} />
                   <text x={x(l)} y={y(l, i) + 4} textAnchor="middle" className={`nn-v ${b > 0.55 ? "dark" : ""}`} style={{ fontSize: Math.max(9, r * 0.52) }}>
                     {n.inner ?? f(n.value)}
                   </text>

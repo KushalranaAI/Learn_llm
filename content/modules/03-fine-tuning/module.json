@@ -1,0 +1,1 @@
+{"title":"Fine-Tuning and Alignment","summary":"Turning a base model into a useful one, concept first, then hands-on on a laptop CPU, free Colab or a rented GPU: instruction tuning, LoRA and QLoRA, preference tuning (RLHF, DPO, KTO, ORPO, SimPO), GRPO with verifiable rewards, and fine-tuning embedding models.","icon":"target","cover":"lora-params"}

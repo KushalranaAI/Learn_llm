@@ -8,6 +8,10 @@ Before you start
 This lesson needs an eval run with per-item results: for every example, the input, the output, the score. If you only keep the average, start by changing that.
 ```
 
+```predict
+{"q":"One cause accounts for 5% of your failures. If you read 20 failures picked at random, how likely are you to see it at least once?","options":["Almost certain","About 64%","About 25%","About 5%"],"answer":1,"reveal":"$1 - 0.95^{20} \\approx 0.64$, so you miss it about a third of the time. Being 95% sure takes about 59 failures, as the steps under \"Sample the failures properly\" show."}
+```
+
 An 80% pass rate is a thermometer reading. It says the patient has a fever, not what the infection is. To improve a system you need to know **why** the 20% fail, and that requires reading the actual failing outputs. This is the single most productive and most skipped step in LLM work. Fifteen minutes with 30 failures usually tells you more than a day of prompt tweaking in the dark.
 
 The method comes from qualitative research and is called **open coding**. You read each failure and write a short, descriptive label for what went wrong, without deciding the categories in advance. Labels repeat; similar ones get merged; and a small set of categories (the **taxonomy**) emerges from the data rather than from your assumptions.

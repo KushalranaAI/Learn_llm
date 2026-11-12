@@ -327,7 +327,7 @@ export default function AISettings({ onDone }: { onDone?: () => void }) {
           <span>
             <b>Share the current screen with my questions</b>
             <span className="muted small ai-block">
-              Sends what you are looking at (topic text, simulation settings and results, the lab step, your sandbox design) so answers match this course. Never quiz answers, solutions or unrevealed interview answers. {provider.local ? "Stays on your computer." : `Goes to ${provider.label}.`}
+              Sends what you are looking at (topic text, simulation settings and results, the lab step) so answers match this course. Never quiz answers, solutions or unrevealed interview answers. {provider.local ? "Stays on your computer." : `Goes to ${provider.label}.`}
             </span>
           </span>
         </div>

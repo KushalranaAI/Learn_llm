@@ -1,5 +1,5 @@
 "use client";
-// Plays a lab step by step: read, answer, compute by hand, meet goals in a simulation, build in the sandbox.
+// Plays a lab step by step: read, answer, compute by hand, meet goals in a simulation.
 import Link from "next/link";
 import { Fragment, type ReactNode, useCallback, useState } from "react";
 import { getLab } from "@/labs";
@@ -9,13 +9,12 @@ import { setLabStep, useProgress } from "@/lib/progress";
 import { getSim } from "@/sims";
 import { goalMet, type Metrics } from "@/sims/types";
 import SimWorkspace from "@/sims/workspace";
-import DesignStep from "./DesignStep";
 import Markdown from "./Markdown";
 import MiniMarkdown from "./MiniMarkdown";
 import Icon from "./ui/Icon";
 
-const STEP_ICON = { intro: "book", quiz: "target", math: "sigma", sim: "activity", design: "boxes" } as const;
-const STEP_LABEL = { intro: "Brief", quiz: "Predict", math: "Compute", sim: "Simulate", design: "Build" } as const;
+const STEP_ICON = { intro: "book", quiz: "target", math: "sigma", run: "terminal", sim: "activity" } as const;
+const STEP_LABEL = { intro: "Brief", quiz: "Predict", math: "Compute", run: "Run", sim: "Simulate" } as const;
 
 function QuizStep({ step, onPass }: { step: Extract<LabStep, { type: "quiz" }>; onPass: () => void }) {
   const [picked, setPicked] = useState<number | null>(null);
@@ -44,7 +43,8 @@ function QuizStep({ step, onPass }: { step: Extract<LabStep, { type: "quiz" }>; 
   );
 }
 
-function MathStep({ step, onPass }: { step: Extract<LabStep, { type: "math" }>; onPass: () => void }) {
+function MathStep({ step, onPass }: { step: Extract<LabStep, { type: "math" | "run" }>; onPass: () => void }) {
+  const run = step.type === "run";
   const [value, setValue] = useState("");
   const [result, setResult] = useState<"right" | "wrong" | null>(null);
   const [hint, setHint] = useState(false);
@@ -57,7 +57,7 @@ function MathStep({ step, onPass }: { step: Extract<LabStep, { type: "math" }>; 
   };
   return (
     <div className="quiz">
-      <div className="quiz-head"><Icon name="sigma" size={15} /> Work it out</div>
+      <div className="quiz-head"><Icon name={run ? "terminal" : "sigma"} size={15} /> {run ? "Run it, then paste what it prints" : "Work it out"}</div>
       <MiniMarkdown className="quiz-q">{step.question}</MiniMarkdown>
       <div className="row">
         <input className="field mono" style={{ maxWidth: 240 }} inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)} onKeyDown={(e) => e.key === "Enter" && check()} placeholder="Your answer" aria-label="Your answer" />
@@ -68,11 +68,11 @@ function MathStep({ step, onPass }: { step: Extract<LabStep, { type: "math" }>; 
       </div>
       {result && (
         <div className={`quiz-feedback ${result}`}>
-          <b>{result === "right" ? `Right: ${step.answer.toLocaleString("en-US")}${step.unit ? ` ${step.unit}` : ""}.` : `Not within ${Math.round(step.tolerance * 100)}%. Check your working.`}</b>
+          <b>{result === "right" ? `Right: ${step.answer.toLocaleString("en-US")}${step.unit ? ` ${step.unit}` : ""}.` : run ? `Not within ${Math.round(step.tolerance * 100)}% of the reference run. Check the seed and the settings in the command.` : `Not within ${Math.round(step.tolerance * 100)}%. Check your working.`}</b>
         </div>
       )}
       {hint && <div className="callout tip"><b><Icon name="lightbulb" size={15} /> Hint</b><MiniMarkdown>{step.hint}</MiniMarkdown></div>}
-      {solution && <div className="callout math"><b><Icon name="sigma" size={15} /> Worked solution</b><MiniMarkdown>{step.solution}</MiniMarkdown></div>}
+      {solution && <div className="callout math"><b><Icon name={run ? "terminal" : "sigma"} size={15} /> {run ? "What a correct run shows" : "Worked solution"}</b><MiniMarkdown>{step.solution}</MiniMarkdown></div>}
     </div>
   );
 }
@@ -133,7 +133,7 @@ export default function LabPlayer({ slug }: { slug: string }) {
           suggestions: ["Give me a hint without giving away the answer", "Explain the idea behind this step"],
           build: () => {
             const st = lab.steps[i];
-            const ask = st.type === "quiz" ? { question: st.question, options: st.options.map((o) => o.text) } : st.type === "math" ? { question: st.question, unit: st.unit } : st.type === "sim" ? { goals: st.goals.map((g) => g.label) } : {};
+            const ask = st.type === "quiz" ? { question: st.question, options: st.options.map((o) => o.text) } : st.type === "math" || st.type === "run" ? { question: st.question, unit: st.unit } : st.type === "sim" ? { goals: st.goals.map((g) => g.label) } : {};
             return { lab: lab.title, summary: lab.summary, step: `${i + 1} of ${lab.steps.length} (${STEP_LABEL[st.type]})`, title: st.title, brief: st.body, ...ask, note: "Answers and worked solutions are hidden from the tutor: give hints, not the answer." };
           },
         }
@@ -152,7 +152,7 @@ export default function LabPlayer({ slug }: { slug: string }) {
     setI(i + 1);
   };
 
-  const wide = step.type === "sim" || step.type === "design";
+  const wide = step.type === "sim";
   const brief = (
     <>
       <p className="eyebrow">Step {i + 1} of {lab.steps.length} · {STEP_LABEL[step.type]}</p>
@@ -215,14 +215,13 @@ export default function LabPlayer({ slug }: { slug: string }) {
       {wide ? (
         <div className="page wide" style={{ paddingTop: 20 }}>
           {step.type === "sim" && <SimStep key={i} step={step} onPass={() => pass(i)} brief={brief} nav={nav} />}
-          {step.type === "design" && <DesignStep key={i} step={step} onPass={() => pass(i)} brief={brief} nav={nav} />}
         </div>
       ) : (
         <div className="labstage">
           <article className="labcard">
             {brief}
             {step.type === "quiz" && <QuizStep key={i} step={step} onPass={() => pass(i)} />}
-            {step.type === "math" && <MathStep key={i} step={step} onPass={() => pass(i)} />}
+            {(step.type === "math" || step.type === "run") && <MathStep key={i} step={step} onPass={() => pass(i)} />}
             <div className="topic-end">{nav}</div>
           </article>
         </div>

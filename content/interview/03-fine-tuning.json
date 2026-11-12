@@ -1,0 +1,426 @@
+{
+  "module": "fine-tuning",
+  "sections": [
+    {
+      "slug": "instruction-tuning",
+      "title": "Instruction Tuning (SFT)",
+      "lesson": "instruction-tuning",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What is supervised fine-tuning, and how does it change a base model's behaviour?",
+          "a": "Supervised fine-tuning (SFT), or instruction tuning, trains a pretrained model on prompt-response pairs with the same next-token cross-entropy loss, applied to the response tokens. A base model continues text in whatever style is likely: asked a question, it may produce more questions. After SFT it treats the prompt as a request and writes an answer, in a chat format, and stops.\n\nThe knowledge was already in the model from pretraining; SFT mostly teaches a format and a behaviour. This is why a small dataset, from thousands to a few hundred thousand examples, can be enough, and why SFT costs a tiny fraction of pretraining: 50,000 examples of 600 tokens for 3 epochs on a 7B model is about $3.8\\times10^{18}$ FLOPs, roughly 0.005% of a 2T-token pretraining run."
+        },
+        {
+          "level": "junior",
+          "q": "Why is the loss masked on prompt tokens during SFT?",
+          "a": "We want the model to get good at writing answers, not at predicting what users will type. If prompt tokens contributed to the loss, most of the gradient could come from guessing user text, which is hard to predict and not a behaviour we want to imitate. In a worked example with 6 prompt tokens and 4 response tokens, unmasked loss is 1.30 nats, of which about 87% comes from the prompt, versus 0.417 on the response alone.\n\nThe mask only affects the loss: the model still reads the whole sequence, so response predictions are conditioned on the prompt. Implementation: set the label of masked positions to an ignore value (such as -100 in PyTorch). The end-of-turn token must stay unmasked, otherwise the model never learns to stop."
+        },
+        {
+          "level": "mid",
+          "q": "What is a chat template, and what goes wrong if training and inference templates differ?",
+          "a": "A chat template is the rule that serialises role-tagged messages (system, user, assistant, tool) into one token sequence with special tokens marking message boundaries, for example start and end markers with a role name. The model sees only the flat sequence; the template is how it learns who is speaking and where its turn ends.\n\nIf inference uses a different template from training, quality degrades in ways that are easy to miss: the model may ignore the system prompt, produce odd formatting, fail to stop (never emitting the trained end-of-turn token) or continue by writing the next user message. The overhead is also real: 20 messages at 5 template tokens each add 100 tokens to a 500-token conversation, about 17%. Use the tokenizer's own template function for both training and serving, and decode one training example to text to check it before every run."
+        },
+        {
+          "level": "mid",
+          "q": "Compare per-token and per-sequence loss averaging in SFT batches.",
+          "a": "Per-token averaging pools all unmasked tokens in the batch and divides once; per-sequence averaging computes each example's mean first, then averages examples. Take a 10-token answer with mean loss 1.0 and a 100-token answer with mean loss 0.5. Per-token: $(10 \\times 1.0 + 100 \\times 0.5)/110 = 0.545$; per-sequence: $0.75$. Per-token gives the long answer 91% of the weight and favours learning long outputs; per-sequence weights short answers equally.\n\nNeither is wrong, but the choice shapes behaviour, for example length tendencies. A frequent bug is gradient accumulation: normalising each micro-batch separately gives a different weighting from normalising over the whole accumulated batch. Normalise by the total number of unmasked tokens across all micro-batches (or by the number of sequences, consistently) so that the effective loss is identical regardless of how the batch is split."
+        },
+        {
+          "level": "mid",
+          "q": "A batch of 8 sequences padded to 1,024 tokens holds 4,096 real tokens. Quantify the waste and describe packing done correctly.",
+          "a": "Padding efficiency is real tokens divided by slots: $4096/(8 \\times 1024) = 50\\%$, so half the compute is wasted. Packing concatenates several examples into each fixed-length row, bringing efficiency close to 100%, about a 2x throughput gain here.\n\nDone correctly, packing needs a block-diagonal causal attention mask so tokens attend only to earlier tokens of their own example, and position indices that reset at each example's start. With an ordinary causal mask, later examples can attend to earlier unrelated ones, teaching spurious dependencies. Modern attention kernels accept sequence boundaries directly. Loss masking still applies per example, and the end-of-turn token of each example must be unmasked. Sorting or bucketing by length is a simpler middle ground that reduces padding without changing attention."
+        },
+        {
+          "level": "mid",
+          "q": "A fine-tuned model opens most answers with 'Certainly! Here is'. Diagnose and fix.",
+          "a": "SFT imitates the style of its targets, so a habit shared by many responses becomes the model's default. First check the training data: count how many responses begin with the phrase. If synthetic data was generated by a model with that habit, 30% to 70% of examples may carry it. The fix is in the data: filter or rewrite those openings, and diversify generation prompts.\n\nHyperparameters only change how fast the habit is learned. Other contributing factors: very small data with several epochs (memorisation of the common prefix), and no preference stage to penalise it. After cleaning, measure the rate of the phrase on held-out prompts before and after to confirm the effect. In general, any recurring quirk of a fine-tuned model should send you to the dataset first, since SFT is a mirror of its data."
+        },
+        {
+          "level": "senior",
+          "q": "A team wants to teach an instruct model the quarter's new product facts using SFT on 500 Q&A pairs. What do you advise?",
+          "a": "I would advise against relying on SFT for facts. New facts appear in a handful of examples, so the model learns to reproduce those answers to near-identical questions and generalises poorly. Worse, research on fine-tuning with unfamiliar knowledge (Gekhman et al., 2024) found such examples are learned slowly and, once learned, increase hallucination on other questions, because the model is trained to answer confidently without grounding.\n\nA better design is retrieval: put the current product documentation in the context, with citations, and use SFT only for behaviour (answer format, tone, refusing when the context lacks the answer). If fine-tuning on the facts is required, make examples grounded (include the source passage in the prompt), add examples where the right answer is 'not in the documentation', mix in 20% general replay data to limit forgetting, and evaluate hallucination on held-out questions alongside task accuracy. Measure general ability before and after."
+        },
+        {
+          "level": "senior",
+          "q": "Design an SFT data pipeline and evaluation for a customer-support classifier-plus-reply model with 3,000 labelled tickets.",
+          "a": "Start with guidelines defining a good reply and the label taxonomy, and have two reviewers label a 200-ticket overlap set to measure agreement; low agreement means the guidelines, not the model, need work. Split by time (train on older tickets, test on the most recent month) to mimic deployment and avoid leakage; check n-gram overlap between train and test, since tickets are often duplicated.\n\nExpand the 3,000 labels using a strong model to draft replies, filtered by rules (format, policy), judged against a rubric, and spot-checked by humans; deduplicate with MinHash. Train an instruct model with LoRA, response-only loss, 2 to 3 epochs, using the base model's chat template exactly. Evaluate on the held-out set for label accuracy and reply quality (rubric plus human review of a sample), run a general benchmark to detect forgetting, and probe known failure modes: invented policy details, wrong tone for angry customers. Keep the large model as a fallback for low-confidence cases."
+        }
+      ]
+    },
+    {
+      "slug": "peft-lora",
+      "title": "Parameter-Efficient Fine-Tuning: LoRA and QLoRA",
+      "lesson": "peft-lora",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What is LoRA, and why is it cheaper than full fine-tuning?",
+          "a": "LoRA freezes the pretrained weight matrix $W_0$ and learns a low-rank update: $W = W_0 + \\frac{\\alpha}{r}BA$, with $B \\in \\mathbb{R}^{d_{\\text{out}}\\times r}$, $A \\in \\mathbb{R}^{r\\times d_{\\text{in}}}$ and a small rank $r$. Only $A$ and $B$ are trained.\n\nIt is cheaper because only a tiny fraction of parameters need gradients and optimizer states. Full fine-tuning of 6.74B parameters needs $16 \\times 6.74\\times10^9 \\approx 108$ GB of model states; LoRA at rank 16 on all linear layers trains about 40M parameters (0.6%), needing $16 \\times 40\\times10^6 \\approx 0.64$ GB of states plus the 13.5 GB frozen BF16 base. The adapter file is tens of megabytes instead of a full model copy, and merged into the weights it adds no inference latency."
+        },
+        {
+          "level": "junior",
+          "q": "How many trainable parameters does a rank-8 LoRA add to a $4096 \\times 4096$ matrix?",
+          "a": "LoRA adds $B$ ($4096 \\times 8$) and $A$ ($8 \\times 4096$): $r(d_{\\text{in}} + d_{\\text{out}}) = 8 \\times 8192 = 65{,}536$ parameters. The full matrix has $4096^2 = 16{,}777{,}216$, so LoRA trains $65{,}536/16{,}777{,}216 = 0.39\\%$ of it, which equals $2r/d = 16/4096$.\n\nCost is linear in rank: rank 16 gives 131,072. For a 32-layer model adapting only the query and value matrices at rank 8, the total is $2 \\times 65{,}536 \\times 32 = 4.19$M parameters. Adapting all attention and MLP matrices raises the count several times, because the MLP matrices are larger. Always compare the trainable count printed by your training library against this formula to catch layers adapted by accident or missed."
+        },
+        {
+          "level": "mid",
+          "q": "Why is $B$ initialised to zero, and what is the role of $\\alpha/r$?",
+          "a": "With $B = 0$, the product $BA = 0$, so $W = W_0$ exactly at initialisation: training starts from the pretrained model's behaviour instead of adding noise to every layer. $A$ is initialised randomly (otherwise the gradient with respect to $B$, which depends on $Ax$, would be zero). The first updates move $B$ away from zero.\n\nThe scale $\\alpha/r$ keeps the update's magnitude roughly stable as the rank changes: a larger $r$ makes $BA$ larger, and without the division the best learning rate would shift with $r$. Common settings are $\\alpha = r$ (scale 1) or $\\alpha = 2r$. A larger $\\alpha/r$ acts like a larger learning rate on the adapter. At high ranks some work argues for $\\alpha/\\sqrt{r}$, so it is a design choice, not a law. Practically, fix $\\alpha$ and tune the learning rate, or fix the ratio and tune the learning rate within the typical $10^{-4}$ to $3\\times10^{-4}$ range."
+        },
+        {
+          "level": "mid",
+          "q": "Compute LoRA trainable parameters for Llama-2-7B at rank 16 on $W_Q, W_V$ versus all linear layers.",
+          "a": "Llama-2-7B has $d = 4096$, MLP width 11,008, 32 layers and full multi-head attention. Each attention matrix is $4096 \\times 4096$, costing $16 \\times 8192 = 131{,}072$ at rank 16. For $W_Q, W_V$: $2 \\times 131{,}072 \\times 32 = 8.39$M, which is 0.12% of 6.74B. For all linear layers, add $W_K, W_O$ (another $2 \\times 131{,}072$ per layer) and the three MLP matrices at $16 \\times (4096 + 11008) = 241{,}664$ each, $724{,}992$ for the three. Per layer: $524{,}288 + 724{,}992 = 1{,}249{,}280$; times 32 gives $39.98$M, 0.59%.\n\nAdapting all linear layers costs about 4.8 times more parameters but is generally better at the same rank (the QLoRA paper found that adapting all layers matched full fine-tuning where $Q,V$ only did not). If quality is short, adding target matrices usually helps more than raising the rank."
+        },
+        {
+          "level": "mid",
+          "q": "Estimate memory for fine-tuning a 7B model with full fine-tuning, LoRA and QLoRA.",
+          "a": "Full fine-tuning with mixed-precision AdamW: $16 \\times 6.74\\times10^9 = 108$ GB of model states, plus activations. LoRA (rank 16, all linear layers, 40M trainable): the frozen BF16 base is 13.5 GB and the adapter's states are $16 \\times 40\\times10^6 = 0.64$ GB, about 14.1 GB plus activations. QLoRA: the base at about 4.127 bits per weight is $6.74\\times10^9 \\times 4.127/8 = 3.48$ GB (a few tensors kept in BF16 add a little), plus 0.64 GB for the adapter, about 4.1 GB plus activations.\n\nActivations depend on sequence length, micro-batch and checkpointing, and are typically several GB; with checkpointing at 2K context they are around 2 to 4 GB. So QLoRA fits on a 16 GB GPU, LoRA on 24 GB, while full fine-tuning needs sharding across several 80 GB GPUs. QLoRA trades about 20% to 40% slower training (dequantisation) and slight base-model noise for the memory saving."
+        },
+        {
+          "level": "mid",
+          "q": "What are NF4 and double quantisation, and what do they cost in bits per weight?",
+          "a": "Block-wise 4-bit quantisation divides weights into blocks (64 in QLoRA), scales each block by its absolute maximum and maps each weight to one of 16 levels. NF4 (NormalFloat4) places those levels at quantiles of a standard normal distribution instead of on a uniform grid, because trained weights are roughly normally distributed: levels are denser near zero, where most weights are, so error is lower for the same 4 bits.\n\nEach block needs a scale: an FP32 scale per 64 weights adds $32/64 = 0.5$ bits per weight. Double quantisation quantises the scales too, storing them in 8 bits in groups of 256 with one FP32 constant per group: $8/64 + 32/(64 \\times 256) = 0.125 + 0.002$. Total $4 + 0.127 = 4.127$ bits per weight rather than 4.5, saving about 3 GB on a 65B model, whose 4-bit base occupies roughly 33.5 GB."
+        },
+        {
+          "level": "senior",
+          "q": "You serve 200 customer-specific fine-tunes of a 7B model. Compare merged models with a shared base plus adapters.",
+          "a": "Merged: 200 full copies at 13.5 GB is 2.7 TB of weights; each copy needs its own GPU memory when loaded, so you must route traffic per tenant and many GPUs sit mostly idle for low-traffic tenants. Adapters: one 13.5 GB base plus 200 adapters of about 80 MB each (rank 16, all linear layers, 40M parameters in BF16) is roughly 16 GB total, small enough to keep all adapters resident on one GPU.\n\nThe unmerged path computes $W_0x + \\frac{\\alpha}{r}B(Ax)$ per request. Serving engines batch requests with different adapters together: the shared $W_0x$ runs once for the batch and the small low-rank multiplications run per adapter, so overhead is modest but real, and scheduling is more complex. My design: keep the base plus adapters for the long tail; merge and dedicate capacity only to tenants with high sustained traffic, where the zero-overhead merged model saves latency. Pin base, tokenizer and chat template versions with each adapter, since an adapter is only valid for its exact base."
+        },
+        {
+          "level": "senior",
+          "q": "LoRA fine-tuning matches full fine-tuning on a format-following task but lags on a hard maths task. Why, and what do you try?",
+          "a": "A low-rank update is a constrained change. Format and style changes are close to low-rank, so rank 8 to 16 suffices. A hard maths task needs larger changes and new capabilities; research comparing the two (Biderman et al., 2024) found LoRA learns less than full fine-tuning on demanding code and maths, while forgetting less of the base model's abilities.\n\nThings to try in order of cost: raise the rank (64 to 256) and adapt all linear layers; raise the learning rate for the adapters and train more steps, since LoRA often needs more data or steps to match; improve data quality and quantity (more worked solutions, verified); use rank-stabilised scaling $\\alpha/\\sqrt{r}$ at high ranks; check that the base model is strong at maths to begin with. If gaps persist, full fine-tuning with ZeRO-3 on enough GPUs, or continued pretraining on maths data, may be required. Decide with a fixed evaluation set and compute cost per quality point, not intuition."
+        }
+      ]
+    },
+    {
+      "slug": "preference-tuning",
+      "title": "Preference Tuning: RLHF and DPO",
+      "lesson": "preference-tuning",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "Why collect preferences between two answers instead of asking people to write ideal answers?",
+          "a": "Judging is easier and more reliable than producing. A reviewer who could not write the perfect answer to a hard question can usually tell which of two drafts is clearer, more accurate or less evasive. Comparisons are also faster, so you get more labels per hour, and a ranking of $k$ responses gives $\\binom{k}{2}$ pairs: 6 pairs from 4 responses, 10 from 5.\n\nPreferences also carry a contrast that demonstrations lack: not only what to move toward but what to move away from. That helps with qualities that are hard to demonstrate, such as honesty about uncertainty, appropriate length and refusing harmful requests without refusing harmless ones. The limits are noise (labellers often disagree on close pairs) and bias, such as a preference for longer or more flattering answers, which models can exploit."
+        },
+        {
+          "level": "junior",
+          "q": "State the Bradley-Terry model and what a reward gap of 2 means.",
+          "a": "Bradley-Terry models the probability that response $y_w$ beats $y_l$ for the same prompt as $P(y_w \\succ y_l) = \\sigma(r_w - r_l)$, where $r$ are scalar rewards and $\\sigma(z) = 1/(1 + e^{-z})$. Only the difference matters, so adding a constant to all rewards changes nothing.\n\nA gap of 2 gives $\\sigma(2) = 0.881$: the model says the first response is preferred 88% of the time. A gap of 0 gives 0.5, a gap of 1 gives 0.731 and a gap of $-1$ gives 0.269. The reward model is trained by minimising $-\\log\\sigma(r_w - r_l)$ on labelled pairs. The loss at gap 0 is $\\ln 2 = 0.693$ and at gap 2 is 0.127; the gradient weight is $\\sigma(-\\Delta)$, so pairs the model ranks wrongly are corrected hardest."
+        },
+        {
+          "level": "mid",
+          "q": "Write the RLHF objective and explain the role of the KL term and $\\beta$.",
+          "a": "The policy maximises $\\mathbb{E}_{y \\sim \\pi_\\theta}[r_\\phi(x, y)] - \\beta\\,\\mathbb{D}_{\\text{KL}}[\\pi_\\theta(\\cdot|x)\\,\\|\\,\\pi_{\\text{ref}}(\\cdot|x)]$, where $r_\\phi$ is the reward model and $\\pi_{\\text{ref}}$ the SFT model the policy started from.\n\nThe reward model is a proxy trained on limited data and is only reliable near the responses it saw. Without a leash, the policy drifts to regions where the score is high for wrong reasons (reward hacking). The KL term penalises drift: for a sampled answer, the penalty is $\\beta$ times the sum of per-token log-ratios. Example: reward 1.2, sequence log-ratio 2.0 nats, $\\beta = 0.1$ gives shaped reward $1.2 - 0.2 = 1.0$; a log-ratio of 12 would cancel the reward entirely. Larger $\\beta$ keeps the policy closer to the reference, giving safer but smaller gains. Some implementations adapt $\\beta$ to hold KL near a target."
+        },
+        {
+          "level": "mid",
+          "q": "Explain PPO's clipped objective with an example where clipping is active.",
+          "a": "PPO maximises $\\mathbb{E}[\\min(\\rho\\hat A, \\text{clip}(\\rho, 1-\\epsilon, 1+\\epsilon)\\hat A)]$, where $\\rho = \\pi_\\theta/\\pi_{\\theta_{\\text{old}}}$ is the probability ratio for a token and $\\hat A$ its advantage (how much better than expected the outcome was, estimated with a value model).\n\nTake $\\epsilon = 0.2$. A good token ($\\hat A = +1$) whose probability rose by 30% ($\\rho = 1.3$): the unclipped term is 1.3, the clipped term is $1.2$, and the minimum is 1.2, so the gain is capped and the gradient is zero. A bad token ($\\hat A = -1$) pushed down to $\\rho = 0.7$: unclipped $-0.7$, clipped $-0.8$, minimum $-0.8$, also zero gradient. The clip removes the incentive to move any token's probability by more than about 20% per update, which keeps learning stable and keeps the new policy close to the one that generated the samples."
+        },
+        {
+          "level": "mid",
+          "q": "Derive the DPO loss from the KL-regularised objective.",
+          "a": "The optimum of $\\max_\\pi \\mathbb{E}[r] - \\beta\\,\\mathbb{D}_{\\text{KL}}[\\pi\\|\\pi_{\\text{ref}}]$ is $\\pi^*(y|x) = \\frac{1}{Z(x)}\\pi_{\\text{ref}}(y|x)e^{r(x,y)/\\beta}$. Taking logs and rearranging: $r(x,y) = \\beta\\log\\frac{\\pi^*(y|x)}{\\pi_{\\text{ref}}(y|x)} + \\beta\\log Z(x)$.\n\nSubstitute into Bradley-Terry, $P(y_w \\succ y_l) = \\sigma(r_w - r_l)$. The $\\beta\\log Z(x)$ term is the same for both responses (same prompt) and cancels, leaving $\\sigma\\!\\big(\\beta[\\log\\frac{\\pi^*(y_w)}{\\pi_{\\text{ref}}(y_w)} - \\log\\frac{\\pi^*(y_l)}{\\pi_{\\text{ref}}(y_l)}]\\big)$. Replace $\\pi^*$ with the trainable $\\pi_\\theta$ and minimise the negative log-likelihood: $\\mathcal{L}_{\\text{DPO}} = -\\mathbb{E}\\log\\sigma(\\beta[\\Delta_w - \\Delta_l])$ with $\\Delta = \\log\\pi_\\theta - \\log\\pi_{\\text{ref}}$. The intractable partition function disappears, so no reward model or RL loop is needed."
+        },
+        {
+          "level": "mid",
+          "q": "Compute the DPO loss for $\\beta = 0.1$, $\\Delta_w = 2$, $\\Delta_l = -1$, and its gradient weight.",
+          "a": "Margin $= \\beta(\\Delta_w - \\Delta_l) = 0.1 \\times 3 = 0.3$. $\\sigma(0.3) = 1/(1 + e^{-0.3}) = 0.574$, so the loss is $-\\ln 0.574 = 0.554$. At initialisation, with $\\pi_\\theta = \\pi_{\\text{ref}}$, both $\\Delta$ are 0, the margin is 0 and the loss is $\\ln 2 = 0.693$.\n\nThe gradient with respect to the log-probabilities is scaled by $\\beta\\sigma(-\\text{margin}) = 0.1 \\times 0.426 = 0.043$: it raises $\\log\\pi_\\theta(y_w)$ and lowers $\\log\\pi_\\theta(y_l)$, with larger weight on pairs the implicit reward ranks wrongly. Raising $\\beta$ to 0.5 with the same log-ratios makes the margin 1.5 and the loss 0.201: the same movement counts for more, so a high $\\beta$ saturates quickly and holds the policy near the reference."
+        },
+        {
+          "level": "mid",
+          "q": "What is GRPO and what do the advantages look like for rewards (1, 0, 0, 0) in a group of four?",
+          "a": "Group Relative Policy Optimization removes PPO's value model. For each prompt, sample a group of $G$ responses, score them (often with a verifiable checker), and set each advantage to its reward's z-score within the group: $\\hat A_i = (r_i - \\mu)/\\sigma$. The update then uses the clipped ratio and a KL penalty as in PPO.\n\nFor rewards $(1, 0, 0, 0)$: $\\mu = 0.25$, $\\sigma = \\sqrt{0.1875} = 0.433$. The correct answer gets $0.75/0.433 = +1.73$ and each wrong one $-0.25/0.433 = -0.58$, so a rare success is boosted strongly. If all four are right or all wrong, $\\sigma = 0$ and every advantage is 0: that prompt teaches nothing, so training sets favour prompts of intermediate difficulty. Advantages here are shared by every token of a response, and the baseline is the group mean, which costs only extra samples, not another network."
+        },
+        {
+          "level": "senior",
+          "q": "Reward keeps rising during RLHF but human evaluations fall. Diagnose and respond.",
+          "a": "This is reward over-optimisation: the policy has moved into regions where the proxy reward model is inaccurate. Gao et al. showed that true quality typically rises, peaks and then falls as KL from the reference grows, while the proxy keeps rising; for a fixed reward model the peak is a limit, not a target.\n\nDiagnose with samples: look for length growth, flattery and sycophancy, stock phrases, fabricated but confident detail, and formatting excess; plot reward against response length. Respond by rolling back to the checkpoint near the peak of an independent evaluation (held-out prompts, human review, a different judge), raising $\\beta$ or lowering the learning rate, adding length control or a length-normalised reward, improving the reward model (more data, a larger model, an ensemble taking a conservative estimate), and refreshing preference data on the current policy's samples. Where possible, add verifiable rewards, which are much harder to game. Make the independent evaluation, not the training reward, the stopping criterion."
+        },
+        {
+          "level": "senior",
+          "q": "Compare RLHF with PPO and DPO for a product team with 5,000 preference pairs. Which would you choose and why?",
+          "a": "With 5,000 pairs and a small team, DPO. It trains like SFT: two models in memory (policy and a frozen reference, whose log-probabilities can be precomputed), no sampling loop, stable losses and few hyperparameters ($\\beta$ around 0.1, a low learning rate near $5\\times10^{-7}$ to $5\\times10^{-6}$ for full fine-tuning, 1 to 3 epochs). PPO needs four models (policy, reference, reward, value), slow generation, and a reward model that 5,000 pairs cannot train well.\n\nDPO's weaknesses are that it is offline (it never sees its own samples, so it cannot discover and fix new failure modes) and that it only constrains the margin, so the likelihood of both chosen and rejected answers can fall. Mitigations: monitor the chosen log-probability, add a small SFT term on the chosen answer, run iterative rounds (sample from the current model, label, retrain), and keep an independent evaluation covering length, refusals and sycophancy. If the task has a verifier, consider GRPO-style RL instead."
+        }
+      ]
+    },
+    {
+      "slug": "run-fine-tuning-yourself",
+      "title": "Fine-tuning environments",
+      "lesson": "run-fine-tuning-yourself",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "Why can you not run QLoRA on a laptop without an NVIDIA GPU, and what do you do instead?",
+          "a": "QLoRA stores the frozen base model in 4-bit **NF4** using the bitsandbytes library, and the kernels that pack, unpack and multiply those 4-bit weights are written for CUDA. On a CPU-only machine that path is simply not available. The practical substitute is plain **LoRA** with the base weights in fp32: 4 bytes per parameter. That limits the model size by RAM. An 8 GB laptop with perhaps 4 GB free can hold a 0.5B model ($0.5 \\times 10^9 \\times 4 = 2$ GB of weights, plus adapter states and activations); a 16 GB laptop can stretch to about 1.5B, though it will be slow. For anything larger, move to a free Colab or Kaggle T4, where QLoRA fits 7–8B models at short context."
+        },
+        {
+          "level": "junior",
+          "q": "Your Colab session disconnected two hours into training. What should you have set up so that this costs you only a few minutes?",
+          "a": "Three things. First, write checkpoints somewhere that outlives the VM: mount Google Drive and set the trainer's `output_dir` to a Drive folder (or push checkpoints to the Hugging Face Hub). Files under `/content` vanish with the session. Second, save on a schedule with `save_steps` (and `save_total_limit` to stop Drive filling). The expected loss from a random disconnect is half a save interval: at 6 s per step and `save_steps=50`, about 150 s. Third, know how to resume: reconnect, re-run the install, login, mount and setup cells, then call `trainer.train(resume_from_checkpoint=True)`, which restores the adapter weights, optimizer and scheduler state and the data position from the latest checkpoint."
+        },
+        {
+          "level": "mid",
+          "q": "Estimate how long a LoRA fine-tune of a 0.5B model on 300 examples of 256 tokens for 3 epochs will take on a laptop CPU, and explain how you would get a reliable number.",
+          "a": "Tokens: $T = 300 \\times 256 \\times 3 \\approx 2.3 \\times 10^5$. With LoRA the frozen weights need no weight gradients, so training costs about $4N$ FLOPs per token (forward $2N$, backward through activations $2N$) instead of $6N$: $4 \\times 0.5 \\times 10^9 \\times 2.3 \\times 10^5 \\approx 4.6 \\times 10^{14}$ FLOPs. A laptop sustains roughly 50–200 GFLOP/s in PyTorch, giving about 40 minutes to 2.5 hours. That range is too wide to plan with, so **measure**: run a smoke test of 10 steps, drop the first (warm-up), read seconds per optimizer step $s$, and compute $t \\approx s \\cdot \\lceil n/(B G) \\rceil \\cdot E$. With batch 4 that is 225 steps; at 12 s per step, 45 minutes."
+        },
+        {
+          "level": "mid",
+          "q": "A script that trains fine on an A100 crashes on a free Colab T4. List the settings you would check and why.",
+          "a": "1. **Precision.** The T4 (Turing) has no bf16. TRL's `SFTConfig` enables `bf16` by default unless `fp16` is set, so set `fp16=True, bf16=False`, and use `torch.float16` as `bnb_4bit_compute_dtype` for QLoRA.\n2. **Memory.** The A100 has 80 GB; the T4 about 15 GB. A bf16 LoRA on an 8B model (16 GB of weights) cannot fit; switch to QLoRA (about 5–6 GB of base weights), cut `max_length`, lower the micro-batch and raise gradient accumulation to keep the effective batch.\n3. **Attention kernel.** FlashAttention 2 needs an Ampere or newer GPU; fall back to the default SDPA attention.\n4. **Persistence.** Point `output_dir` at Drive and set `save_steps`, because the session can end at any time.\n5. **Versions.** Colab's preinstalled transformers may differ from your A100 environment; pin them."
+        },
+        {
+          "level": "mid",
+          "q": "How do you budget a rented-GPU fine-tuning run, and where does the money usually go?",
+          "a": "Cost is price per hour times *all* the hours the machine is on, plus storage: $p \\cdot (t_{setup} + t_{train} + t_{idle})$. Estimate training time from FLOPs: an 8B LoRA run on $2 \\times 10^7$ tokens needs about $4 \\times 8 \\times 10^9 \\times 2 \\times 10^7 \\approx 6.4 \\times 10^{17}$ FLOPs; an A100 sustaining about 125 TFLOP/s (40% of its bf16 peak) takes about 1.4 h. Add 30 minutes for installs and the model download. At about \\$1.30 an hour (late-2026 marketplace prices vary daily) the job is under \\$3. Beginners overspend on **idle time**: a pod left on overnight costs several times the run. Debug on free hardware first, set a low prepaid balance or auto-stop, and confirm the adapter is on the Hub before you terminate the pod and delete volumes."
+        },
+        {
+          "level": "mid",
+          "q": "On a CPU, why might you turn gradient checkpointing off and train in fp32, when on a GPU you would usually do the opposite?",
+          "a": "Both GPU defaults trade something a tiny CPU run does not need to trade. **Gradient checkpointing** (on by default in TRL's `SFTConfig`) discards activations and recomputes them in the backward pass, adding roughly one extra forward pass, about 30% more compute. For a 135M model at 128 tokens the activations are a few hundred MB, so on an 8–16 GB laptop you would pay the time cost for no benefit. **Mixed precision** (bf16 or fp16) speeds up GPUs because their tensor cores run 16-bit maths much faster. Many laptop CPUs lack fast bf16 instructions, so it can be slower, not faster. fp32 costs 4 bytes per weight, which is affordable at 0.5B and below, and it removes one source of numerical surprises while you are still debugging the pipeline."
+        },
+        {
+          "level": "senior",
+          "q": "A group of five learners needs to run fine-tuning exercises weekly: SFT on 1–3B models, a GRPO exercise and an embedding fine-tune. Design their compute setup.",
+          "a": "Tier it by purpose. **Laptops (CPU)**: every exercise starts as a smoke test on SmolLM2-135M or Qwen2.5-0.5B with LoRA in fp32, which catches data, template and config bugs for free in minutes. Embedding fine-tunes of small encoders (around 110M parameters) can run here entirely. **Free tier**: Colab and Kaggle T4s (about 15 GB, fp16 only) handle QLoRA SFT on 1–8B models and GRPO with QLoRA on 1–3B models. Kaggle's visible weekly quota (around 30 h, varies) is easier to plan around than Colab's unpublished limits; spread work across both. Require Drive or Hub checkpoints and pinned versions in a shared requirements file. **Paid burst**: a marketplace 4090 or A100 by the hour for runs that need bf16, longer context or speed, with a per-person prepaid cap and auto-stop. A 1–2 hour A100 run costs a few dollars; the risk to control is idle pods, not training cost."
+        },
+        {
+          "level": "senior",
+          "q": "Your first LoRA run reports a perfect score on 20 held-out examples, but a colleague is sceptical. What could make the score misleading, and how would you make the check trustworthy?",
+          "a": "Several things inflate a small before/after test. **Leakage**: in a templated dataset the held-out items reuse training phrases in new combinations, so the model can pattern-match rather than generalise. Build a test set from different sources, with no shared templates. **Format versus content**: valid JSON is easy to learn; report label accuracy separately from format validity, and check class balance so a constant label cannot score well. **Small n**: with 20 items one item is 5 points, and a 95% interval on 18/20 spans roughly 0.7 to 0.97; use hundreds of items. **Decoding mismatch**: score with the same chat template and greedy settings you will serve with. Finally, reload the saved adapter onto a fresh base model and re-score, to prove the artefact you ship, not the in-memory object, produced the result."
+        }
+      ]
+    },
+    {
+      "slug": "sft-with-lora-step-by-step",
+      "title": "SFT with LoRA in Practice",
+      "lesson": "sft-with-lora-step-by-step",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What does the `messages` (conversational) dataset format look like for SFT, and why use it instead of pre-formatted text?",
+          "a": "Each row has a `messages` list of `{\"role\", \"content\"}` dictionaries, for example a system message, a user message and the assistant answer. The trainer renders each row with the model's own **chat template**, so the special tokens and turn markers match exactly what the model saw in its own instruction tuning and what it will see at inference time.\n\nWriting the formatted text yourself invites silent mismatches: a missing end-of-turn token, a different system prompt, or the wrong role markers. The model then learns from a slightly different format than the one it is served with. The structured format also lets the trainer find the assistant turns and mask the loss to them (`assistant_only_loss=True`). Keep the system prompt identical across rows and identical to production."
+        },
+        {
+          "level": "junior",
+          "q": "How do you compute the effective batch size, and why use gradient accumulation?",
+          "a": "$B_{\\text{eff}} = b_{\\text{device}} \\times g_{\\text{accum}} \\times n_{\\text{GPU}}$. With a micro-batch of 4, 4 accumulation steps and one GPU, each optimizer step averages gradients over 16 examples.\n\nGradient accumulation runs several small forward and backward passes and sums their gradients before one optimizer step. Activation memory depends on the micro-batch, so a 15 GB T4 can train with the same effective batch as a large GPU, at the cost of more passes per step. On an out-of-memory error, the standard fix is to halve the micro-batch and double the accumulation steps. The optimisation is unchanged because the effective batch is the same, and the activation memory halves."
+        },
+        {
+          "level": "mid",
+          "q": "You set `r=16, lora_alpha=32` and later try `r=64` with the same alpha. Results get worse. Why, and what should you change?",
+          "a": "The LoRA update is applied as $\\frac{\\alpha}{r} BA$. At $r=16, \\alpha=32$ the scale is 2. At $r=64, \\alpha=32$ it is 0.5, four times weaker. The learning rate you tuned at rank 16 is now effectively too small for the adapter, so the run underfits, and that looks like \"higher rank hurts\".\n\nTo compare ranks fairly, keep the scale constant by setting $\\alpha = 2r$ (here 128). You can also use rsLoRA (`use_rslora=True`), which scales by $\\alpha/\\sqrt{r}$ and is designed so the effective step size is more stable across ranks. Then retune the learning rate lightly. For format and style tasks, rank 16 on all linear layers is usually enough, so check eval metrics before assuming more rank helps."
+        },
+        {
+          "level": "mid",
+          "q": "What does `assistant_only_loss=True` do in TRL's SFTTrainer, what does it require, and how do you verify it worked?",
+          "a": "It computes the cross-entropy only on assistant-turn tokens. System and user tokens are still read in the forward pass, but their labels are set to -100, so the model learns to answer, not to reproduce prompts. It needs a conversational dataset and a chat template with `{% generation %}`/`{% endgeneration %}` markers around assistant output. TRL v1.x ships patched templates for common families (Qwen2.5, Qwen3, Llama 3 and others) and swaps them in automatically. For other models you must patch the template yourself.\n\nVerify before training: take one prepared row, keep only the token ids whose mask is 1 (or whose label is not -100), and decode them. You should see only the answer plus the end-of-turn token. If you see the schema or system prompt, the mask is not in effect. If the string is empty, nothing is supervised."
+        },
+        {
+          "level": "mid",
+          "q": "You have 2,000 training rows, effective batch 16, 3 epochs, 5% warmup and eval every 25 steps. Lay out the run.",
+          "a": "Steps per epoch: $\\lceil 2000/16 \\rceil = 125$. Total: $3 \\times 125 = 375$ optimizer steps. Warmup: $0.05 \\times 375 \\approx 19$ steps. Evals at 25, 50, ... 375 give 15 eval points. Epoch boundaries fall at steps 125 and 250. Expect a step down in training loss just after each boundary, because the model starts revisiting rows it has trained on.\n\nWith rows averaging 230 tokens, each step reads about $16 \\times 230 = 3{,}680$ tokens, about 1.38M in total. Time five steps first: at 2.8 s per step the run takes $375 \\times 2.8 \\approx 17.5$ minutes. Save a checkpoint at each eval and set `load_best_model_at_end=True` with `metric_for_best_model=\"eval_loss\"`, so the overfitted final epoch does not become the delivered model."
+        },
+        {
+          "level": "mid",
+          "q": "Which mixed-precision settings do you use on a CPU, a T4 and an A100, and why?",
+          "a": "**CPU:** load the model in fp32, set `use_cpu=True` and turn off `bf16`/`fp16`. CPU mixed precision gives little speed-up for training and adds risk.\n\n**T4 (Turing):** no hardware bf16. Use `fp16=True, bf16=False`, and for QLoRA set `bnb_4bit_compute_dtype=torch.float16`. TRL's `SFTConfig` defaults `bf16=True` when `fp16` is not set, so you must override it. fp16 has a maximum of about 65,504, so a high learning rate can overflow to NaN. Keep the LR moderate and watch `grad_norm`.\n\n**A100 or other Ampere and newer:** `bf16=True`. bf16 has the same exponent range as fp32, so it rarely overflows and needs no loss scaling. Use bf16 compute dtype for QLoRA as well."
+        },
+        {
+          "level": "senior",
+          "q": "A teammate's SQL adapter shows eval loss falling from 0.6 to 0.4, but execution accuracy on the test set barely improves over the prompted base model. How do you investigate?",
+          "a": "Loss measures token likelihood, not whether whole queries are correct. One wrong column name ruins a query while costing little loss. Steps:\n\n1. **Check the baseline.** Is the base prompted well (few-shot, same system prompt)? A strong prompt may already capture most of the gain.\n2. **Split the metric.** Format accuracy, exact match and execution separately. If format jumped but execution did not, SFT taught the output style but not the reasoning.\n3. **Read 20–30 failures** and tag them: wrong column, wrong join, aggregation, truncated output (`max_new_tokens`), dialect mismatch (the data is not SQLite).\n4. **Audit the data.** Check what share of reference queries actually execute, whether there are duplicates between train and test, and whether the schemas match the queries.\n5. Then try a larger base, more or harder examples, or execution-filtered data.\n\nReport paired differences with confidence intervals, not single numbers."
+        },
+        {
+          "level": "senior",
+          "q": "After SFT on 2,000 narrow examples, the model answers \"What is the capital of Japan?\" with a SELECT statement. What happened, and what are your options?",
+          "a": "This is behavioural **catastrophic forgetting**, or leakage: every training example rewarded SQL, so the adapter shifted the output distribution toward SQL regardless of the prompt. LoRA forgets less than full fine-tuning but not nothing, especially with a high LR or many epochs.\n\nOptions, roughly from cheapest to most involved:\n- **Route.** Load the adapter only for SQL requests (multi-LoRA serving or a classifier in front). General traffic uses the base.\n- **Mix data.** Add 10–20% general chat rows (e.g. from `trl-lib/Capybara`) so the adapter learns when *not* to write SQL.\n- **Regularise the run.** Fewer epochs, a lower LR, a lower rank, or targeting fewer modules, then keep the best checkpoint by eval loss.\n- **Condition explicitly.** Keep a distinctive system prompt for the task and include some rows without it.\n\nMeasure with a fixed probe set of general prompts before and after, ideally scored by an LLM judge."
+        },
+        {
+          "level": "senior",
+          "q": "You trained a QLoRA adapter on an NF4 base and now need to serve it. Compare serving it separately versus merging, including sizes and the QLoRA caveat.",
+          "a": "**Separate:** keep the base and load the adapter at run time (PEFT, or vLLM/TGI multi-LoRA). For a 1.5B model at rank 16 on all linear layers the adapter has about 18.5M parameters, about 74 MB in fp32. Many task adapters can share one base, and you can swap or roll back an adapter in seconds. The cost is a small latency overhead and more complex serving.\n\n**Merged:** load the base in **16-bit** (not 4-bit), call `merge_and_unload()` and save. The result is about $2 \\times 1.54\\text{B} = 3.1$ GB in fp16, with no PEFT dependency and no adapter overhead. It can then be quantised for serving.\n\n**Caveat:** the adapter learned to correct the *quantised* base. Merged into the 16-bit weights, it gives a model close to, but not identical to, the one you evaluated. Merging into NF4 would round away much of the update. Re-run the test set on whatever artefact you ship, and record the base model's revision."
+        }
+      ]
+    },
+    {
+      "slug": "preference-optimization-methods",
+      "title": "Preference optimization methods",
+      "lesson": "preference-optimization-methods",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What is the difference between online and offline preference optimisation? Give one method of each kind.",
+          "a": "An **online** method samples new answers from the model being trained during training, scores them (with a reward model or a checker) and learns from those fresh samples. PPO-based RLHF, RLOO and GRPO are online. An **offline** method learns from a fixed dataset of judgements collected in advance, much like SFT: DPO, IPO, KTO, ORPO and SimPO are offline.\n\nOnline methods can discover and correct the model's *own* new failure modes, because they keep seeing what the current model actually writes, but they pay for generation at every step and need more machinery. Offline methods are cheaper and more stable, but they only learn about the answers in the dataset. A common middle ground is iterative DPO: sample from the current model, label the samples, run DPO, and repeat."
+        },
+        {
+          "level": "junior",
+          "q": "What data does each of DPO, KTO and GRPO need?",
+          "a": "- **DPO** needs preference pairs: a prompt, a chosen answer and a rejected answer for the same prompt (in TRL, columns `prompt`, `chosen`, `rejected`).\n- **KTO** needs single answers with a binary label: prompt, completion and `label` True (desirable) or False (undesirable). It does not need two answers to the same prompt, so thumbs-up/down product feedback fits directly.\n- **GRPO** needs only prompts plus a reward function that can score any answer, for example unit tests for code or an exact-match check for a maths answer. It generates its own answers during training.\n\nThe data you can collect is usually the first thing that decides the method."
+        },
+        {
+          "level": "junior",
+          "q": "In a DPO run with LoRA, where does the reference model come from, and how much extra memory does it cost?",
+          "a": "The reference model is the model as it was before preference training, normally your SFT model. With LoRA the base weights are frozen and shared, so the trainer obtains reference log-probabilities by running the same base with the LoRA adapters **disabled**. That is exactly the starting model, and it costs no extra weight memory: for an 8B model you hold the 16 GB bf16 base once, plus well under 1 GB of adapter and optimizer state.\n\nIt does cost compute: one extra forward pass over the chosen and rejected answers per step. TRL can avoid even that with `precompute_ref_log_probs=True`, which computes the reference log-probabilities once before training. In TRL you get this behaviour by passing `ref_model=None` together with a `peft_config`."
+        },
+        {
+          "level": "mid",
+          "q": "Compute the model-state memory for full fine-tuning of an 8B model with PPO, DPO and ORPO, and explain the difference.",
+          "a": "Use 16 bytes per trained parameter (bf16 weight and gradient, fp32 master weight, two Adam moments) and 2 bytes per frozen parameter.\n\n- **PPO**: policy $16 \\times 8 = 128$ GB, value model (same size, also trained) 128 GB, reward model 16 GB, reference 16 GB: **288 GB**.\n- **DPO**: policy 128 GB plus frozen reference 16 GB: **144 GB**, or 128 GB if reference log-probabilities are precomputed.\n- **ORPO** (and SimPO, CPO): policy only, **128 GB**.\n\nThe big jump is PPO's trained value model. Reference models are cheap because they get no gradients or optimizer states. All of this excludes activations, which for preference methods are roughly double SFT's because each example has two sequences, and excludes the generation cache that online methods need."
+        },
+        {
+          "level": "mid",
+          "q": "What does β do in DPO? Use a numeric example.",
+          "a": "$\\beta$ scales the log-ratio gap $h = \\Delta_w - \\Delta_l$ before the sigmoid: $\\mathcal{L} = -\\log\\sigma(\\beta h)$. It sets how far the policy needs to move from the reference before a pair counts as learned, so it acts as a KL leash.\n\nTake $h = 4$ nats. With $\\beta = 0.1$ the margin is 0.4, $\\sigma(0.4) = 0.60$ and the loss is 0.513: plenty of loss left, so the policy keeps moving away from the reference. With $\\beta = 0.5$ the margin is 2.0, $\\sigma = 0.88$ and the loss is 0.127: the pair is mostly satisfied, so the policy stays closer to the reference.\n\nSmall $\\beta$ allows larger drift (more change, more risk of over-optimisation); large $\\beta$ keeps the model near its SFT behaviour. Common values are 0.05 to 0.5, and 0.1 is the usual default."
+        },
+        {
+          "level": "mid",
+          "q": "Why was IPO proposed, and how does its loss differ from DPO's?",
+          "a": "Azar et al. showed that when preferences are **deterministic** (the chosen answer always wins, which is effectively true when each pair is labelled once), DPO's optimum is an infinite log-ratio gap. DPO's loss $-\\log\\sigma(\\beta h)$ keeps decreasing as the gap $h$ grows, so the policy can drive the rejected answers' probabilities toward zero, ignoring the KL regularisation and overfitting small datasets.\n\nIPO replaces it with a squared loss toward a fixed target: $(h - \\tfrac{1}{2\\tau})^2$. With $\\tau = 0.1$ the target is 5 nats. At $h = 8$ IPO's gradient is $2(8 - 5) = +6$, pulling the gap back down, while DPO is still pushing it up (loss 0.371 at $\\beta = 0.1$). IPO behaves like a spring with a rest length, so it is a good choice for small, noisy or once-labelled preference sets. In TRL it is `loss_type=[\"ipo\"]`, with `beta` acting as $\\tau$."
+        },
+        {
+          "level": "mid",
+          "q": "Explain ORPO's loss and compute the odds-ratio term for chosen and rejected answers with per-token average probabilities 0.6 and 0.2.",
+          "a": "ORPO trains a base model on preference pairs in one stage, with no reference model:\n\n$$\\mathcal{L} = \\mathcal{L}_{\\text{SFT}}(y_w) + \\lambda\\,\\big(-\\log\\sigma(\\log \\tfrac{\\text{odds}(y_w)}{\\text{odds}(y_l)})\\big), \\quad \\text{odds} = \\tfrac{P}{1-P}$$\n\nwhere $P$ is the per-token average probability of the answer. The SFT term teaches the chosen answers; the odds-ratio term pushes the rejected style down relative to them.\n\nWith $P_w = 0.6$ the odds are 1.5; with $P_l = 0.2$ they are 0.25. The odds ratio is 6, its log is 1.79, $\\sigma(1.79) = 0.857$, and the term is $-\\ln 0.857 = 0.154$. With $\\lambda = 0.1$ it adds 0.015 to the SFT loss, so ORPO is mostly SFT with a nudge. It saves the separate SFT run and the reference model, but it is sensitive to $\\lambda$ and the learning rate."
+        },
+        {
+          "level": "mid",
+          "q": "Your product logs 2,000 thumbs-up and 500 thumbs-down answers. How would you train on them with KTO, and how do you set the class weights?",
+          "a": "Build one row per answer: `prompt`, `completion`, `label` (True for thumbs-up). KTO's value function rewards desirable answers for rising above a reference point $z_0$ (an in-batch KL estimate) and undesirable answers for falling below it, with weights $\\lambda_D$ and $\\lambda_U$.\n\nThe KTO paper recommends $\\lambda_D n_D / (\\lambda_U n_U)$ between 1 and 4/3. With $\\lambda_D = 1$: $2000 / (500\\,\\lambda_U) \\in [1, 1.33]$, so $\\lambda_U$ between 3 and 4, for example 3.5 (`undesirable_weight=3.5`).\n\nPractical points: start from the SFT model, use LoRA, keep the per-device batch at 4 or more because $z_0$ is estimated within the batch, keep the learning rate around 5e-7 to 5e-6, and audit a sample of thumbs-down answers first, since some are correct answers disliked for unrelated reasons."
+        },
+        {
+          "level": "senior",
+          "q": "After DPO, your model wins 64% of comparisons against the SFT model with an LLM judge, but its answers are 1.9 times longer. How do you decide whether it really improved, and what would you change?",
+          "a": "First separate quality from length. LLM judges (and human raters) favour longer answers, and DPO's summed implicit reward lets long chosen answers accumulate reward, so verbosity is the obvious suspect.\n\n**Measure**: compute the win rate with a confidence interval (on 300 prompts, $\\pm$ about 5.4 points), judge both answer orders, and report a length-controlled number: either the win rate on pairs whose lengths are within about 20%, or a regression-adjusted rate like AlpacaEval 2's LC metric. Check a second judge or a small human sample.\n\n**If the gain vanishes on length-matched pairs**: balance length in the training pairs (drop pairs where the chosen answer is much longer), raise $\\beta$, lower the learning rate or epochs, or switch to SimPO, whose average log-probability reward and margin $\\gamma$ remove the length incentive. Keep a fixed eval suite with length ratio and format probes reported alongside the win rate on every checkpoint."
+        },
+        {
+          "level": "senior",
+          "q": "You must ship preference tuning for an 8B assistant on a single 80 GB GPU, with 20k on-policy preference pairs labelled by an LLM judge. Compare DPO, SimPO and ORPO for this setting and pick one.",
+          "a": "**Memory**: full fine-tuning (128 GB of states) does not fit one 80 GB GPU for any of them, so use LoRA. Then all three need about 16 GB of base weights plus under 1 GB of adapter states plus activations for two sequences. The reference-free advantage of SimPO and ORPO shrinks to saving one forward pass, and precomputed reference log-probabilities remove that too.\n\n**Data**: the pairs are on-policy samples from an existing SFT model. ORPO's main benefit, merging SFT into the same run, is wasted, and its SFT term would imitate the chosen answers instead of preserving the existing SFT model.\n\n**Choice**: DPO from the SFT model, $\\beta = 0.1$, one epoch, held-out reward accuracy monitored. It has a KL anchor to a known-good model and is easiest to debug. Run SimPO as the second experiment if evaluation shows length growth, with a very small learning rate (around 5e-7 to 1e-6 for full FT; tune for LoRA), since it has no reference anchor. Decide by length-controlled win rate and format probes."
+        },
+        {
+          "level": "senior",
+          "q": "TRL removed PPOTrainer in a later 1.x release. A team asks whether they still need PPO for their RLHF pipeline. What do you advise?",
+          "a": "Start from what the reward is. **If the task has checkable outcomes** (maths answers, unit tests, schema validation, tool-call success), use an online method without a value model: GRPO or RLOO. They keep the useful part of RLHF, learning from the model's own samples, but drop the value network, which removes a trained 128 GB model for an 8B full fine-tune and a set of hyperparameters. Both remain stable in TRL.\n\n**If the reward is a learned preference model** for tone or helpfulness, offline DPO-family methods on pairs usually match PPO on chat quality at a fraction of the cost. To recover some on-policy benefit, use the reward model to label fresh samples and run iterative DPO, or use RLOO/GRPO with the reward model as the reward function.\n\n**Keep PPO only** to reproduce prior results or if there is a measured gain that justifies it. In that case pin an older TRL release or use a dedicated RL framework, and budget for four models and slow rollouts."
+        }
+      ]
+    },
+    {
+      "slug": "grpo-hands-on",
+      "title": "GRPO Hands-On",
+      "lesson": "grpo-hands-on",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "How does GRPO compute the advantage of a completion, and why does it not need a value model?",
+          "a": "For each prompt GRPO samples a group of $G$ completions, scores each with the reward function, and normalises within the group: $\\hat A_i = (r_i - \\mu)/\\sigma$, where $\\mu$ and $\\sigma$ are the group's mean and standard deviation. Every token of completion $i$ shares $\\hat A_i$.\n\nPPO needs a learned value model to estimate a baseline (the expected reward) so that advantages are centred. GRPO uses the group mean as that baseline instead: it is a free, unbiased estimate of how well the current policy does on this prompt. Example: rewards $(2, 1, 0, 1)$ give $\\mu = 1$, $\\sigma = 0.707$, advantages $(+1.41, 0, -1.41, 0)$. Dropping the value model removes a second policy-sized network with its own gradients and optimizer state."
+        },
+        {
+          "level": "junior",
+          "q": "Why does a GRPO group in which every completion gets the same reward contribute nothing to learning?",
+          "a": "If all $G$ rewards are equal, every reward equals the mean, so $r_i - \\mu = 0$ and the standard deviation is 0 too. Every advantage is 0 (TRL adds a small constant to $\\sigma$ to avoid dividing by zero), so the policy-gradient term vanishes; only the KL term, if `beta > 0`, still acts.\n\nWith a pass/fail reward and success rate $p$, the chance a group of 8 ties is $p^8 + (1-p)^8$: 5.8% at $p = 0.3$ but 43% at $p = 0.9$. TRL logs this as `frac_reward_zero_std`. When it rises, the data has become too easy (or is too hard) and you should change prompts rather than train longer."
+        },
+        {
+          "level": "mid",
+          "q": "You are writing reward functions for GSM8K with TRL's GRPOTrainer. What signature do they need and how would you structure correctness and format rewards?",
+          "a": "TRL calls each reward function with keyword arguments: `prompts`, `completions`, `completion_ids`, plus every extra dataset column by name (for example `ground_truth`), and newer versions add things such as `trainer_state`. It must return a list with one float per completion (or `None` to skip one). Accept `**kwargs` so new arguments do not break you. In conversational datasets the text is `completion[0][\"content\"]`.\n\nCorrectness: extract the answer from exactly one `<answer>` tag, require exactly one number, strip commas, compare with the reference after `####`; reward 1.0 or 0. Format: a strict regex for reasoning then a single final tag, worth about 0.5 or less. Keep format well below correctness, or a tidy wrong answer ties with an untidy right one. Test both on hand-written edge cases before training."
+        },
+        {
+          "level": "mid",
+          "q": "GRPOTrainer refuses to start with `per_device_train_batch_size=6`, `gradient_accumulation_steps=4`, `num_generations=8` on one GPU. Why, and how do you fix it?",
+          "a": "The completions processed per optimizer step, $N_{GPU} \\times b \\times a = 1 \\times 6 \\times 4 = 24$, must be divisible by `num_generations` so they form whole groups of $G$ completions per prompt. 24 is not divisible by 8.\n\nFixes: set $b = 8$ (32 completions, 4 prompts per step), or $b = 4$ (16 completions, 2 prompts), or change $G$ to 6 or 4 (24 completions, 4 or 6 prompts). Note that `per_device_train_batch_size` counts completions, not prompts, so prompts per step is the total divided by $G$. Choose the option that fits memory while keeping $G$ at least 4, since smaller groups give noisier means and more all-tied groups."
+        },
+        {
+          "level": "mid",
+          "q": "Estimate the GPU memory of GRPO with LoRA on Qwen2.5-1.5B-Instruct on a T4, and say which item surprises people.",
+          "a": "Main terms with fp16 base weights, 32 completions generated together, 256 completion tokens and a training micro-batch of 8:\n\n- Weights: $1.54 \\times 10^9 \\times 2$ B = 3.1 GB.\n- LoRA $r = 16$ on all linear layers: about 18.5M parameters at 16 B (fp32 weight, grad, Adam) = 0.3 GB.\n- KV cache: $2 \\times 28 \\times 2 \\times 128 \\times 2 = 28.7$ KB per token, times $32 \\times 406$ tokens = 0.37 GB.\n- Logits: $8 \\times 256 \\times 151{,}936 \\times 4$ B = 1.2 GB, up to 2.5 GB with a softmax copy.\n- Activations with checkpointing and CUDA overhead: about 1.5 GB.\n\nTotal about 6.5 to 8 GB, comfortable on 15 GB. The surprise is the logits: with a 152k vocabulary they rival the weights and do not shrink when you move to the 0.5B model."
+        },
+        {
+          "level": "mid",
+          "q": "Why is generation usually the bottleneck in a GRPO step, and what does that imply for tuning?",
+          "a": "Generating 256 tokens needs 256 sequential forward passes, each reading all the weights; on a T4 at about 320 GB/s, 3.1 GB of weights sets a floor of about 10 ms per step, and Hugging Face `generate` is typically several times slower. The training pass, in contrast, processes all tokens in parallel at high utilisation.\n\nImplications: decode time scales with `max_completion_length`, not much with the number of completions in flight, so raising `num_generations` is relatively cheap while longer completions are expensive. Accelerating generation (vLLM in colocate mode, Unsloth's fast inference) gives the biggest speed-up. Always measure: TRL logs `step_time`; run 5 steps and extrapolate before launching 300."
+        },
+        {
+          "level": "mid",
+          "q": "Map the from-scratch GRPO in part_9 to TRL's GRPOTrainer. What differs?",
+          "a": "`grpo_loss.py` is PPO's clipped loss with the value term removed: `ratio = exp(new_logp - old_logp)`, `-mean(min(ratio*adv, clamp(ratio, 0.8, 1.2)*adv))`, plus `kl_coef * kl`. `train_grpo.py` samples `group_size` completions per prompt, subtracts the group mean, broadcasts to tokens and normalises by the batch std.\n\nDifferences: part_9 scores with a learned reward model from Part 7, TRL with Python functions; part_9 normalises by batch std (TRL's `scale_rewards=\"batch\"`) while TRL defaults to group std; part_9's KL is the mean log-ratio, TRL uses the $\\pi_{ref}/\\pi - \\log(\\pi_{ref}/\\pi) - 1$ estimator weighted by `beta`. Names map as `group_size` to `num_generations`, `kl_coef` to `beta`, `resp_len` to `max_completion_length`. Both do one update per batch, so the ratio is 1 and the clip is inactive."
+        },
+        {
+          "level": "senior",
+          "q": "After 150 steps, the format reward is at its maximum, total reward keeps rising, but held-out GSM8K accuracy is flat. Completions are getting shorter. Diagnose and fix.",
+          "a": "This is reward hacking of the format and length terms. Total reward rises because the model has learned the cheap components: perfect tags and short outputs that avoid the length penalty, while correctness, the term you care about, is not improving. Check `rewards/correctness_reward/mean` separately and read 20 completions; expect minimal or empty reasoning followed by a tagged guess.\n\nFixes, in order: reduce the format weight (0.5 to 0.1, or drop it once compliance is near 100%), remove or loosen the length penalty so reasoning is not taxed, require non-trivial reasoning before the tag, and make sure correctness parsing rejects hedged answers. Restart from the last checkpoint before the drift. Judge success only by held-out accuracy with error bars (about $\\pm 2.7$ points at 1,319 questions), and stop if it falls while reward rises."
+        },
+        {
+          "level": "senior",
+          "q": "Entropy is dropping toward zero, reward_std is collapsing and the logged completions look nearly identical across questions. What is happening and what do you change?",
+          "a": "The policy is collapsing to a narrow, near-deterministic mode. Once completions in a group become identical, rewards tie, advantages go to 0, and learning stalls; if the collapsed mode exploits the reward, it can also lock in a hack. Common causes: learning rate too high for LoRA, no KL anchor (`beta=0`), too many updates per batch (`num_iterations > 1` with wide clipping), or a reward dominated by one easy component.\n\nResponses: roll back to the last checkpoint with healthy entropy, lower the learning rate (for example 1e-5 to 3e-6), add a small KL weight (`beta` 0.01 to 0.04), keep temperature at 1.0 during training, and check reward balance. TRL also offers an entropy bonus (`entropy_coef`) if collapse recurs. Watch `entropy`, `reward_std` and `frac_reward_zero_std` together; they move as a set."
+        },
+        {
+          "level": "senior",
+          "q": "Your team wants to GRPO-train a 1.5B model for a structured extraction task on a single T4. Design the run.",
+          "a": "Reward: a verifiable checker, for example parse the output as JSON, validate against the schema, then compare fields with the gold record; give partial credit per correct field (unlike GSM8K, quality here is genuinely graded) and a small format reward only while schema compliance is low. Unit-test the checker on hand-written edge cases.\n\nData: prompts the base model solves sometimes; filter out those it always or never solves (check with 8 samples each) so groups have variance.\n\nConfig: LoRA r=16 all-linear, fp16 (T4 has no fast bf16), `num_generations=8`, completion length just above the longest gold output, batch 8 with accumulation 4, learning rate around 1e-5, small `beta`. Budget about 7 to 8 GB or use Unsloth 4-bit. Measure 5 steps for timing, checkpoint to Drive, and evaluate field-level accuracy on a held-out set with paired comparisons against the SFT baseline."
+        }
+      ]
+    },
+    {
+      "slug": "fine-tuning-embedding-models",
+      "title": "Fine-tuning embedding models",
+      "lesson": "fine-tuning-embedding-models",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What is the difference between a bi-encoder and a cross-encoder, and where is each used?",
+          "a": "A **bi-encoder** encodes the query and the document separately with the same network and compares the two vectors by cosine or dot product. Because documents are encoded independently, you can embed a whole corpus once, store the vectors, and at query time run the model only on the query. That makes it suitable for searching millions of passages.\n\nA **cross-encoder** reads the query and document together in one forward pass and outputs a relevance score. Attention can compare the two texts token by token, so it is more accurate, but it must run once per (query, document) pair. Searching 1M documents would need 1M forward passes per query.\n\nThe usual design combines them: a bi-encoder shortlists the top 50 to 100 candidates, and a cross-encoder re-ranks that shortlist."
+        },
+        {
+          "level": "junior",
+          "q": "Why do we normalise sentence embeddings to unit length?",
+          "a": "For unit vectors the dot product equals the cosine similarity, and squared Euclidean distance is $2 - 2\\cos$, so all three give the same ranking. Normalising once when you write vectors lets the index use the cheapest operation, a dot product, while still comparing directions only.\n\nWithout normalisation, a dot-product index rewards long vectors: a document whose embedding happens to have a large norm scores well against many unrelated queries. Training losses such as MultipleNegativesRankingLoss use cosine similarity by default, so the model was optimised for directions anyway. Check whether your model or API already returns unit vectors (many do) so you know whether the step is needed."
+        },
+        {
+          "level": "mid",
+          "q": "Explain MultipleNegativesRankingLoss and compute it for one row of cosines (0.8, 0.5, 0.4) where the first entry is the true pair, with scale 20.",
+          "a": "The loss treats each anchor as a $B$-way classification over the batch's positives. It builds the $B \\times B$ cosine matrix between anchors and positives, multiplies by a scale $s$ (inverse temperature; the default 20 means $\\tau = 0.05$), applies a softmax per row, and takes cross-entropy against the diagonal. This is InfoNCE.\n\nFor the row $(0.8, 0.5, 0.4)$: logits are $(16, 10, 8)$. Loss $= -\\log \\frac{e^{16}}{e^{16} + e^{10} + e^{8}} = \\log(1 + e^{-6} + e^{-8}) \\approx \\log(1.00281) \\approx 0.0028$.\n\nWithout the scale the logits would differ by at most 2 (cosines lie in $[-1, 1]$), the softmax could never become confident, and every row would keep a large loss, so the model could not separate easy pairs from hard ones."
+        },
+        {
+          "level": "mid",
+          "q": "Why does a larger batch usually give a better embedding model with in-batch negatives, and why does gradient accumulation not help?",
+          "a": "Each anchor is contrasted with the $B - 1$ other positives in its batch. A larger batch means more negatives per anchor at no extra labelling cost, and a higher chance that some are genuinely confusing near-misses. That makes the classification harder and the gradient more informative, so the learned space separates fine distinctions better.\n\nGradient accumulation runs several small batches and sums their gradients. Each small batch still builds its own small similarity matrix, so an anchor in a micro-batch of 32 sees only 31 negatives even if the effective batch is 512. To get the benefit of a large batch on limited memory you need a method that computes the full matrix, such as `CachedMultipleNegativesRankingLoss` (GradCache), which encodes in mini-batches, caches embeddings, and back-propagates in chunks."
+        },
+        {
+          "level": "mid",
+          "q": "What is a hard negative, how do you mine one, and what is the main risk?",
+          "a": "A hard negative is a passage that looks relevant to the query but does not answer it, such as the rate-limit page for a different product. In-batch negatives are mostly easy, so adding one hard negative per anchor gives the loss something difficult to learn from; DPR showed a clear gain from this.\n\nTo mine: embed the corpus with the base model, retrieve the top $k$ (say 20) passages for each anchor, drop the known positive, and pick one of the remaining candidates.\n\nThe main risk is **false negatives**: the top-ranked \"negatives\" are often correct answers that simply were not labelled, for example duplicated or overlapping passages. Training pushes them away from the query and damages the model. Mitigations: skip candidates scoring within a margin of the positive (e.g. above 95% of its score), skip the very top ranks, deduplicate the corpus, or have a cross-encoder veto relevant candidates."
+        },
+        {
+          "level": "mid",
+          "q": "How many bytes does one embedding take at 768 dimensions in float32, and at 128 dimensions in binary? What does Matryoshka training have to do with it?",
+          "a": "Bytes per vector are $d \\times \\text{bits} / 8$. At 768 dimensions in float32: $768 \\times 4 = 3{,}072$ bytes. At 128 dimensions in binary (1 bit each): $128 / 8 = 16$ bytes, which is 192 times smaller. For 10M documents that is 30.7 GB against 160 MB.\n\nTruncating dimensions is only safe if the model was trained for it. An ordinary model spreads information over all dimensions, so the first 128 are an arbitrary slice and rankings change. **Matryoshka training** adds the contrastive loss computed on several truncated prefixes (e.g. 768, 512, 256, 128, 64) to the total loss, so the leading dimensions carry the most important information. You then choose the size at deployment, and can combine a small vector for fast shortlisting with the full vector for re-scoring."
+        },
+        {
+          "level": "mid",
+          "q": "Three test queries have their single relevant passage at ranks 1, 3 and 12. Compute recall@10, MRR@10 and NDCG@10.",
+          "a": "**Recall@10**: the answer is in the top 10 for 2 of 3 queries, so $2/3 \\approx 0.67$.\n\n**MRR@10**: reciprocal ranks, with anything beyond 10 counted as zero: $(1/1 + 1/3 + 0)/3 = 1.333/3 \\approx 0.444$.\n\n**NDCG@10**: with one relevant passage the ideal DCG is $1/\\log_2 2 = 1$, so each query scores $1/\\log_2(\\text{rank} + 1)$: $1$, $1/\\log_2 4 = 0.5$, and $0$. The mean is $0.5$.\n\nNDCG and MRR both reward the top position most, but NDCG's log discount falls more slowly than $1/\\text{rank}$, and it handles several relevant passages and graded relevance, which is why it is the usual headline metric for retrieval benchmarks such as MTEB."
+        },
+        {
+          "level": "senior",
+          "q": "Your fine-tuned embedding model improves NDCG@10 from 0.61 to 0.88 on your held-out set. What would you check before believing it?",
+          "a": "A 27-point jump from a domain fine-tune is suspicious; typical gains are a few points. Check for leakage first:\n\n1. **Split granularity.** Were pairs split at random? If several synthetic questions share a passage, test questions point to passages the model was trained on. Re-split by document.\n2. **Near-duplicate queries** across train and test (LLM-generated questions often repeat). Deduplicate by text similarity.\n3. **Corpus realism.** Is the search space only the test passages? Search the full corpus, including training passages, which compete for the top ranks in production.\n4. **Baseline fairness.** Was the base model run with its required prefixes (E5's `query:`, BGE's instruction) and the same pooling and max length?\n5. **Test-set quality.** If test queries were generated by the same LLM and prompt as training, the model learns that generator's style. Use human-checked queries.\n6. **Noise.** With 100 queries, one query is a point of recall. Use a paired comparison over enough queries.\n\nThen check a general benchmark to confirm the model did not lose broad ability."
+        },
+        {
+          "level": "senior",
+          "q": "You have 300 labelled question-passage pairs and a 50,000-document corpus with no queries. Design a plan to fine-tune and validate an embedding model on a CPU-only machine.",
+          "a": "Use the 300 human pairs only for **evaluation**, split by document, never for training. Search them against the full 50,000-document corpus.\n\nFor training data, chunk the corpus and have an LLM write one or two questions per chunk, phrased as a user would ask without quoting the text. Filter: keep questions where the base model ranks the source chunk in its top 20, and drop near-duplicates. Exclude any chunk that belongs to an evaluation document. Aim for 5,000 to 20,000 pairs.\n\nMine one hard negative per anchor with the base model (ranks 2 to 20, relative margin around 5% below the positive's score) to avoid false negatives.\n\nModel: a small encoder such as all-MiniLM-L6-v2 (22.7M parameters, about 363 MB of fp32 Adam states) fits a laptop. Train with MultipleNegativesRankingLoss wrapped in MatryoshkaLoss, batch 32 to 64, learning rate 2e-5, 10% warmup, one to three epochs, `NO_DUPLICATES` sampler, max sequence length 128 to keep CPU time manageable. Evaluate base and tuned with the same InformationRetrievalEvaluator and keep the best checkpoint; also sweep truncation sizes to choose the deployed dimension."
+        },
+        {
+          "level": "senior",
+          "q": "After fine-tuning, in-domain retrieval improved but users report worse results on general questions. What happened and how would you fix it?",
+          "a": "This is **catastrophic forgetting**, or more precisely over-specialisation: the model re-drew its neighbourhoods around the domain pairs and lost some of the general structure it learned from hundreds of millions of pretraining pairs. Common causes are too many epochs, a learning rate that is too high for a small dataset, no warmup, or training data with a narrow style (all synthetic questions from one prompt).\n\nFixes, roughly in order of cost:\n\n- Fewer epochs and a lower learning rate (e.g. 1e-5), keeping the checkpoint with the best in-domain score that still passes a general check.\n- **Mix in general pairs** (for example 20 to 30% from a public question-answer dataset) so the loss keeps rewarding general behaviour.\n- Track a small general benchmark during training as a second evaluator, and set a tolerance (say, at most a 1 to 2 point drop).\n- Route queries: use the tuned model for the domain index and the general model elsewhere.\n\nAlways report both numbers; an in-domain gain alone hides the trade."
+        }
+      ]
+    }
+  ]
+}

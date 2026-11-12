@@ -5,7 +5,7 @@ const r = String.raw;
 
 export const loraBudget: Lab = {
   slug: "lora-budget",
-  module: "training-and-adaptation",
+  module: "fine-tuning",
   title: "The LoRA budget",
   product: "A legal-clause classifier on one 24 GB GPU",
   summary: "A small team wants to fine-tune an 8B model on contract clauses using one 24 GB GPU. Compute why full fine-tuning cannot fit, count LoRA's trainable parameters by hand, choose the rank and target matrices, and use QLoRA to tune a 70B model on a single H100.",

@@ -8,6 +8,10 @@ Before you start
 This lesson builds on the confusion matrix and thresholds from [Success Criteria](/learn/evaluation/success-criteria). You do not need to know how judge models are trained; we treat a judge as a classifier whose behaviour we measure.
 ```
 
+```predict
+{"q":"A judge model grades 2,000 support replies, reading 1,500 tokens and writing 200 per item, at \\$3 and \\$15 per million input and output tokens. Roughly what does the whole run cost?","options":["About \\$1.50","About \\$15","About \\$150","About \\$1,500"],"answer":1,"reveal":"About \\$15 (\\$9 of input plus \\$6 of output), done in minutes, against about \\$1,000 for fast human review. The steps under \"The maths: is it worth it?\" do the sums; the rest of the lesson is about whether the judge deserves that trust."}
+```
+
 Reference metrics work when a correct answer has one shape. Most LLM outputs do not. A good reply to "my parcel is late and I'm furious" can take a hundred forms, and the question that matters ("is it accurate, polite, and does it offer the right next step?") needs reading comprehension to answer. Human reviewers can answer it, but they are slow and expensive, and they get tired.
 
 The **LLM-as-judge** pattern hands that reading to a second model. You give the judge the input, the output, often a reference or source document, and a **rubric**, and ask for a verdict. It is the same idea as a teacher with a marking scheme: the scheme, not the teacher's mood, should decide the grade. Done carefully, a strong judge agrees with careful human reviewers about as often as two humans agree with each other on many tasks. Done carelessly, it produces confident, biased numbers.

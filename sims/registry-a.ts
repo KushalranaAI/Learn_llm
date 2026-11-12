@@ -4,7 +4,6 @@ import { backpropFlow } from "./a/backprop-flow";
 import { bpeTokenizer } from "./a/bpe-tokenizer";
 import { contextPosition } from "./a/context-position";
 import { embeddingSpace } from "./a/embedding-space";
-import { gpuCapacity } from "./a/gpu-capacity";
 import { gradientDescent } from "./a/gradient-descent";
 import { kvCacheMemory } from "./a/kv-cache-memory";
 import { latencyBreakdown } from "./a/latency-breakdown";
@@ -30,5 +29,5 @@ export const SIMS_A: SimDef[] = [
   // training-and-adaptation
   scalingLaws, trainingMemory, lrSchedule, preferenceLoss, loraParams,
   // inference-and-serving
-  latencyBreakdown, roofline, llmBatching, quantization, speculativeDecoding, gpuCapacity,
+  latencyBreakdown, roofline, llmBatching, quantization, speculativeDecoding,
 ];

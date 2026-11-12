@@ -1,0 +1,22 @@
+{
+  "title": "Mixture of Experts: More Parameters, Same Compute",
+  "summary": "A mixture-of-experts layer replaces the single feed-forward network with many expert FFNs and a router that sends each token to only a few of them. This lesson builds one in PyTorch from the companion repo's part 5: top-k gating, the Switch load-balancing loss, dispatch and combine, hybrid dense and MoE stacks, and what MoE costs in memory and communication.",
+  "objectives": [
+    "Compute total and active parameters, and FLOPs per token, for an MoE layer and a real model such as Mixtral 8x7B",
+    "Route a token by hand through softmax, top-k selection and renormalised gate weights, and explain how the router receives gradient",
+    "Calculate the Switch auxiliary loss and expert capacity, and explain why routers collapse without them",
+    "Implement an MoE layer that dispatches, computes and combines tokens with correct shapes, and test it against the dense case",
+    "Choose between dense, interleaved, shared-expert and all-MoE designs by weighing memory, decode bandwidth and all-to-all communication"
+  ],
+  "prerequisites": "You should know the feed-forward network from [The Transformer Block](/learn/model-foundations/transformer-block) and have the PyTorch block from [Attention in code](/learn/model-foundations/attention-in-code). The experts here are the SwiGLU FFN from [Modernising the architecture](/learn/model-foundations/modern-architecture). Softmax is covered in [Attention](/learn/model-foundations/attention). For the serving discussion, [Where the time goes](/learn/inference-and-serving/memory-and-compute) explains memory-bound decode and the roofline.",
+  "sims": ["roofline"],
+  "labs": [],
+  "sources": [
+    { "title": "Outrageously Large Neural Networks: The Sparsely-Gated Mixture-of-Experts Layer", "authors": "Shazeer et al.", "year": 2017, "note": "The modern MoE layer: noisy top-k gating and an importance-based balancing loss" },
+    { "title": "GShard: Scaling Giant Models with Conditional Computation and Automatic Sharding", "authors": "Lepikhin et al.", "year": 2020, "note": "Top-2 routing, expert capacity, MoE in every other layer, and expert parallelism across devices" },
+    { "title": "Switch Transformers: Scaling to Trillion Parameter Models with Simple and Efficient Sparsity", "authors": "Fedus, Zoph and Shazeer", "year": 2021, "note": "Top-1 routing, the N · Σ f_i P_i auxiliary loss and the capacity factor; the repo's gate follows it" },
+    { "title": "ST-MoE: Designing Stable and Transferable Sparse Expert Models", "authors": "Zoph et al.", "year": 2022, "note": "Router z-loss and training-stability advice for sparse models" },
+    { "title": "DeepSeekMoE: Towards Ultimate Expert Specialization in Mixture-of-Experts Language Models", "authors": "Dai et al.", "year": 2024, "note": "Fine-grained experts plus always-on shared experts" },
+    { "title": "Mixtral of Experts", "authors": "Jiang et al.", "year": 2024, "note": "8 experts, top-2 routing: about 47B total and 13B active parameters" }
+  ]
+}

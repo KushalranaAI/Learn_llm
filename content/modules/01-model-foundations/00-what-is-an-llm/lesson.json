@@ -10,7 +10,6 @@
   "prerequisites": "None. Start here.",
   "sims": ["llm-autocomplete", "llm-timeline", "transformer-flow", "training-stages", "llm-can-cant"],
   "labs": [],
-  "sandbox": [],
   "sources": [
     { "title": "Attention Is All You Need", "authors": "Vaswani et al.", "year": 2017, "note": "The transformer architecture" },
     { "title": "Improving Language Understanding by Generative Pre-Training", "authors": "Radford et al.", "year": 2018, "note": "GPT-1: pretrain on next-token prediction, then fine-tune" },

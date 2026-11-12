@@ -11,7 +11,6 @@
   "prerequisites": "The idea that an eval score is an average, and the standard error formula, from [Success Criteria](/learn/evaluation/success-criteria). Judge agreement from [Using a Model as a Judge](/learn/evaluation/llm-as-judge) is useful but not required.",
   "sims": ["ab-significance"],
   "labs": ["is-it-really-better"],
-  "sandbox": [],
   "sources": [
     { "title": "Statistical Methods for Research Workers", "authors": "R. A. Fisher", "year": 1925, "note": "Significance testing and p-values" },
     { "title": "An Introduction to the Bootstrap", "authors": "Efron and Tibshirani", "year": 1993, "note": "Chapters 1 to 6: the bootstrap and percentile intervals" },

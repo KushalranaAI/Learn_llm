@@ -16,6 +16,18 @@ const nextConfig = {
   // Next's own bootstrap scripts are inline and change per request, so script-src has to allow 'unsafe-inline' here;
   // the static copy is stricter because its inline scripts are fixed and can be hashed.
   ...(!staticExport && {
+    // Lessons that moved keep working at their old addresses (saved progress is renamed in lib/progress.ts).
+    async redirects() {
+      return [
+        { source: "/learn/build-from-scratch", destination: "/learn/model-foundations", permanent: false },
+        { source: "/learn/build-from-scratch/:path*", destination: "/learn/model-foundations/:path*", permanent: false },
+        {
+          source: "/learn/training-and-adaptation/:lesson(instruction-tuning|peft-lora|preference-tuning)/:path*",
+          destination: "/learn/fine-tuning/:lesson/:path*",
+          permanent: false,
+        },
+      ];
+    },
     async headers() {
       const dev = process.env.NODE_ENV !== "production";
       return [

@@ -11,7 +11,6 @@
   "prerequisites": "No machine-learning background. You should be comfortable multiplying and adding numbers and with the idea of a function: numbers in, a number out. A little calculus (what a slope is) helps but is explained as we go.",
   "sims": ["neuron", "gradient-descent", "backprop-flow", "xor-training"],
   "labs": ["train-a-tiny-network"],
-  "sandbox": [],
   "sources": [
     { "title": "Deep Learning", "authors": "Goodfellow, Bengio and Courville", "year": 2016, "note": "Chapter 6 (deep feedforward networks) and Chapter 8 (optimisation)" },
     { "title": "Learning representations by back-propagating errors", "authors": "Rumelhart, Hinton and Williams", "year": 1986, "note": "The paper that popularised backpropagation" },

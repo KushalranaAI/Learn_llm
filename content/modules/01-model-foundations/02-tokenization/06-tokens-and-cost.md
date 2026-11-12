@@ -42,7 +42,7 @@ $$
 t \sum_{k=1}^{K} k = t\,\frac{K(K+1)}{2}
 $$
 
-With $t = 300$ and $K = 10$ turns: $300 \times 55 = 16{,}500$ input tokens, compared with $3{,}000$ if every turn were independent. A 20-turn chat costs $300 \times 210 = 63{,}000$. This is why long chats are summarised or truncated, and why caching a repeated prefix (module 03) matters so much.
+With $t = 300$ and $K = 10$ turns: $300 \times 55 = 16{,}500$ input tokens, compared with $3{,}000$ if every turn were independent. A 20-turn chat costs $300 \times 210 = 63{,}000$. This is why long chats are summarised or truncated, and why caching a repeated prefix (module 06) matters so much.
 
 ## See it
 

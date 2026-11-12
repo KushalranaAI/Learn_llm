@@ -1,0 +1,20 @@
+{
+  "title": "GRPO from Scratch",
+  "summary": "GRPO is PPO without the value head: sample a group of completions per prompt, use their average reward as the baseline, and give every token of a completion the same advantage. This lesson reads the plain-PyTorch version in part_9 of the companion repo line by line, including how its KL term and batch normalisation differ from the paper and the library.",
+  "objectives": [
+    "Explain why the group mean can replace PPO's learned value as a baseline, and estimate the memory that saves at small and large scale",
+    "Compute group-normalised advantages for a batch by hand and say how part_9's batch-level scaling and token-level re-centring change them",
+    "Trace how one advantage per completion is broadcast to every response token through act_mask and traj_id_for_token",
+    "Compare the k1 and k3 KL estimators and explain why a KL term added to the loss behaves differently from one folded into the reward",
+    "Instrument the training loop with reward, within-group spread and KL, and map each part_9 setting onto TRL's GRPOTrainer"
+  ],
+  "prerequisites": "This lesson changes the PPO loop from [RLHF with PPO](/learn/post-training/rlhf-with-ppo), which uses the reward model from [Reward models](/learn/post-training/reward-models); read those first. The theory is in [Verifiable rewards and group-relative advantages](/learn/fine-tuning/preference-tuning/verifiable-rewards-grpo), and the library version is [GRPO hands-on](/learn/fine-tuning/grpo-hands-on).",
+  "sims": ["training-memory", "sampling"],
+  "labs": [],
+  "sources": [
+    { "title": "DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models", "authors": "Shao et al.", "year": 2024, "note": "Introduces GRPO: group-relative advantages instead of a value model, KL to the reference added to the loss" },
+    { "title": "DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning", "authors": "DeepSeek-AI", "year": 2025, "note": "GRPO at scale with rule-based accuracy and format rewards" },
+    { "title": "Proximal Policy Optimization Algorithms", "authors": "Schulman et al.", "year": 2017, "note": "The clipped surrogate objective that GRPO keeps" },
+    { "title": "Understanding R1-Zero-Like Training: A Critical Perspective", "authors": "Liu et al.", "year": 2025, "note": "Argues against GRPO's per-group std division and per-sequence length normalisation (Dr. GRPO)" }
+  ]
+}

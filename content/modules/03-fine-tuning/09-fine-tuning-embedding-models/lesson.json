@@ -1,0 +1,23 @@
+{
+  "title": "Fine-Tuning Embedding Models",
+  "summary": "A general embedding model does not know what counts as similar in your domain. This lesson explains how sentence-embedding models are trained with contrastive loss and in-batch negatives, then fine-tunes a small one on a laptop CPU with sentence-transformers, adds Matryoshka training for smaller vectors, and measures the gain with retrieval metrics on held-out documents.",
+  "objectives": [
+    "Explain how a bi-encoder turns token states into one normalised vector and size a small embedding model's training memory",
+    "Compute the InfoNCE (MultipleNegativesRankingLoss) loss for a small similarity matrix and explain why batch size and the scale matter",
+    "Build (anchor, positive) pairs and mined hard negatives while avoiding false negatives and train/test leakage",
+    "Fine-tune an embedding model with SentenceTransformerTrainer, optionally with MatryoshkaLoss, and compute the storage of truncated and quantised vectors",
+    "Compare a base and a tuned model with recall@k, MRR@10 and NDCG@10 computed by hand and with InformationRetrievalEvaluator"
+  ],
+  "prerequisites": "Sentence vectors, pooling and cosine similarity from [Embeddings](/learn/model-foundations/embeddings), especially [static and contextual embeddings](/learn/model-foundations/embeddings/static-and-contextual). The contrastive loss is easier if you have seen [the CLIP loss](/learn/training-and-adaptation/multimodal/clip-contrastive-loss). Memory per parameter is from [Sizing your first run](/learn/fine-tuning/start-here/sizing-your-first-run); environment setup is in [Run fine-tuning yourself](/learn/fine-tuning/run-fine-tuning-yourself).",
+  "sims": ["embedding-space"],
+  "labs": [],
+  "sources": [
+    { "title": "Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks", "authors": "Reimers and Gurevych", "year": 2019, "note": "Bi-encoder sentence embeddings compared by cosine; the origin of the sentence-transformers library" },
+    { "title": "Representation Learning with Contrastive Predictive Coding", "authors": "van den Oord, Li and Vinyals", "year": 2018, "note": "The InfoNCE loss" },
+    { "title": "A Simple Framework for Contrastive Learning of Visual Representations", "authors": "Chen, Kornblith, Norouzi and Hinton", "year": 2020, "note": "SimCLR: NT-Xent loss, temperature, and the benefit of large batches of negatives" },
+    { "title": "Dense Passage Retrieval for Open-Domain Question Answering", "authors": "Karpukhin et al.", "year": 2020, "note": "In-batch negatives plus a hard negative per question for training a bi-encoder retriever" },
+    { "title": "Matryoshka Representation Learning", "authors": "Kusupati et al.", "year": 2022, "note": "Nested embeddings usable at several sizes from one training run" },
+    { "title": "Text Embeddings by Weakly-Supervised Contrastive Pre-training", "authors": "Wang et al.", "year": 2022, "note": "E5: large-scale contrastive pretraining of a text embedding model" },
+    { "title": "C-Pack: Packaged Resources To Advance General Chinese Embedding", "authors": "Xiao et al.", "year": 2023, "note": "The BGE embedding models and their training recipe" }
+  ]
+}

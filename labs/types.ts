@@ -1,5 +1,4 @@
-// A lab is a short guided challenge: read, predict, compute by hand, then prove it in a simulation or the sandbox.
-import type { DesignTest, Graph, NodeKind } from "@/sandbox/types";
+// A lab is a short guided challenge: read, predict, compute by hand, then prove it in a simulation.
 import type { Goal, Params } from "@/sims/types";
 
 export type LabStep =
@@ -20,6 +19,23 @@ export type LabStep =
       solution: string;
     }
   | {
+      /**
+       * run real code (your laptop, Colab) and paste the number it prints, checked within a tolerance against a
+       * reference run with the same seed. `body` holds the exact commands or script. Capstones are built from these.
+       */
+      type: "run";
+      title: string;
+      body: string;
+      question: string;
+      answer: number;
+      /** relative tolerance: leave room for hardware and library-version differences */
+      tolerance: number;
+      unit?: string;
+      hint: string;
+      /** what a correct run looks like and why the number is what it is, markdown + KaTeX */
+      solution: string;
+    }
+  | {
       type: "sim";
       title: string;
       body: string;
@@ -31,17 +47,6 @@ export type LabStep =
       hints: string[];
       /** params that meet every goal: verified by tests */
       solution: Params;
-    }
-  | {
-      type: "design";
-      title: string;
-      body: string;
-      starter?: Graph;
-      palette?: NodeKind[];
-      test: DesignTest;
-      hints: string[];
-      /** a design that passes: verified by tests */
-      solution: Graph;
     };
 
 export interface Lab {
@@ -56,4 +61,6 @@ export interface Lab {
   minutes: number;
   tags: string[];
   steps: LabStep[];
+  /** a module capstone: one integrative build made of run steps; it need not include a simulation */
+  capstone?: boolean;
 }

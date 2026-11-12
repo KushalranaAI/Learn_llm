@@ -1,29 +1,17 @@
 // Lab: self-host an 8B open model for a bank's support chat. Decode is bandwidth-bound, so batching is the lever; then quantization.
-import { build } from "@/sandbox/presets";
-import type { Graph, NodeConfig } from "@/sandbox/types";
 import type { Lab } from "./types";
 
 const r = String.raw;
-
-/** One users node (800-token prompts, 300-token answers) in front of a self-hosted 8B model. */
-const chat = (rps: number, llm: NodeConfig): Graph =>
-  build(
-    {
-      users: ["users", { rps, promptTokens: 800, outputTokens: 300 }],
-      llm: ["llm-selfhost", { model: "8B", ...llm }, "8B chat model"],
-    },
-    "users > llm",
-  );
 
 export const serveAChatModel: Lab = {
   slug: "serve-a-chat-model",
   module: "inference-and-serving",
   title: "Serve a chat model",
   product: "A bank's support chat on its own GPUs",
-  summary: "A bank self-hosts an 8B model for its support chat. Work out why one GPU serving one user wastes almost everything, find a batch size that balances throughput and speed, then build serving designs in the sandbox that meet success, latency and budget targets.",
+  summary: "A bank self-hosts an 8B model for its support chat. Work out why one GPU serving one user wastes almost everything, find a batch size that balances throughput and speed, then price a million tokens on your own GPU.",
   difficulty: "medium",
-  minutes: 40,
-  tags: ["batching", "decode", "memory bandwidth", "TTFT", "quantization", "GPU cost", "sandbox"],
+  minutes: 25,
+  tags: ["batching", "decode", "memory bandwidth", "TTFT", "quantization", "GPU cost"],
   steps: [
     {
       type: "intro",
@@ -37,7 +25,7 @@ A request has two phases:
 - **Prefill**: process all 800 prompt tokens in one parallel pass. This is compute-heavy and fast.
 - **Decode**: write the answer one token at a time. Each token needs a full pass over the model, which means reading **every weight** from GPU memory.
 
-That second phase is why serving is about memory bandwidth, and why **batching** many requests into each step is the main lever. In this lab you will compute the limit by hand, find a good batch size, and then fix two sandbox designs.`,
+That second phase is why serving is about memory bandwidth, and why **batching** many requests into each step is the main lever. In this lab you will compute the limit by hand, find a good batch size, and then work out what a million tokens costs you.`,
     },
     {
       type: "quiz",
@@ -103,53 +91,6 @@ No amount of GPU compute raises this limit for batch size 1. Quantizing to int8 
 $$\text{cost per } 10^6\text{ tokens} = \frac{2.50}{1.074\times 10^{7}}\times 10^{6} = \$0.2328$$
 
 At batch 1 the same GPU makes 163 tokens/s and the same million tokens cost \$4.26, eighteen times more. The GPU costs the same either way; batching spreads the cost over more tokens.`,
-    },
-    {
-      type: "design",
-      title: "Launch day: turn on batching",
-      body: r`Launch traffic is **3 requests/s**. The design below has **two A10G replicas** (one GPU each) but **continuous batching is off**, so each replica serves one request at a time and almost every request times out.
-
-Fix it **without buying more GPUs**. The checks: nearly all requests answered, GPUs not run into the ground, and the bill under \$2,000 a month. Select the model node and look at its settings.`,
-      starter: chat(3, { gpu: "A10G", replicas: 2, batching: false, quantization: "fp16", maxBatch: 32 }),
-      palette: ["llm-selfhost", "llm-api", "semantic-cache", "gateway"],
-      test: {
-        constraints: [
-          { type: "successRate", min: 0.99, why: "Without batching, one A10G streams one answer at a time (about 0.1 requests/s), so almost everything fails." },
-          { type: "gpuUtil", max: 0.9, why: "A GPU at 100% queues and times out. Keep headroom below 90%." },
-          { type: "costPerMonth", maxUsd: 2000, why: "The budget allows two A10Gs, about \$1,750 a month. Throwing more GPUs at it is not the fix." },
-        ],
-      },
-      hints: [
-        "Open the self-hosted node: the inspector shows the replica is over capacity.",
-        "A single request barely uses the GPU. Batching decodes many requests per step.",
-        "Turn on continuous batching and keep two replicas.",
-      ],
-      solution: chat(3, { gpu: "A10G", replicas: 2, batching: true, quantization: "fp16", maxBatch: 32 }),
-    },
-    {
-      type: "design",
-      title: "Traffic grows to 5 requests/s",
-      body: r`After a marketing push traffic reaches **5 requests/s**. Three batched fp16 A10Gs are at 95% utilisation, so queues build and the first token takes tens of seconds.
-
-The budget is capped at **\$3,000 a month**, so a fourth GPU or an H100 is not allowed. Streaming users need the 99th-percentile first token within **1.5 s**, and answer quality must stay at least **0.715** (the quality proxy of the unquantized model is 0.723).
-
-Hint: halving the bytes per weight roughly doubles decode speed and leaves room for a bigger KV cache.`,
-      starter: chat(5, { gpu: "A10G", replicas: 3, batching: true, quantization: "fp16", maxBatch: 32 }),
-      palette: ["llm-selfhost", "llm-api", "semantic-cache", "gateway"],
-      test: {
-        constraints: [
-          { type: "successRate", min: 0.99, why: "At 95% utilisation the queue grows and requests time out." },
-          { type: "ttft", maxMs: 1500, why: "Streaming users notice a slow first token. Queueing delay is what pushes TTFT up." },
-          { type: "quality", min: 0.715, why: "INT4 is cheaper but gives up too much quality here. INT8 loses almost nothing." },
-          { type: "costPerMonth", maxUsd: 3000, why: "Three A10Gs cost about \$2,630. An H100 (\$3,285) is over budget." },
-        ],
-      },
-      hints: [
-        "Utilisation is the problem: each replica is nearly saturated.",
-        "Quantizing the weights speeds up the bandwidth-bound decode step without adding GPUs.",
-        "Switch the model to INT8. INT4 would pass speed but lose quality.",
-      ],
-      solution: chat(5, { gpu: "A10G", replicas: 3, batching: true, quantization: "int8", maxBatch: 32 }),
     },
   ],
 };

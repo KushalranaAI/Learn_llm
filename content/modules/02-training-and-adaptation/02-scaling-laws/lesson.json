@@ -11,7 +11,6 @@
   "prerequisites": "You should know the pretraining objective and the idea of tokens per parameter ([Pretraining Data](/learn/training-and-adaptation/pretraining-data)), and roughly how parameters are counted in a transformer ([The Transformer Block](/learn/model-foundations/transformer-block)). Comfort with logarithms and exponents helps; they are reviewed where used.",
   "sims": ["scaling-laws"],
   "labs": ["plan-a-training-run"],
-  "sandbox": [],
   "sources": [
     { "title": "Scaling Laws for Neural Language Models", "authors": "Kaplan et al.", "year": 2020, "note": "Power-law fits of loss against parameters, data and compute; the C ≈ 6ND estimate" },
     { "title": "Training Compute-Optimal Large Language Models", "authors": "Hoffmann et al.", "year": 2022, "note": "Chinchilla: the L(N, D) fit and the finding that tokens and parameters should scale about equally" },

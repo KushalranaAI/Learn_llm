@@ -1,0 +1,23 @@
+{
+  "title": "GRPO Hands-On: Teaching a Small Model to Reason with Verifiable Rewards",
+  "summary": "Train a small instruct model with GRPO on GSM8K maths problems on a free Colab T4: write reward functions that cannot be gamed, configure TRL's GRPOTrainer with LoRA, do the memory and time arithmetic before you run, and read the logged signals to tell learning from collapse or reward hacking.",
+  "objectives": [
+    "Compute group-relative advantages, the clipped ratio term and the KL estimator for a worked group, and map each to the TRL argument and the from-scratch code in part_9",
+    "Write correctness, format and length reward functions in TRL's signature and guard them against common reward hacks",
+    "Configure GRPOConfig so the batch divides into groups and the run fits a 15 GB T4, and estimate its memory and step time",
+    "Diagnose a run from reward, reward_std, frac_reward_zero_std, completion length, KL and entropy, and evaluate with greedy accuracy and pass@k on a held-out set"
+  ],
+  "prerequisites": "The GRPO idea from [Verifiable rewards and group-relative advantages](/learn/fine-tuning/preference-tuning/verifiable-rewards-grpo) and PPO's clipped objective from [RLHF with PPO](/learn/fine-tuning/preference-tuning/rlhf-ppo). A working notebook environment from [Run fine-tuning yourself](/learn/fine-tuning/run-fine-tuning-yourself), LoRA from [LoRA and QLoRA](/learn/fine-tuning/peft-lora), and where GRPO sits among DPO-style methods from [Preference optimization methods](/learn/fine-tuning/preference-optimization-methods).",
+  "sims": ["kv-cache-memory", "pass-at-k"],
+  "labs": [],
+  "sources": [
+    { "title": "DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models", "authors": "Shao et al.", "year": 2024, "note": "Introduces GRPO: group-relative advantages, clipped objective, per-token KL estimator, no value model" },
+    { "title": "DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning", "authors": "DeepSeek-AI", "year": 2025, "note": "GRPO with rule-based accuracy and format rewards; response length grows during RL training" },
+    { "title": "Training Verifiers to Solve Math Word Problems", "authors": "Cobbe et al.", "year": 2021, "note": "The GSM8K dataset of grade-school maths word problems" },
+    { "title": "Proximal Policy Optimization Algorithms", "authors": "Schulman et al.", "year": 2017, "note": "The clipped surrogate objective GRPO keeps" },
+    { "title": "DAPO: An Open-Source LLM Reinforcement Learning System at Scale", "authors": "Yu et al.", "year": 2025, "note": "Token-level loss normalisation and other fixes; the basis of TRL's default loss_type" },
+    { "title": "Understanding R1-Zero-Like Training: A Critical Perspective", "authors": "Liu et al.", "year": 2025, "note": "Dr. GRPO: length and difficulty biases in the original GRPO normalisation" },
+    { "title": "Evaluating Large Language Models Trained on Code", "authors": "Chen et al.", "year": 2021, "note": "The unbiased pass@k estimator" },
+    { "title": "LoRA: Low-Rank Adaptation of Large Language Models", "authors": "Hu et al.", "year": 2021, "note": "The adapters trained in place of the full model" }
+  ]
+}

@@ -10,7 +10,7 @@ const run = (id: string, over: Params = {}) => byId[id].compute({ ...byId[id].de
 const EXPECTED_IDS = [
   "neuron", "gradient-descent", "backprop-flow", "xor-training", "bpe-tokenizer", "token-cost", "embedding-space", "attention-heatmap", "transformer-params",
   "sampling", "kv-cache-memory", "context-position", "scaling-laws", "training-memory", "lr-schedule", "preference-loss", "lora-params",
-  "latency-breakdown", "roofline", "llm-batching", "quantization", "speculative-decoding", "gpu-capacity",
+  "latency-breakdown", "roofline", "llm-batching", "quantization", "speculative-decoding",
 ];
 
 describe("group A registry", () => {
@@ -205,13 +205,6 @@ describe("sanity checks", () => {
     expect(m.speedup).toBeCloseTo(m.tokensPerPass / 1.4, 12);
     expect(Math.abs(m.simTokensPerPass - m.tokensPerPass)).toBeLessThan(0.3);
     expect(m.bestSpeedup).toBeGreaterThanOrEqual(m.speedup);
-  });
-
-  it("gpu-capacity: more traffic needs more GPUs; utilisation stays under target", () => {
-    const m = run("gpu-capacity");
-    expect(m.actualUtil).toBeLessThanOrEqual(0.7);
-    expect(run("gpu-capacity", { qps: 200 }).gpusNeeded).toBeGreaterThanOrEqual(9 * m.gpusNeeded);
-    expect(run("gpu-capacity", { model: "llama3-70b" }).gpusNeeded).toBeGreaterThan(m.gpusNeeded);
   });
 
   it("worst-case params stay fast", () => {

@@ -1,0 +1,21 @@
+{
+  "title": "From Equations to PyTorch: Attention and the Transformer Block",
+  "summary": "Turn the attention and transformer-block equations from the earlier lessons into working PyTorch: positional encodings, a single head, batched multi-head attention, the feed-forward network and a pre-norm block. Shapes are tracked on every line, and the lesson ends with the tests that prove the block is wired correctly.",
+  "objectives": [
+    "Read and predict tensor shapes in the (B, n, d) convention, including nn.Linear and batched matrix multiplies",
+    "Implement learned and sinusoidal positional encodings and compute sinusoidal values by hand",
+    "Write a causal attention head and a multi-head attention layer using view, transpose and masked_fill, and explain the bugs each line can hide",
+    "Implement the GELU feed-forward network and count the parameters of attention, FFN and a whole block",
+    "Assemble a pre-norm transformer block and test it for shape, parameter count and causality"
+  ],
+  "prerequisites": "You should know the theory from [Attention](/learn/model-foundations/attention) (queries, keys, values, the causal mask, multi-head attention) and [The Transformer Block](/learn/model-foundations/transformer-block) (residual stream, LayerNorm, FFN, positional information). Basic Python is assumed; PyTorch is introduced as needed, starting from tensor shapes.",
+  "sims": ["attention-heatmap", "transformer-params", "transformer-flow"],
+  "labs": [],
+  "sources": [
+    { "title": "Attention Is All You Need", "authors": "Vaswani et al.", "year": 2017, "note": "Section 3: scaled dot-product and multi-head attention, the position-wise FFN and sinusoidal positional encodings" },
+    { "title": "Language Models are Unsupervised Multitask Learners", "authors": "Radford et al.", "year": 2019, "note": "GPT-2: learned positions and layer norm moved to the input of each sub-block (pre-norm)" },
+    { "title": "Gaussian Error Linear Units (GELUs)", "authors": "Hendrycks and Gimpel", "year": 2016, "note": "The GELU activation and its tanh approximation" },
+    { "title": "Layer Normalization", "authors": "Ba, Kiros and Hinton", "year": 2016, "note": "The normalisation used before each sublayer" },
+    { "title": "On Layer Normalization in the Transformer Architecture", "authors": "Xiong et al.", "year": 2020, "note": "Why pre-norm trains more stably than post-norm without warm-up" }
+  ]
+}

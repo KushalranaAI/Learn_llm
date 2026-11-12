@@ -35,11 +35,11 @@ describe("tutor context", () => {
 
   it("puts the screen in the system prompt only when sharing is on, trimmed to the budget", () => {
     const screen = "x".repeat(500);
-    expect(buildSystem("/sandbox", screen, false, 100)).not.toContain("<screen>");
-    const sys = buildSystem("/sandbox", screen, true, 100);
+    expect(buildSystem("/simulations/sampling", screen, false, 100)).not.toContain("<screen>");
+    const sys = buildSystem("/simulations/sampling", screen, true, 100);
     expect(sys).toContain("<screen>");
     expect(sys).toContain("[screen text trimmed]");
-    expect(sys).toContain("/sandbox");
+    expect(sys).toContain("/simulations/sampling");
     expect(buildUserTurn("Why?", "a quote")).toContain('"""\na quote\n"""');
   });
 });

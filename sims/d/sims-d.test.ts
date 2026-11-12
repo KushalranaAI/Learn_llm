@@ -4,12 +4,11 @@ import { SIM_BY_ID } from "../index";
 import type { Params, SimDef } from "../types";
 import { fitBT, trueRatings, winCounts, simulateVotes } from "./arena-elo-model";
 import { gateRates } from "./eval-gate-model";
-import { runAgent } from "./agent-trajectory-model";
 
 const byId = Object.fromEntries(SIMS_D.map((s) => [s.id, s])) as Record<string, SimDef>;
 const run = (id: string, over: Params = {}) => byId[id].compute({ ...byId[id].defaults, ...over });
 
-const IDS = ["pass-at-k", "arena-elo", "benchmark-contamination", "eval-gate", "agent-trajectory"];
+const IDS = ["pass-at-k", "arena-elo", "benchmark-contamination", "eval-gate"];
 
 describe("group D registry", () => {
   it("registers every sim exactly once and in the global index", () => {
@@ -88,21 +87,4 @@ describe("sanity", () => {
     expect(gateRates({ n: 300, thresholdPp: 2, regressionPp: 3, baseline: 0.85, noisePp: 1 }).miss).toBeCloseTo(run("eval-gate").missRate, 12);
   });
 
-  it("agent-trajectory: no tool errors → higher success; verification and strict judges behave", () => {
-    const d = run("agent-trajectory");
-    const clean = run("agent-trajectory", { toolErrorRate: 0 });
-    expect(clean.taskSuccess).toBeGreaterThan(d.taskSuccess);
-    expect(clean.trueSuccess).toBeGreaterThan(d.trueSuccess);
-    expect(clean.costPerSuccess).toBeLessThan(d.costPerSuccess);
-    const lenient = run("agent-trajectory", { judgeStrictness: 0 });
-    const strict = run("agent-trajectory", { judgeStrictness: 1 });
-    expect(lenient.taskSuccess).toBeGreaterThan(strict.taskSuccess);
-    expect(strict.taskSuccess).toBeCloseTo(strict.trueSuccess, 12);
-    const noisy = { toolErrorRate: 0.3, judgeStrictness: 1, maxSteps: 16 };
-    expect(run("agent-trajectory", { ...noisy, verify: true }).trueSuccess).toBeGreaterThan(run("agent-trajectory", noisy).trueSuccess);
-    // a tiny budget runs out
-    expect(run("agent-trajectory", { maxSteps: 4, toolErrorRate: 0.3 }).taskSuccess).toBeLessThan(d.taskSuccess);
-    const r = runAgent(0, 10, false, 1, 5);
-    expect(r.steps.length).toBeGreaterThanOrEqual(4);
-  });
 });

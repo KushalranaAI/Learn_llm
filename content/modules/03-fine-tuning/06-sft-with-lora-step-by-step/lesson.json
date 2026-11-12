@@ -1,0 +1,22 @@
+{
+  "title": "Supervised Fine-Tuning with LoRA, Step by Step",
+  "summary": "Build a real SFT run end to end with Hugging Face TRL and PEFT: prepare a conversational dataset, configure LoRA or QLoRA, train with SFTTrainer on a CPU or a free Colab T4, read the loss curves, score the tuned model against the base on held-out data, then save, merge and share the adapter.",
+  "objectives": [
+    "Turn a public dataset into a clean, deduplicated conversational SFT set and estimate its training cost from token statistics",
+    "Configure LoraConfig, BitsAndBytesConfig and SFTConfig for CPU, T4 or Ampere hardware, and verify the loss mask before training",
+    "Compute steps per epoch and total steps, and diagnose overfitting, a too-high learning rate and NaNs from the training log",
+    "Judge a tuned model against its base on a held-out set with format, exact-match and execution accuracy, plus a forgetting check",
+    "Save, load, merge and share a LoRA adapter, and predict its size on disk"
+  ],
+  "prerequisites": "The ideas behind every step are in [Instruction Tuning](/learn/fine-tuning/instruction-tuning) (chat templates, loss masking, packing) and [LoRA and QLoRA](/learn/fine-tuning/peft-lora). Size your run with [Start Here](/learn/fine-tuning/start-here), and set up your machine or notebook with [Run Fine-Tuning Yourself](/learn/fine-tuning/run-fine-tuning-yourself).",
+  "sims": ["lora-params", "lr-schedule"],
+  "labs": ["lora-budget"],
+  "sources": [
+    { "title": "LoRA: Low-Rank Adaptation of Large Language Models", "authors": "Hu et al.", "year": 2021, "note": "The low-rank update, the alpha/r scale and merging into the base weights" },
+    { "title": "QLoRA: Efficient Finetuning of Quantized LLMs", "authors": "Dettmers et al.", "year": 2023, "note": "NF4 base weights, double quantisation and adapters trained on top" },
+    { "title": "LIMA: Less Is More for Alignment", "authors": "Zhou et al.", "year": 2023, "note": "1,000 curated examples are enough to shape assistant behaviour" },
+    { "title": "LoRA Learns Less and Forgets Less", "authors": "Biderman et al.", "year": 2024, "note": "LoRA versus full fine-tuning on target-task gains and forgetting of general skills" },
+    { "title": "TRL documentation: SFT Trainer and SFTConfig (v1.x)", "authors": "Hugging Face", "year": 2026, "note": "assistant_only_loss, completion_only_loss, packing, max_length and defaults" },
+    { "title": "PEFT documentation: LoRA (LoraConfig, merge_and_unload)", "authors": "Hugging Face", "year": 2026, "note": "target_modules='all-linear', use_rslora, adapter saving and merging" }
+  ]
+}

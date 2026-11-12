@@ -1,0 +1,171 @@
+{
+  "module": "prompt-and-context",
+  "sections": [
+    {
+      "slug": "prompt-anatomy",
+      "title": "Anatomy of a Prompt",
+      "lesson": "prompt-anatomy",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What does a chat template do, and why must it match the model you are serving?",
+          "a": "A **chat template** turns a list of role-tagged messages (system, user, assistant, tool) into the single token sequence the model saw during instruction tuning. It inserts special marker tokens for turn boundaries and ends with an opened assistant turn, the *generation prompt*, so that the most likely continuation is a reply. The model learned its assistant behaviour in exactly that format, so a different family's markers, missing markers, or markers that get tokenized as ordinary text push it off-distribution and quality drops, often silently. In practice use the tokenizer's own `apply_chat_template`, print the rendered string once per model, and check that special tokens are single token ids."
+        },
+        {
+          "level": "junior",
+          "q": "Why is the system prompt the most expensive text in an application, and how would you reduce that cost?",
+          "a": "Every API call is stateless, so the system prompt is part of the input on every request. Its daily cost is $S \\cdot R \\cdot p_{\\text{in}}$. With $S = 800$ tokens, $R = 100{,}000$ requests a day and a hypothetical \\$3 per 1M input tokens, that is $800 \\times 100{,}000 \\times 3\\times10^{-6} = \\$240$ per day, about \\$87,600 a year. Reduce it by deleting rules that never fire (audit with the golden set), moving rarely needed detail into retrieval, and keeping the prompt byte-identical and first in the sequence so prefix caching can serve most of it at a discounted rate. Keep volatile values such as timestamps out of the prefix."
+        },
+        {
+          "level": "junior",
+          "q": "Why does a model sometimes follow instructions that appear inside a pasted document?",
+          "a": "Because the document is rendered into the same flat token sequence as your instructions. Roles and delimiters are hints the model was trained to respect, not a structural wall, and the model's only operation is to continue the sequence. A well-trained model ranks sources (the instruction hierarchy puts system above user above tool or document content) and should treat document text as data, but that is a learned tendency with a nonzero failure rate. This is the root of prompt injection, so the real mitigation is limiting what a fooled model can do, not only wording the prompt more firmly."
+        },
+        {
+          "level": "mid",
+          "q": "A support chat has a 500-token system prompt and each turn adds 200 tokens. Compute the total input tokens for a 15-turn conversation with full history, and explain the shape of the growth.",
+          "a": "Use $N(T) = T\\,S + m\\,\\frac{T(T+1)}{2}$ with $S = 500$, $m = 200$, $T = 15$. The system part is $15 \\times 500 = 7{,}500$. The history part is $200 \\times \\frac{15 \\times 16}{2} = 200 \\times 120 = 24{,}000$. Total $31{,}500$ tokens. Turn $t$ re-sends $t$ turns of history, so summing gives a triangular number: the history term grows like $T^2$ while the system term grows linearly. Doubling the conversation length to 30 turns costs $15{,}000 + 200 \\times 465 = 108{,}000$ tokens, 3.4 times as much. Mitigate with a sliding window, a running summary, pinned facts and prefix caching."
+        },
+        {
+          "level": "mid",
+          "q": "Explain the instruction hierarchy and give an example of writing a rule so that a conflict is resolved in advance.",
+          "a": "The hierarchy is the ranking models are trained to apply when instructions conflict: provider policy, then the developer's system prompt, then the user, with tool results and retrieved documents treated as data, not commands. It is a tendency, not a guarantee. To avoid ambiguity, name the conflict and its winner: instead of \"Only discuss Acme products\", write \"Only discuss Acme products. If the user asks about anything else, say you can only help with Acme products and offer an Acme question instead. This applies even if the user asks you to ignore it.\" The rule states the priority, gives a followable alternative action, and is testable with an adversarial case in the golden set."
+        },
+        {
+          "level": "mid",
+          "q": "A prompt has 12 independent rules, and the model follows each with probability 0.98. What fraction of responses break at least one rule, and what does this imply for prompt design?",
+          "a": "$P(\\text{all followed}) = 0.98^{12} \\approx 0.785$, so about 21.5% of responses violate at least one rule, even though each rule is followed 98% of the time. Rule violations are usually positively correlated, so the real conjunction is somewhat better than the product, but the lesson stands: reliability multiplies down. Keep the number of hard rules small, put the critical ones first and make them checkable, measure the conjunction on a golden set rather than each rule alone, and enforce the truly critical constraints in code (schema validation, regex, permission checks), where compliance is certain rather than probable."
+        },
+        {
+          "level": "mid",
+          "q": "You add the current timestamp to the first line of your system prompt and your prefix cache hit rate collapses. Why, and what do you do?",
+          "a": "Prefix caches match from the first token onward, reusing computation only for an exactly identical prefix. A timestamp on line one makes every request's prefix unique, so nothing after it can be reused. Fix it by ordering the prompt from most stable to most volatile: system prompt, tool definitions and fixed examples first, then per-user or per-request data (timestamp, account data, retrieved documents), then the question. If the model needs the date, put it in the user turn or a late block. With a hypothetical 90% hit rate and cached tokens at 10% of the price, a 1,500-token prefix drops its cost to about 19% of the uncached cost."
+        },
+        {
+          "level": "senior",
+          "q": "Two prompt versions: A costs \\$0.0069 per attempt and yields a usable answer 90% of the time; B costs \\$0.0075 and yields 99%. Which is cheaper, and what else belongs in the comparison?",
+          "a": "With retries until success, expected attempts are $1/p$, so cost per usable answer is $c/p$: A is $0.0069/0.90 = \\$0.00767$, B is $0.0075/0.99 = \\$0.00758$. B is 8.7% dearer per attempt but cheaper per usable answer. The break-even extra input is $\\Delta n\\,p_{\\text{in}} < c\\,(p_2/p_1 - 1)$. Also compare: latency (one user in ten under A waits for a second generation), undetected failures that no retry catches (a summary that invents a deadline is acted on, not retried), whether the success check is a real validator, and whether the 90% and 99% were measured with intervals on enough cases. The retry model assumes independent attempts, which overstates the benefit when failures cluster on hard inputs."
+        },
+        {
+          "level": "senior",
+          "q": "An open-weight model you deploy scores far below its published benchmark. The prompts look fine. How do you debug it?",
+          "a": "Start from what the model actually received. Render the final string and token ids and check: is the correct chat template for this model family applied, are the special tokens single ids rather than split text, is the generation prompt present with no stray trailing whitespace, is there a duplicated system message from a framework default, is the BOS token added once and not twice, and are the stop tokens configured so the model ends its turn? Then check sampling settings versus the benchmark's, the context length truncation (are you cutting off the start of the prompt), and quantization quality. Template and tokenization mismatches are the most common cause of large, unexplained gaps, and they are cheap to rule out by printing one example."
+        },
+        {
+          "level": "senior",
+          "q": "Design a context strategy for a customer chat that can run 80 turns, with a 1,000-token system prompt and 150 tokens per turn.",
+          "a": "Full history would reach $1{,}000 + 80 \\times 150 = 13{,}000$ tokens by the last turn and cost $80 \\times 1{,}000 + 150 \\times 3{,}240 = 566{,}000$ input tokens over the conversation. Instead layer it: a stable prefix (system prompt, tools) that can be cached; a small pinned block of extracted verbatim facts (IDs, amounts, decisions, user constraints) always included; a running summary of older turns for the gist; and a sliding window of the last 6 turns for coherence. Prompt size is then about $1{,}000 + 200 + 150 + 900 = 2{,}250$ tokens at any turn, around 180,000 tokens total, a 68% cut. Test with golden conversations that ask for details from early turns, since summaries lose lookups first, and keep the raw log retrievable."
+        }
+      ]
+    },
+    {
+      "slug": "few-shot-and-structured",
+      "title": "Few-Shot Examples and Structured Outputs",
+      "lesson": "few-shot-and-structured",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "What is in-context learning, and does it change the model's weights?",
+          "a": "**In-context learning** is the model's ability to pick up a task from examples placed in the prompt: a few input-output pairs followed by a new input, which it continues in the same pattern. No weights change. The examples only condition the next-token probabilities, so everything is forgotten after the call and the examples are paid for in input tokens every time. They do two jobs: they identify which task is being asked (sentiment versus topic) and they show the output format. Experiments suggest format and label space often matter more than whether each demonstration label is correct."
+        },
+        {
+          "level": "junior",
+          "q": "Why is \"the model returns valid JSON 99.5% of the time\" not good enough in production?",
+          "a": "Because failure rates compound with volume. At 10,000 calls a day and $\\varepsilon = 0.005$ you expect $N\\varepsilon = 50$ malformed outputs every day, and the probability of at least one is $1 - (1-\\varepsilon)^N \\approx 1 - e^{-50}$, effectively 1. Each malformed output is an exception, a retry or a bad record unless you handle it. Per-field errors compound further: 12 fields each valid 99.9% of the time give $0.999^{12} \\approx 98.8\\%$ valid objects. So you need validation plus a retry or repair path, and ideally constrained decoding to make the structure impossible to break."
+        },
+        {
+          "level": "mid",
+          "q": "Examples cost 100 tokens each at a hypothetical \\$3 per 1M input tokens, and an error costs \\$0.05. Going from 0 to 2 examples raises accuracy from 0.85 to 0.90. Is it worth it?",
+          "a": "Cost of two examples: $200 \\times 3\\times10^{-6} = \\$0.0006$ per call. Benefit: $0.05$ accuracy gain times \\$0.05 per error $= \\$0.0025$ per call. Benefit exceeds cost four to one, so yes. In general minimise $J(k) = k\\,\\ell\\,p_{\\text{in}} + (1 - a(k))\\,e$, or add examples while the marginal accuracy gain times $e$ exceeds $\\ell\\,p_{\\text{in}}$. Check four things: the accuracy figures need intervals (with 200 cases a 5-point gain is borderline), a fixed example block can be prefix-cached which lowers cost, extra examples add prefill latency, and a higher error cost moves the optimum towards more examples."
+        },
+        {
+          "level": "mid",
+          "q": "Explain constrained decoding and compute the constrained probabilities when logits for tokens A, B, C are 2, 1, 0 and only A and B are allowed.",
+          "a": "Constrained decoding computes, at each step, the set $A$ of tokens that keep the output valid under a schema or grammar, sets disallowed logits to $-\\infty$, and samples from the softmax over the rest. Here $e^2 = 7.389$, $e^1 = 2.718$, $e^0 = 1$. Unconstrained: $P(A) = 7.389/11.107 = 0.665$, $P(B) = 0.245$, $P(C) = 0.090$. Masking C and renormalising: $P_A(A) = 7.389/10.107 = 0.731$, $P_A(B) = 0.269$. Note the ratio $A:B = 2.72$ is unchanged, since renormalising divides every allowed probability by the allowed mass $Z_A = 0.910$. The output is guaranteed to parse, but nothing guarantees it is correct."
+        },
+        {
+          "level": "mid",
+          "q": "Your few-shot classifier labels almost every borderline case \"positive\". The examples are 5 positive, 1 negative. What is happening and how do you fix it?",
+          "a": "This is **majority-label bias**: skewed demonstrations raise the model's prior on the common label for every input. Related is **recency bias**, where the last example's label gets extra weight. Diagnose by feeding a content-free input like \"N/A\" with the same examples and reading the label probabilities; an unbiased setup gives about $1/C$ each. Fix by rebalancing labels (roughly equal counts or a deliberately matched class mix), mixing the order so no label is last by construction, adding explicit borderline examples, and re-evaluating on a golden set sliced by true label. If you have label probabilities, dividing by the content-free probabilities and renormalising (calibration) removes the bias."
+        },
+        {
+          "level": "mid",
+          "q": "When does dynamic few-shot example selection beat a fixed example set, and what does it cost?",
+          "a": "Dynamic selection embeds the incoming input and retrieves the most similar labelled examples from a pool, often with diversity (MMR) and label balancing. It helps most when inputs vary widely, so a few fixed examples cannot cover them: support tickets, code, extraction from many document types. The model sees a solved case close to the current one. Costs: an embedding call and a vector lookup per request; the examples change per request, so the prompt prefix cannot be cached like a fixed block; the pool becomes a dataset that needs versioning and review, since one bad example retrieved often damages many answers; and evaluation is harder because behaviour now depends on the retrieval. Start static, measure by slice, and move to dynamic only if the slices justify it."
+        },
+        {
+          "level": "mid",
+          "q": "Each attempt fails schema validation with probability 0.02, and you allow 2 attempts. What is the residual failure rate, and what is the caveat?",
+          "a": "If failures were independent, the residual is $0.02^2 = 4\\times10^{-4}$, or 0.04%, with expected attempts $1 + 0.02 = 1.02$. At 50,000 calls a day that is about 20 hard failures. The caveat is that failures are correlated: the inputs that break the format once (heavy quoting, unusual language) tend to break it again, and at temperature 0 an identical retry can reproduce the identical output. So measure the actual retry success rate, include the validation error text in the retry prompt so the second attempt is a different request, and have a typed fallback. Constrained decoding removes the structural failures altogether."
+        },
+        {
+          "level": "senior",
+          "q": "Constrained decoding guarantees valid JSON. Why can it still hurt answer quality, and how do you mitigate that?",
+          "a": "Masking is local: at each step it renormalises over tokens that keep the output valid, without looking ahead. If the allowed mass $Z_A$ at a step is small, the model wanted something the format forbids, and the mask forces a choice that may not reflect its preference. Example: valid strings \"yes\" and \"no\", model puts 0.6 on \"n\" but then 0.9 on \"ope\" (invalid). The model's global preference among valid strings is 87% yes, yet token-level masking outputs \"no\" 60% of the time. Mitigate: describe the format and give an example so $Z_A$ stays near 1; log $Z_A$ per step to flag forced answers; put a `reasoning` field before the `answer` field; include an honest `unknown` option; and validate semantics in code."
+        },
+        {
+          "level": "senior",
+          "q": "Design the output schema and error handling for an invoice-extraction pipeline that processes 200,000 documents a day.",
+          "a": "Use a flat schema with typed, constrained fields: `vendor` (string), `invoice_date` (pattern), `total` (number), `currency` (enum), `line_items` (array of small objects), and an `evidence` or `confidence` field per critical value. Allow `null` for absent fields so the model is never forced to invent. Use the provider's structured-output or constrained decoding so syntax is guaranteed, then validate business rules in code: line items sum to the total within tolerance, dates are plausible, vendor exists. Failures go to one retry with the validator's message, then to a human review queue. Track per-field validity (12 fields at 99.9% each is 98.8% per document, 2,400 documents a day to review), log invalid cases into the golden set, and alert on shifts in the failure rate after any prompt or model change."
+        },
+        {
+          "level": "senior",
+          "q": "A teammate says few-shot examples are no longer needed because we use constrained decoding. Do you agree?",
+          "a": "Partly. Constrained decoding guarantees format and removes the format-related reasons for examples, which lowers the optimal number of examples. But examples also teach which task is being asked, the label semantics, how to handle borderline cases, tone, and what \"unknown\" looks like, none of which a grammar enforces. Worse, forcing a model that does not understand the task into a valid shape yields confident, well-formed, wrong output. Test it: run the golden set with $k = 0, 2, 4$ examples under constraints and compute $J(k)$ including your error cost. Often $k = 0$ to 2 wins, but it is a measurement, not a principle. Also keep an instruction describing the format, since it keeps the allowed mass high and avoids forced choices."
+        }
+      ]
+    },
+    {
+      "slug": "context-selection",
+      "title": "Choosing Context",
+      "lesson": "context-selection",
+      "questions": [
+        {
+          "level": "junior",
+          "q": "Write the context budget equation and compute how many 400-token chunks fit in an 8,000-token window.",
+          "a": "The constraint is $S + T + H + Q + R + O_{\\max} + \\delta \\le W$: system prompt, tools, history, question, retrieved material, output reserve and a safety margin must fit in the window $W$. Take $S = 500$, $T = 700$, $H = 1{,}500$, $Q = 100$, $O_{\\max} = 800$, $\\delta = 100$. Committed tokens are $3{,}700$, so $R_{\\max} = 8{,}000 - 3{,}700 = 4{,}300$ and $\\lfloor 4{,}300 / 400 \\rfloor = 10$ chunks. That is a ceiling, not a target: more chunks cost money and can lower accuracy. Compute it in code with the real tokenizer and decide explicitly what to drop on overflow."
+        },
+        {
+          "level": "junior",
+          "q": "What is the lost-in-the-middle effect?",
+          "a": "When a relevant passage sits in a long context, models tend to use it most reliably at the beginning (primacy) and end (recency) and least in the middle, giving a U-shaped accuracy curve over position. The dip grows with context length and shrinks, but rarely vanishes, in newer long-context models. Consequences: put the most important passages near the ends, put the question and key instructions last, keep contexts shorter than the window, and test your own model with a needle-style experiment, placing the gold passage at start, middle and end. Advertised window size is a capacity, not a guarantee that all positions are used equally well."
+        },
+        {
+          "level": "mid",
+          "q": "Recall by slot is 0.9, 0.7, 0.6, 0.7, 0.95 for five slots. The key passage lands in a random slot. What is expected recall, and what is the gain from always placing it last?",
+          "a": "Expected recall is the mean: $(0.9 + 0.7 + 0.6 + 0.7 + 0.95)/5 = 3.85/5 = 0.77$. Always placing the passage in the last slot gives 0.95, an absolute gain of 0.18 or about 23% relative. At 100,000 questions a day that is about 23,000 missed answers versus 5,000. The experiment costs nothing but the ordering function. For several passages with different values, the rearrangement inequality says to pair the highest-value passage with the highest-recall slot, and so on, which usually means best at one end, second best at the other, and the weakest in the middle."
+        },
+        {
+          "level": "mid",
+          "q": "Budget is 600 tokens. Candidates (value, tokens): A (0.9, 500), B (0.5, 200), C (0.45, 200), D (0.2, 100). Compare take-most-relevant-first with greedy by value per token.",
+          "a": "Most relevant first: take A (500 tokens), then D fits (600 total), B and C do not. Value $0.9 + 0.2 = 1.1$. Greedy by density (value per token): B is $0.5/200 = 0.0025$, C $0.00225$, D $0.002$, A $0.0018$. Take B (200), C (400), D (500). Value $0.5 + 0.45 + 0.2 = 1.15$, with 100 tokens spare. Density-greedy wins here by leaving out the single most relevant but bulky item. It is a knapsack heuristic, not always optimal, and real values are not additive: redundant passages add less, which MMR handles by penalising similarity to items already chosen."
+        },
+        {
+          "level": "mid",
+          "q": "Explain maximal marginal relevance and compute it for a candidate with relevance 0.8 and similarity 0.9 to a chosen item, at $\\lambda = 0.7$, versus relevance 0.6 and similarity 0.2.",
+          "a": "MMR scores the next item as $\\lambda\\,\\text{rel}(i) - (1-\\lambda)\\max_{j \\in X}\\text{sim}(i,j)$, trading relevance to the query against similarity to already selected items, so the context avoids near-duplicates. First candidate: $0.7 \\times 0.8 - 0.3 \\times 0.9 = 0.56 - 0.27 = 0.29$. Second: $0.7 \\times 0.6 - 0.3 \\times 0.2 = 0.42 - 0.06 = 0.36$. The less relevant but novel passage is chosen. $\\lambda = 1$ recovers plain relevance ranking; lower values favour diversity. It is a cheap step after retrieval or reranking, and it helps most when the index contains many overlapping chunks."
+        },
+        {
+          "level": "mid",
+          "q": "A summariser keeps each needed fact with probability 0.97. A question needs 6 facts. Can you rely on the summary?",
+          "a": "If facts survive independently, the question is answerable with probability $0.97^6 \\approx 0.833$. So 17% of six-fact questions cannot be answered from the summary even though per-fact retention looks excellent, and a ten-fact question gets only 74%. The fix is to split by use: extract identifiers, amounts, dates and explicit requirements verbatim into a pinned block that is never summarised, and summarise only the gist. Evaluate compression with your actual golden questions comparing accuracy with the uncompressed context, not with similarity scores. Keep the original retrievable by a tool so a dropped detail can be recovered, and avoid summaries of summaries, which lose detail geometrically."
+        },
+        {
+          "level": "senior",
+          "q": "Retrieval recall@10 improved from 0.90 to 0.95, but end-to-end accuracy dropped. Explain how that can happen and how you would find the right number of chunks.",
+          "a": "End-to-end accuracy is roughly recall@$k$ times the chance the generator uses the gold passage correctly given $k$ chunks, $g(k)$. More chunks raise recall but add distractors, push the gold passage towards the middle of the context and dilute attention, so $g(k)$ falls. For instance $0.88 \\times 0.89 = 0.783$ at $k = 5$ against $0.94 \\times 0.785 = 0.738$ at $k = 12$. To find the optimum, measure $a(k)$ on a golden set for several $k$, then minimise $J(k) = (F + k\\ell)p_{\\text{in}} + (1 - a(k))e$ with your token price and error cost. Then improve the curve: rerank and cut, add a relevance floor, order for the ends, and let the model request more evidence when needed."
+        },
+        {
+          "level": "senior",
+          "q": "Design context handling for question answering over a 200-page contract (about 100,000 tokens) with a 16k-token window.",
+          "a": "Do not cram it. Index the contract by section, with headings and clause numbers in each chunk (around 500 tokens), and retrieve per question. Use hybrid retrieval, rerank, include the top 4 to 6 chunks (2,000 to 3,000 tokens) with a relevance floor, add each clause's heading path for context, and put the question last. Budget: 1,000 system, 300 tools, 800 history, 100 question, 1,500 output reserve, 200 margin leaves about $12{,}100$ for retrieval but use well under that. For global questions (summarise obligations) use a map-reduce pass: summarise sections offline into pinned summaries with verbatim key terms and keep a tool to open the exact clause. Evaluate with questions requiring one, two and several clauses, since multi-fact survival multiplies down."
+        },
+        {
+          "level": "senior",
+          "q": "How would you test whether ordering of passages matters for your system?",
+          "a": "Build a needle-style experiment on real questions with known gold passages. For each question construct contexts of realistic length and place the gold passage at start, 25%, 50%, 75% and end, holding the distractors fixed. Run each condition several times if sampling is on, score with your normal check, and plot recall against position with confidence intervals (a few hundred questions per condition gives roughly ±3 to 5 points). If the curve is flat, ordering does not matter for this model and you save effort. If it is U-shaped, compute the expected utility of candidate orderings using the measured slot recalls and passage values, pick the pairing from the rearrangement inequality, and verify it end to end on the golden set. Re-run when the model changes."
+        }
+      ]
+    }
+  ]
+}

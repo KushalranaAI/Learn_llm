@@ -11,7 +11,6 @@
   "prerequisites": "Precision, recall and thresholds from [Success Criteria](/learn/evaluation/success-criteria), and the reference metrics from [Scoring Against References](/learn/evaluation/reference-scoring), whose failures motivate judges.",
   "sims": ["judge-agreement"],
   "labs": [],
-  "sandbox": [],
   "sources": [
     { "title": "Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena", "authors": "Zheng et al.", "year": 2023, "note": "Agreement of strong judges with humans; position, verbosity and self-enhancement biases" },
     { "title": "Large Language Models are not Fair Evaluators", "authors": "Wang et al.", "year": 2023, "note": "Position bias in pairwise judging and order-swap calibration" },

@@ -1,6 +1,6 @@
 "use client";
 // Course markdown: GitHub tables, $math$ / $$math$$ (KaTeX), highlighted code, ```mermaid diagrams, and the lesson
-// directives ```quiz, ```steps, ```sim, ```lab, ```sandbox and ```callout-<kind> (see CONTENT_GUIDE.md).
+// directives ```quiz, ```steps, ```sim, ```lab, ```predict, ```parsons, ```bughunt and ```callout-<kind> (see CONTENT_GUIDE.md).
 import Link from "next/link";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
@@ -8,8 +8,10 @@ import rehypeHighlight from "rehype-highlight";
 import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
-import { Callout, type CalloutKind, LabCard, SandboxCard, SimEmbed, Steps } from "./lesson/Blocks";
+import { Callout, type CalloutKind, LabCard, SimEmbed, Steps } from "./lesson/Blocks";
 import Quiz from "./lesson/Quiz";
+import Predict from "./lesson/Predict";
+import { BugHunt, Parsons } from "./lesson/Drills";
 import Mermaid from "./Mermaid";
 import { fixMath } from "@/lib/mathfix";
 import Icon from "./ui/Icon";
@@ -45,10 +47,12 @@ const render = (md: string) => <Markdown>{md}</Markdown>;
 function directive(lang: string, text: string) {
   if (lang === "mermaid") return <Mermaid chart={text.trim()} />;
   if (lang === "quiz") return <Quiz raw={text} />;
+  if (lang === "predict") return <Predict raw={text} />;
+  if (lang === "parsons") return <Parsons raw={text} />;
+  if (lang === "bughunt") return <BugHunt raw={text} />;
   if (lang === "steps") return <Steps raw={text.trim()} render={render} />;
   if (lang === "sim") return <SimEmbed raw={text.trim()} />;
   if (lang === "lab") return <LabCard raw={text} />;
-  if (lang === "sandbox") return <SandboxCard raw={text} />;
   if (lang.startsWith("callout-")) return <Callout kind={lang.slice(8) as CalloutKind} raw={text.trim()} render={render} />;
   return null;
 }

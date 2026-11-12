@@ -112,7 +112,7 @@ export function Field2D({
       const x = x0 + ((i + 0.5) / nx) * (x1 - x0);
       const y = y1 - ((j + 0.5) / ny) * (y1 - y0);
       const c = cell(x, y);
-      rects.push(<rect key={`${i}-${j}`} x={i * cw} y={j * ch} width={cw + 0.6} height={ch + 0.6} fill={c.fill} fillOpacity={c.opacity} />);
+      rects.push(<rect key={`${i}-${j}`} x={i * cw} y={j * ch} width={cw + 0.6} height={ch + 0.6} fill={c.fill} fillOpacity={Math.round(c.opacity * 1e4) / 1e4} />);
     }
   }
   const inside = (p: [number, number]) => p[0] >= x0 - 1e-9 && p[0] <= x1 + 1e-9 && p[1] >= y0 - 1e-9 && p[1] <= y1 + 1e-9;

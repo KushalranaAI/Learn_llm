@@ -1,8 +1,6 @@
 import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { KINDS, isKind } from "@/sandbox/catalog";
-import { evaluateDesign } from "@/sandbox/engine";
 import { getSim } from "@/sims";
 import { goalMet, type Params } from "@/sims/types";
 import { LABS } from "./index";
@@ -10,30 +8,19 @@ import { LABS } from "./index";
 const EXPECTED = [
   "train-a-tiny-network", "token-budget", "attention-by-hand", "tune-the-sampler", "fit-the-kv-cache",
   "plan-a-training-run", "lora-budget",
-  "serve-a-chat-model", "shrink-the-model", "capacity-plan",
-  "stop-the-injection",
   "is-it-really-better", "build-an-eval-suite",
-  "tune-the-index", "chunk-it-right", "fix-the-rag-bot",
-  "make-the-agent-reliable", "evaluate-an-agent",
-  "route-the-traffic",
-  "design-support-bot",
+  "serve-a-chat-model", "shrink-the-model",
 ];
 const MODULE_OF: Record<string, string> = {
   "train-a-tiny-network": "model-foundations", "token-budget": "model-foundations", "attention-by-hand": "model-foundations",
   "tune-the-sampler": "model-foundations", "fit-the-kv-cache": "model-foundations",
-  "plan-a-training-run": "training-and-adaptation", "lora-budget": "training-and-adaptation",
-  "serve-a-chat-model": "inference-and-serving", "shrink-the-model": "inference-and-serving", "capacity-plan": "inference-and-serving",
-  "stop-the-injection": "prompt-and-context",
+  "plan-a-training-run": "training-and-adaptation", "lora-budget": "fine-tuning",
+  "serve-a-chat-model": "inference-and-serving", "shrink-the-model": "inference-and-serving",
   "is-it-really-better": "evaluation", "build-an-eval-suite": "evaluation",
-  "tune-the-index": "retrieval-and-rag", "chunk-it-right": "retrieval-and-rag", "fix-the-rag-bot": "retrieval-and-rag",
-  "make-the-agent-reliable": "agents", "evaluate-an-agent": "agents",
-  "route-the-traffic": "production-systems",
-  "design-support-bot": "llm-system-design",
 };
-const SYSTEM_LABS = ["serve-a-chat-model", "capacity-plan", "stop-the-injection", "fix-the-rag-bot", "make-the-agent-reliable", "route-the-traffic", "design-support-bot", "build-an-eval-suite", "evaluate-an-agent"];
 
 describe("lab catalogue", () => {
-  it("has all 20 labs, with unique slugs, in curriculum order", () => {
+  it("has all 11 labs, with unique slugs, in curriculum order", () => {
     const slugs = LABS.map((l) => l.slug);
     expect(new Set(slugs).size).toBe(slugs.length);
     expect(slugs).toEqual(EXPECTED);
@@ -46,25 +33,18 @@ describe("lab catalogue", () => {
   it("gives each lab 5-9 steps, 15-45 minutes, a math step and a sim step", () => {
     for (const lab of LABS) {
       expect(lab.steps.length, `${lab.slug} steps`).toBeGreaterThanOrEqual(5);
-      expect(lab.steps.length, `${lab.slug} steps`).toBeLessThanOrEqual(9);
+      expect(lab.steps.length, `${lab.slug} steps`).toBeLessThanOrEqual(lab.capstone ? 12 : 9);
       expect(lab.minutes, `${lab.slug} minutes`).toBeGreaterThanOrEqual(15);
-      expect(lab.minutes, `${lab.slug} minutes`).toBeLessThanOrEqual(45);
-      expect(lab.steps.some((s) => s.type === "math"), `${lab.slug} has a math step`).toBe(true);
+      expect(lab.minutes, `${lab.slug} minutes`).toBeLessThanOrEqual(lab.capstone ? 150 : 45);
+      expect(lab.steps.some((s) => s.type === "math" || s.type === "run"), `${lab.slug} has a math or run step`).toBe(true);
       const sims = lab.steps.filter((s) => s.type === "sim");
-      expect(sims.length, `${lab.slug} has a sim step`).toBeGreaterThanOrEqual(1);
+      if (lab.capstone) expect(lab.steps.filter((s) => s.type === "run").length, `${lab.slug} capstone run steps`).toBeGreaterThanOrEqual(2);
+      else expect(sims.length, `${lab.slug} has a sim step`).toBeGreaterThanOrEqual(1);
       expect(lab.steps[0].type, `${lab.slug} starts with an intro`).toBe("intro");
       expect(lab.title && lab.product && lab.summary && lab.tags.length, `${lab.slug} text`).toBeTruthy();
     }
   });
 
-  it("gives every systems lab one to three design steps", () => {
-    for (const slug of SYSTEM_LABS) {
-      const lab = LABS.find((l) => l.slug === slug)!;
-      const n = lab.steps.filter((s) => s.type === "design").length;
-      expect(n, `${slug} design steps`).toBeGreaterThanOrEqual(1);
-      expect(n, `${slug} design steps`).toBeLessThanOrEqual(3);
-    }
-  });
 });
 
 describe("lab data files", () => {
@@ -99,7 +79,7 @@ for (const lab of LABS) {
         });
       }
 
-      if (step.type === "math") {
+      if (step.type === "math" || step.type === "run") {
         it(`${where}: answer is finite and tolerance is sensible`, () => {
           expect(Number.isFinite(step.answer)).toBe(true);
           expect(step.answer).not.toBe(0);
@@ -133,34 +113,6 @@ for (const lab of LABS) {
         });
       }
 
-      if (step.type === "design") {
-        it(`${where}: solution passes, starter fails, palette is valid`, () => {
-          const ev = evaluateDesign(step.solution, step.test);
-          expect(ev.results.filter((r) => !r.pass).map((r) => `${r.label}: ${r.detail}`)).toEqual([]);
-          if (step.starter) {
-            expect(evaluateDesign(step.starter, step.test).pass, "the starter already passes").toBe(false);
-          }
-          for (const c of step.test.constraints) expect(c.type).toBeTruthy();
-          expect(step.test.constraints.length).toBeGreaterThanOrEqual(2);
-          expect(step.hints.length).toBeGreaterThanOrEqual(2);
-          for (const c of step.test.constraints) {
-            if (c.type === "requires" || c.type === "forbids") expect(isKind(c.kind), c.kind).toBe(true);
-          }
-          const palette = step.palette ?? [];
-          for (const k of palette) expect(k in KINDS, `unknown palette kind ${k}`).toBe(true);
-          if (palette.length) {
-            for (const n of step.solution.nodes) {
-              if (n.kind === "users") continue;
-              expect(palette, `solution uses ${n.kind} which is not in the palette`).toContain(n.kind);
-            }
-          }
-          // wired edges refer to real nodes
-          for (const g of [step.solution, step.starter].filter(Boolean)) {
-            const ids = new Set(g!.nodes.map((n) => n.id));
-            for (const e of g!.edges) expect(ids.has(e.from) && ids.has(e.to), `${e.from}->${e.to}`).toBe(true);
-          }
-        });
-      }
     });
   });
 }

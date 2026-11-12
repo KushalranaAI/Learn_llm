@@ -1,0 +1,66 @@
+{
+  "title": "Run It Yourself: Laptop CPU, Free Colab or a Short GPU Rental",
+  "summary": "Everything in parts 1 to 5 of the companion repo runs on an ordinary laptop with no GPU; only part 4's 57.9M-parameter default run is worth moving to a free Colab or Kaggle T4. This lesson sizes each part's memory and time from its real configs, sets up a CPU-only environment on Windows, macOS and Linux, runs the repo on Colab with checkpoints on Drive, and shows what Colab Pro or an hour of rented GPU costs.",
+  "objectives": [
+    "Estimate a training run's memory as 16 bytes per parameter plus activations that scale with B·n, and its time as 6·N·tokens divided by achieved throughput",
+    "Set up a CPU-only Python 3.11 environment by installing the CPU PyTorch wheel before the repo's pinned requirements, and run every part from its own folder",
+    "Run the repo on Google Colab or Kaggle with mixed precision, keep checkpoints on Drive, and resume a run after a disconnect",
+    "Convert Colab compute units and rental prices into a cost per run, including setup and idle time, and follow a checklist that avoids paying for idle pods",
+    "Work through parts 1 to 5 in order with a specific check for each, starting from a first loss close to ln V"
+  ],
+  "prerequisites": "Basic use of a terminal and Python. The memory accounting builds on [Training at scale](/learn/training-and-adaptation/training-at-scale) (16 bytes per parameter) and the parameter counts on [The Transformer Block](/learn/model-foundations/transformer-block), but each topic restates what it needs. You need a copy of the `llm_from_scratch` repo folder on your computer.",
+  "sims": [
+    "transformer-params",
+    "training-memory"
+  ],
+  "labs": [],
+  "sources": [
+    {
+      "title": "LLM from Scratch: Hands-On Curriculum (PyTorch), parts 1-5",
+      "authors": "Companion repository for this module",
+      "note": "Default configs in each part's train.py and orchestrator.py, used for every parameter count, memory and timing figure here"
+    },
+    {
+      "title": "PyTorch documentation: Get Started (Start Locally)",
+      "authors": "PyTorch",
+      "year": 2026,
+      "note": "Installing the CPU-only wheel from the download.pytorch.org/whl/cpu index"
+    },
+    {
+      "title": "Python documentation: venv, creation of virtual environments",
+      "authors": "Python Software Foundation",
+      "year": 2026,
+      "note": "Creating and activating a virtual environment on each platform"
+    },
+    {
+      "title": "Google Colab FAQ",
+      "authors": "Google",
+      "year": 2026,
+      "note": "Free-tier resources and usage limits fluctuate; GPU access is not guaranteed; compute units for paid plans"
+    },
+    {
+      "title": "Kaggle documentation: Notebooks",
+      "authors": "Kaggle",
+      "year": 2026,
+      "note": "Accelerator settings, weekly GPU quota shown in account settings, saving notebook outputs"
+    },
+    {
+      "title": "Scaling Laws for Neural Language Models",
+      "authors": "Kaplan et al.",
+      "year": 2020,
+      "note": "The approximate 6N training FLOPs per token used for every time estimate"
+    },
+    {
+      "title": "ZeRO: Memory Optimizations Toward Training Trillion Parameter Models",
+      "authors": "Rajbhandari et al.",
+      "year": 2020,
+      "note": "Model-state accounting: weights, gradients and Adam moments per parameter"
+    },
+    {
+      "title": "Reducing Activation Recomputation in Large Transformer Models",
+      "authors": "Korthikanti et al.",
+      "year": 2022,
+      "note": "Per-layer activation memory, the basis of the training-memory sim"
+    }
+  ]
+}

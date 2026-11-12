@@ -1,32 +1,18 @@
 // Lab: build an evaluation suite for a tax-help assistant: size the golden set, choose graders, keep it clean of
-// contamination, set a CI gate threshold with the eval-gate sim, then gate a bad model rollout in the sandbox.
-import { build } from "@/sandbox/presets";
-import type { Graph, NodeConfig } from "@/sandbox/types";
+// contamination, set a CI gate threshold with the eval-gate sim.
 import type { Lab } from "./types";
 
 const r = String.raw;
-
-const release = (gate?: NodeConfig): Graph =>
-  build(
-    {
-      users: ["users", { rps: 1, hardShare: 0.3 }],
-      gateway: ["gateway"],
-      ...(gate ? { gate: ["eval-gate", gate] as ["eval-gate", NodeConfig] } : {}),
-      llm: ["llm-api", { model: "medium" }],
-      obs: ["observability"],
-    },
-    gate ? "users > gateway > gate > llm" : "users > gateway > llm",
-  );
 
 export const buildAnEvalSuite: Lab = {
   slug: "build-an-eval-suite",
   module: "evaluation",
   title: "Build an eval suite",
   product: "A tax-help assistant that ships a new prompt or model every week",
-  summary: "Turn \"it looks fine to me\" into a release process: size a golden set for the precision you need, pick assertions or an LLM judge for each check, keep the set uncontaminated, set a CI gate threshold that catches regressions without crying wolf, and stop a bad model rollout in the sandbox.",
+  summary: "Turn \"it looks fine to me\" into a release process: size a golden set for the precision you need, pick assertions or an LLM judge for each check, keep the set uncontaminated, and set a CI gate threshold that catches regressions without crying wolf.",
   difficulty: "medium",
-  minutes: 40,
-  tags: ["evaluation", "golden set", "LLM judge", "assertions", "CI", "regression gate", "contamination", "sandbox"],
+  minutes: 30,
+  tags: ["evaluation", "golden set", "LLM judge", "assertions", "CI", "regression gate", "contamination"],
   steps: [
     {
       type: "intro",
@@ -129,36 +115,6 @@ Choose the eval set size and the threshold. Watch the two shaded error areas as 
         "1,500 items with a 2.5 pp threshold meets both.",
       ],
       solution: { evalSetSize: 1500, threshold: 2.5 },
-    },
-    {
-      type: "design",
-      title: "Stop the bad rollout",
-      body: r`Here is the production assistant in the sandbox. The test runs it under a **bad model rollout**: the provider ships a worse model version. Success stays at 99.9% and nothing errors, but answer quality collapses.
-
-Add an **Eval gate** in front of the model (palette, group *Ops*) and tune it so that:
-
-- quality stays at least **0.83** under the bad rollout (so the gate must stop most bad versions),
-- the gate wrongly blocks at most **20%** of good releases,
-- the whole system still costs at most **\$19,500 a month** (eval runs are paid on every candidate, and human review is expensive).
-
-The gate's card shows its catch rate, false alarms and eval spend.`,
-      starter: release(),
-      palette: ["gateway", "llm-api", "eval-gate", "observability"],
-      test: {
-        incident: { type: "badRollout" },
-        constraints: [
-          { type: "quality", min: 0.83, why: "A bad version reaches users unless the gate blocks it. Grow the eval set or lower the threshold." },
-          { type: "gateFalseAlarms", max: 0.2, why: "A threshold inside the noise blocks good releases. Raise it, or grow the set to shrink the noise." },
-          { type: "costPerMonth", maxUsd: 19500, why: "Human review of every item on every candidate is too expensive here; an LLM judge is enough." },
-          { type: "requires", kind: "eval-gate", why: "Online monitoring only notices after users were affected." },
-        ],
-      },
-      hints: [
-        "Use the guide's \"Add an eval gate\" fix or drag an Eval gate between the gateway and the model.",
-        "At the default 500 items the gate stops about 87% of bad versions: not enough. More items cut the noise, so real drops stand out.",
-        "2,000 items, block at > 2 pp, graded by an LLM judge passes every check.",
-      ],
-      solution: release({ evalSetSize: 2000, threshold: 2, judge: "llm-judge" }),
     },
     {
       type: "quiz",

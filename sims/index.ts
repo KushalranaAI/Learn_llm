@@ -1,5 +1,5 @@
-// Every simulation, by id. Group A (foundations, training, inference) and group B (prompting, evaluation, RAG,
-// agents, production) register in their own files so they can grow independently.
+// Every simulation, by id. Group A (foundations, training, inference), B (prompting, evaluation), C (the animated
+// opener) and D (evaluation) register in their own files so they can grow independently.
 import { SIMS_A } from "./registry-a";
 import { SIMS_B } from "./registry-b";
 import { SIMS_C } from "./registry-c";

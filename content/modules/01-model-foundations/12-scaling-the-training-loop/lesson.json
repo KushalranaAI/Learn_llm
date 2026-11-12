@@ -1,0 +1,22 @@
+{
+  "title": "Scaling Up the Training Loop",
+  "summary": "The part 2 loop trains a byte-level toy. This lesson turns it into a loop you can leave running for hours: a trained BPE tokenizer, gradient accumulation, mixed precision with autocast and a gradient scaler, a warmup-plus-cosine schedule, resumable checkpoints and logging you can trust. Each change is shown as working PyTorch with the arithmetic behind it and the quiet bugs it can introduce.",
+  "objectives": [
+    "Compute what a BPE vocabulary costs in embedding, LM-head and logits memory, and convert per-token loss to bits per byte",
+    "Implement gradient accumulation, compute the effective batch, and explain why the loss is divided by the number of micro-batches",
+    "Write a correct FP16 or BF16 training step with autocast and GradScaler, including unscaling before gradient clipping",
+    "Implement warmup with cosine decay per optimizer step and evaluate the learning rate at any step",
+    "List everything a resumable checkpoint must hold, estimate its size, and read loss, learning-rate, gradient-norm and throughput curves to diagnose a run"
+  ],
+  "prerequisites": "You should have the simple training loop from [Train a Tiny GPT](/learn/model-foundations/train-a-tiny-gpt) and the model from [The Modern Architecture](/learn/model-foundations/modern-architecture), which this lesson trains. The theory behind the pieces lives elsewhere and is not repeated: byte-pair encoding and vocabulary size in [Tokenization](/learn/model-foundations/tokenization), and number formats, memory per parameter and learning-rate schedules in [Training at Scale](/learn/training-and-adaptation/training-at-scale).",
+  "sims": ["bpe-tokenizer", "training-memory", "lr-schedule"],
+  "labs": ["plan-a-training-run"],
+  "sources": [
+    { "title": "Neural Machine Translation of Rare Words with Subword Units", "authors": "Sennrich, Haddow and Birch", "year": 2016, "note": "Byte-pair encoding for sub-word vocabularies" },
+    { "title": "Language Models are Unsupervised Multitask Learners", "authors": "Radford et al.", "year": 2019, "note": "GPT-2: the byte-level BPE scheme the part 4 tokenizer uses" },
+    { "title": "Mixed Precision Training", "authors": "Micikevicius et al.", "year": 2018, "note": "FP16 compute with FP32 master weights and loss scaling" },
+    { "title": "SGDR: Stochastic Gradient Descent with Warm Restarts", "authors": "Loshchilov and Hutter", "year": 2017, "note": "The cosine learning-rate schedule" },
+    { "title": "Adam: A Method for Stochastic Optimization", "authors": "Kingma and Ba", "year": 2015, "note": "Moment estimates and bias correction, which explain why losing optimizer state on resume causes a spike" },
+    { "title": "PaLM: Scaling Language Modeling with Pathways", "authors": "Chowdhery et al.", "year": 2022, "note": "Defines model FLOPs utilisation (MFU) and describes rolling back past loss spikes" }
+  ]
+}

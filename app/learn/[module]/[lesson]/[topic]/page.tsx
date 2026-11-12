@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import BuildsOn from "@/components/BuildsOn";
+import Recall from "@/components/lesson/Recall";
 import { TocList, TopicFooter, TopicSegments } from "@/components/ProgressBits";
 import TopicBody from "@/components/TopicBody";
 import Icon from "@/components/ui/Icon";
-import { flatTopics, getLesson, getModule, getModules } from "@/lib/content";
+import { flatTopics, getLesson, getMap, getModule, getModules, recallFor } from "@/lib/content";
 
 export function generateStaticParams() {
   return getModules().flatMap((m) => m.lessons.flatMap((l) => l.topics.map((t) => ({ module: m.slug, lesson: l.slug, topic: t.slug }))));
@@ -31,6 +33,21 @@ export default async function TopicPage({ params }: P) {
   const nx = all[at + 1];
   const nextHref = nx ? `/learn/${nx.module}/${nx.lesson}/${nx.topic}` : null;
   const nextLabel = !nx ? "" : nx.lesson === l.slug ? "Next topic" : "Next lesson";
+  const pv = all[at - 1];
+  const prevHref = pv ? `/learn/${pv.module}/${pv.lesson}/${pv.topic}` : null;
+  const map = getMap();
+  const reqIds = map.lessons[base] ?? [];
+  // practice (code) lessons: finishing a topic counts as review of the theory lessons it builds on
+  const credits = map.practice.includes(base) ? reqIds.filter((r) => !map.practice.includes(r)) : [];
+  const recall = recallFor(m.slug, l.slug, i);
+  const prereqs =
+    i === 0
+      ? reqIds.flatMap((r) => {
+          const [rm, rl] = r.split("/");
+          const lesson = getLesson(rm, rl);
+          return lesson ? [{ id: r, title: lesson.title, moduleTitle: getModule(rm)?.title ?? rm, topics: lesson.topics.map((x) => x.slug) }] : [];
+        })
+      : [];
   const topics = l.topics.map((x) => ({ slug: x.slug, title: x.title }));
 
   return (
@@ -48,15 +65,17 @@ export default async function TopicPage({ params }: P) {
         <div className="topic-layout">
           <article className="topic-article">
             <nav className="crumbs" aria-label="Breadcrumb">
-              <Link href="/curriculum">Curriculum</Link> / <Link href={`/learn/${m.slug}`}>Module {m.order}</Link> / <span>Lesson {m.order}.{l.order}</span>
+              <Link href="/curriculum">Roadmap</Link> / <Link href={`/learn/${m.slug}`}>Module {m.order}</Link> / <span>Lesson {m.order}.{l.order}</span>
             </nav>
             <div className="lesson-meta-row">
               <span className="pill"><Icon name="book" size={12} /> Topic {i + 1}</span>
               <span className="pill"><Icon name="clock" size={12} /> {t.minutes} min</span>
             </div>
             <h1>{t.title}</h1>
+            {prereqs.length > 0 && <BuildsOn reqs={prereqs} compact />}
             <TopicBody id={id} title={t.title} body={t.body} lesson={l.title} />
-            <TopicFooter id={id} next={nextHref} nextLabel={nextLabel} />
+            {recall && <Recall item={recall} />}
+            <TopicFooter id={id} next={nextHref} nextLabel={nextLabel} prev={prevHref} credits={credits} />
           </article>
           <aside className="toc" aria-label="In this lesson">
             <h4>In this lesson</h4>

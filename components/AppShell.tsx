@@ -15,11 +15,10 @@ import Credit from "./Credit";
 import ThemeToggle from "./ThemeToggle";
 import Icon, { type IconName } from "./ui/Icon";
 
-// Five primary destinations (learn → practise → interview); personal tools sit on the right as icon buttons.
+// Four primary destinations (learn → practise → interview); personal tools sit on the right as icon buttons.
 const NAV: { href: string; label: string; icon: IconName }[] = [
-  { href: "/curriculum", label: "Curriculum", icon: "route" },
+  { href: "/curriculum", label: "Roadmap", icon: "route" },
   { href: "/labs", label: "Labs", icon: "beaker" },
-  { href: "/sandbox", label: "Sandbox", icon: "boxes" },
   { href: "/simulations", label: "Simulations", icon: "activity" },
   { href: "/interview", label: "Interview", icon: "chats" },
 ];

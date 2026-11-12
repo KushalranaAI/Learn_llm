@@ -1,0 +1,1 @@
+{"title":"Post-Training from Scratch","summary":"The alignment pipeline in plain PyTorch, on the tiny model you built: supervised fine-tuning with masked labels, a reward model trained on preference pairs, RLHF with PPO, and GRPO. Every step is code you can read and run on a laptop.","icon":"rocket","cover":"preference-loss"}

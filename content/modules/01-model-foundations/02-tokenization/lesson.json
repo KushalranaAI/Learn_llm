@@ -11,7 +11,6 @@
   "prerequisites": "You should know that a model maps numbers in to probabilities out and is trained with cross-entropy over a vocabulary, from [How a Network Learns](/learn/model-foundations/how-networks-learn). No other background is needed.",
   "sims": ["bpe-tokenizer", "token-cost"],
   "labs": ["token-budget"],
-  "sandbox": [],
   "sources": [
     { "title": "Neural Machine Translation of Rare Words with Subword Units", "authors": "Sennrich, Haddow and Birch", "year": 2016, "note": "Introduced byte-pair encoding for sub-word vocabularies" },
     { "title": "Language Models are Unsupervised Multitask Learners", "authors": "Radford et al.", "year": 2019, "note": "GPT-2: byte-level BPE with a 50,257-token vocabulary" },
