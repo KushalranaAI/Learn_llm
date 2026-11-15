@@ -4,6 +4,7 @@ import "highlight.js/styles/github-dark-dimmed.css";
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import AppShell from "@/components/AppShell";
+import { getOutline } from "@/lib/content";
 import { THEME_SCRIPT } from "@/lib/theme-script";
 
 const sans = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
@@ -42,7 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       {/* browser extensions add attributes to <body> before React loads */}
       <body suppressHydrationWarning>
-        <AppShell>{children}</AppShell>
+        <AppShell topics={getOutline().reduce((a, m) => a + m.lessons.reduce((b, l) => b + l.topics.length, 0), 0)}>{children}</AppShell>
       </body>
     </html>
   );

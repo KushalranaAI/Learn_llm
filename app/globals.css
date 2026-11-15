@@ -190,6 +190,8 @@ p { margin: 0 0 0.8em; }
 .credit-links { display: flex; align-items: center; gap: 2px; }
 .credit-links a { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 6px; color: var(--muted); transition: color 0.15s, background 0.15s; }
 .credit-links a:hover { color: var(--text); background: var(--panel-2); }
+.credit-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 560px) { .credit-wide { display: none; } } /* phones: "Kushal Rana · Learn in Public" */
 
 @media (max-width: 1180px) { .nav-label { display: none; } .nav-links a { padding: 7px 10px; } }
 @media (max-width: 720px) {
@@ -621,7 +623,9 @@ a.card:hover, .link-card:hover, a.module-card:hover { border-color: var(--line-2
 .entry-grid > :nth-child(4) { animation-delay: 0.15s; }
 .hero-dot { animation: dot-pulse 1.6s ease-in-out infinite; }
 @keyframes dot-pulse { 50% { opacity: 0.35; } }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; } }
+/* Reduced motion: transitions off and animations end at once. Transitions are 0s, not a tiny duration: with a tiny one every
+   style change is still a transition, and code that measures right after changing styles (Mermaid) reads stale values. */
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0s !important; scroll-behavior: auto !important; } }
 .lab-nav-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; width: 100%; }
 .simws-right .lab-nav-row .btn { flex: 1; }
 .simws-right .lab-nav-row > .row { order: -1; width: 100%; }
@@ -873,3 +877,17 @@ kbd { font-family: var(--font-mono), monospace; font-size: 0.74rem; padding: 1px
 .pathguide-card .btn { align-self: flex-start; margin-top: auto; }
 .pathguide-num { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--panel-3); color: var(--accent-strong); font-weight: 650; font-size: 0.8rem; }
 .pathguide-here { align-self: flex-start; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent-strong); }
+.pathguide-family { margin: 16px 0 0; max-width: 760px; line-height: 1.55; }
+.pathguide-family a { font-weight: 600; }
+
+/* ---------- Learn in Public: the rest of the family ---------- */
+.family-next { margin: 40px 0 28px; }
+
+/* <kr-roadmaps>, the Learn in Public switcher (design/roadmaps.js), collapses its label together with the nav labels */
+@media (max-width: 1180px) {
+  kr-roadmaps::part(label) { display: none; }
+  kr-roadmaps::part(button) { padding: 0; width: 34px; justify-content: center; }
+}
+
+/* phones: when the top bar is still too full, the section links scroll sideways instead of pushing the tools on the right off screen */
+@media (max-width: 640px) { .nav nav { min-width: 0; overflow-x: auto; scrollbar-width: none; } }

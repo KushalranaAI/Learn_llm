@@ -2,6 +2,8 @@
 
 *Built by [Kushal Rana](https://kushalranaai.github.io/) · [LinkedIn](https://www.linkedin.com/in/kushal-rana) · [YouTube](https://www.youtube.com/@naaku-o2x) · [X](https://x.com/KushalranaAI) · [Medium](https://kushalrana448.medium.com/)*
 
+Part of **[Learn in Public](https://kushalranaai.github.io/learn-in-public/)**: seven connected roadmaps from your first class to production AI systems. Every app has a **Roadmaps** button in its top bar that shows the others, and your progress in each.
+
 **Learn how large language models work and how they are built, by doing.** Every topic explains the idea, works
 through the maths with real numbers, lets you see it in a live simulation, and checks your understanding. Labs turn it
 into practice. Building applications on top of LLMs (RAG, agents, production systems) is covered by the separate AI

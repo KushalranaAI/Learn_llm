@@ -32,7 +32,11 @@ export function Logo({ size = 26 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true" className="logo">
       <rect width="32" height="32" rx="8" fill="var(--accent)" />
-      <path d="M8 22h4v-6H8zm6 0h4V10h-4zm6 0h4v-9h-4z" fill="var(--on-accent)" />
+      {/* the LLM glyph from the family registry (design/roadmaps.js): a chat bubble of tokens */}
+      <path d="M11.5 8h9a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3h-5l-4 3.5V20a3 3 0 0 1-3-3v-6a3 3 0 0 1 3-3z" fill="none" stroke="var(--on-accent)" strokeWidth="2.2" strokeLinejoin="round" />
+      <circle cx="12.6" cy="14" r="1.5" fill="var(--on-accent)" />
+      <circle cx="16" cy="14" r="1.5" fill="var(--on-accent)" />
+      <circle cx="19.4" cy="14" r="1.5" fill="var(--on-accent)" />
     </svg>
   );
 }
@@ -42,12 +46,16 @@ function isActive(path: string, href: string) {
   return path.startsWith(href);
 }
 
-export default function AppShell({ children }: { children: React.ReactNode }) {
+export default function AppShell({ children, topics }: { children: React.ReactNode; topics: number }) {
   const path = usePathname();
   const [open, setOpen] = useState(false);
   const progress = useProgress();
   const [due, setDue] = useState(0);
   useEffect(() => setDue(dueReviews(progress).length), [progress]);
+  // The Learn in Public family elements (<kr-roadmaps>, <kr-next-roadmap>) are registered after hydration, in the browser only.
+  useEffect(() => {
+    import("@/app/design/roadmaps.js");
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -74,6 +82,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </Link>
           ))}
         </nav>
+        <kr-roadmaps current="llm" done={Object.keys(progress.done).length} total={topics} />
         <div className="nav-right">
           <button type="button" className="search-chip" onClick={() => setOpen(true)} aria-label="Search the course">
             <Icon name="search" size={15} /> <span>Search</span> <kbd className="kbd">Ctrl K</kbd>

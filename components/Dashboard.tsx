@@ -6,7 +6,8 @@ import { useEffect, useState } from "react";
 import type { Outline } from "@/lib/content";
 import { readyToLearn } from "@/lib/learner";
 import { dueReviews, type Progress, useProgress, weekActivity } from "@/lib/progress";
-import { BRAND } from "@/lib/brand";
+import { FAMILY, ROADMAPS, roadmapHref, saveProgress } from "@/app/design/roadmaps.js";
+import { BRAND, asset } from "@/lib/brand";
 import HeroPanel from "./HeroPanel";
 import Icon, { type IconName } from "./ui/Icon";
 
@@ -59,6 +60,11 @@ export default function Dashboard({ outline, interview, practice }: { outline: O
   const currentModule = outline.find((m) => m.slug === start?.m.slug) ?? outline[0];
   const doneIn = (m: Outline[number], l: Outline[number]["lessons"][number]) => l.topics.filter((t) => prog.done[`${m.slug}/${l.slug}/${t.slug}`]).length;
   const startHref = start ? `/learn/${start.m.slug}/${start.l.slug}/${start.t.slug}` : "/curriculum";
+  // Tell the rest of the Learn in Public family where to resume (the hub and the other apps' switchers read it).
+  useEffect(() => {
+    if (!mounted || !start) return;
+    saveProgress("llm", { done: doneCount, total: topics, href: new URL(asset(startHref), window.location.href).href, label: start.t.title });
+  }, [mounted, start, doneCount, topics, startHref]);
 
   return (
     <div className="page">
@@ -180,6 +186,10 @@ export default function Dashboard({ outline, interview, practice }: { outline: O
         </div>
       )}
 
+      <section className="family-next">
+        <kr-next-roadmap current="llm" />
+      </section>
+
       <section className="card creator" aria-label="About the author">
         <span className="creator-mark" aria-hidden="true">KR</span>
         <div className="creator-body">
@@ -191,10 +201,11 @@ export default function Dashboard({ outline, interview, practice }: { outline: O
           </div>
         </div>
         <div className="creator-more">
-          <h4>More courses</h4>
-          {BRAND.projects.map((pr) => (
-            <a key={pr.href} href={pr.href} target="_blank" rel="noopener noreferrer" className="creator-link">{pr.label} <Icon name="external" size={13} /></a>
+          <h4>All {FAMILY.name} roadmaps</h4>
+          {ROADMAPS.filter((r) => r.id !== "llm").map((r) => (
+            <a key={r.id} href={roadmapHref(r)} className="creator-link">{r.name} <Icon name="external" size={13} /></a>
           ))}
+          <a href={FAMILY.hub} className="creator-link">See them all, in order <Icon name="arrow-right" size={13} /></a>
         </div>
       </section>
 

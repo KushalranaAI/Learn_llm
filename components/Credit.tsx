@@ -1,4 +1,5 @@
 // The credit strip at the bottom of every page: small, quiet, and out of the way of the content (same as System Learn).
+import { FAMILY } from "@/app/design/roadmaps.js";
 import { BRAND } from "@/lib/brand";
 import type { ReactNode } from "react";
 
@@ -27,7 +28,8 @@ export default function Credit() {
   return (
     <footer className="credit">
       <span className="credit-text">
-        Built by <a href={BRAND.links[0].href} target="_blank" rel="noopener noreferrer">{BRAND.name}</a>
+        <span className="credit-wide">Built by </span><a href={BRAND.links[0].href} target="_blank" rel="noopener noreferrer">{BRAND.name}</a>
+        {" · "}<span className="credit-wide">Part of </span><a href={FAMILY.hub} title={`${FAMILY.name}: every roadmap by ${FAMILY.author}`}>{FAMILY.name}</a>
       </span>
       <nav className="credit-links" aria-label={`${BRAND.name} on the web`}>
         {BRAND.links.map((l) => (
