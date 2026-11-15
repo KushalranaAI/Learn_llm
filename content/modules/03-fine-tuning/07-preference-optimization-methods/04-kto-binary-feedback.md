@@ -7,6 +7,27 @@ Most products do not collect preference pairs. They collect a thumbs-up or thumb
 
 The name comes from **prospect theory**, Kahneman and Tversky's model of how people value outcomes. Two of its ideas matter here. People judge an outcome relative to a **reference point**, not in absolute terms: a 5% raise feels good if you expected nothing and bad if you expected 10%. And the value curve is S-shaped, flattening for large gains and large losses, so the hundredth unit of improvement counts less than the first. KTO builds a loss with exactly this shape.
 
+## In everyday life
+
+A small restaurant puts a feedback box by the door. Each guest drops in a card about one dish: a smile or a frown. Nobody tastes two dishes side by side and ranks them. The manager still learns plenty. Dishes with smiles stay, and dishes with frowns get fixed. There is one catch. Most cards are smiles, so the few frowns could get lost. The manager counts each frown a little extra so both kinds are heard.
+
+**KTO** works from exactly this kind of feedback. Its examples are single answers, each marked **desirable** (thumbs up) or **undesirable** (thumbs down). No pair is needed. The model is trained to make liked answers more likely and disliked ones less likely, judged against a **reference point**, which is roughly how far the model has already drifted from its start. A frown matters most when the model has grown fonder of a bad answer than it was before. Because smiles usually outnumber frowns, KTO has weights that boost the rarer label. The name borrows from Kahneman and Tversky, who studied how people judge gains and losses.
+
+One warning from the restaurant: some frowns are about slow service, not the dish. Read a sample of thumbs-down cards before training.
+
+**Where you meet it.** A software company logs thumbs up and thumbs down on its help assistant's replies. Most users never compare two replies, so true pairs are rare. KTO lets the team use every logged rating instead of discarding the unpaired ones.
+
+```scene
+title: Smile and frown cards in a restaurant
+step: 🍽 Each guest drops a card about one dish: smile or frown | single answer with thumbs up or down
+step: 🗂 No two dishes are ranked side by side, yet every card is used | no pairing needed
+step: ⚖ Smiles far outnumber frowns, so each frown counts extra | desirable and undesirable weights
+step: 📏 Cards are judged against what the kitchen usually serves | reference point
+step: 🍳 The cook repeats what earns smiles and drops what earns frowns | raise liked, lower disliked answers
+step: 🔍 The manager reads frown cards and finds some blame slow service | noisy labels
+takeaway: KTO learns from single thumbs-up or thumbs-down answers, so no pairs are needed and every rating counts.
+```
+
 ## The loss
 
 Let $r_\theta(x, y) = \log \pi_\theta(y \mid x) - \log \pi_{\text{ref}}(y \mid x)$, the same log-ratio DPO uses. The reference point $z_0$ is an estimate of the KL divergence between policy and reference, computed in practice from mismatched prompt-answer pairs in the batch and treated as a constant (no gradient flows through it). The value of an answer is

@@ -7,6 +7,24 @@ The simplest way to use many GPUs is to give each one a full copy of the model a
 
 The catch is that last phrase. Plain data parallelism keeps **every** byte of model state on **every** GPU. With 64 GPUs training a 7.5B model you hold 64 identical copies of the optimizer states. **ZeRO** (Zero Redundancy Optimizer) removes that redundancy by splitting, or **sharding**, the states so each GPU stores only its share.
 
+## In everyday life
+
+Eight friends in a hostel are preparing for the same exam, and each buys the full twenty-volume reference set. Every room holds the same books, and nobody has space for anything else. A smarter plan is for each friend to keep only a few volumes. When someone needs a volume, they borrow it from whoever owns it, use it, and hand it back. Everyone now has room to spare. The price is some walking between rooms.
+
+Data parallelism is the first half of that story. Several GPUs each hold a full copy of the model but work on different examples, then **average their gradients**, the notes on how to change the weights, so every copy updates in the same way. The waste is that each GPU stores everything. **ZeRO** removes it by **sharding**, which means splitting the stored state into pieces so each GPU keeps only its own share and fetches other pieces for a moment when needed. Unlike the hostel, the GPUs swap pieces over fast cables, and the cost is time spent on those cables.
+
+**Where you meet it.** A team wants to fine-tune a model whose training state is too big for any single GPU in its cluster. Without sharding, every GPU needs a full copy and the job does not fit. With ZeRO, the same cluster holds the state between its members and the job runs.
+
+```scene
+title: Sharing a reference set in a hostel
+step: 📚 Every friend buys the full reference set for the same exam | plain data parallelism, full copies
+step: 🏠 Rooms fill with identical books and leave no space | redundant model states
+step: ✂️ The friends split the set so each keeps a few volumes | ZeRO sharding
+step: 🤝 When someone needs a volume, the owner lends it briefly | all-gather of parameters
+step: 🚶 Borrowing costs some walking time between rooms | communication cost
+takeaway: Sharding stops every GPU from storing the same state, trading memory for communication.
+```
+
 ## The cost of averaging gradients
 
 After the backward pass, GPUs combine gradients with an **all-reduce**. The bandwidth-optimal ring all-reduce makes each GPU send (and receive) about

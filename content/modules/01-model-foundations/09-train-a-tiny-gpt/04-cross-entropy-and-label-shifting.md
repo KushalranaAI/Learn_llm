@@ -7,6 +7,26 @@ The model hands back logits of shape $(B, n, V)$: for every position in every se
 
 That number is **cross-entropy**, the same loss you computed by hand in [How a network learns](/learn/model-foundations/how-networks-learn): turn the scores into probabilities with softmax and take the negative log of the probability given to the correct answer. A confident correct prediction costs almost nothing; a confident wrong one costs a lot. Here we care about two practical things: how to feed $B \cdot n$ predictions into PyTorch's loss in one call, and what value the loss must start at if the model is wired correctly.
 
+## In everyday life
+
+A kirana shopkeeper must decide each morning how to share his shelf space across the things customers might ask for: rice, atta, biscuits, soap. He spreads it as shares that add up to the whole shelf. Later a customer asks for something. If he gave that item a big share, no harm done. If he gave it almost nothing, he feels the miss badly.
+
+Now suppose a new shopkeeper has no idea what sells. The fair thing is to spread the space evenly across everything. That gives a known baseline miss, which depends only on how many different items there are. A shopkeeper who has learned his customers should do clearly better than this baseline. One who confidently stocks a lot of the wrong item does worse than the newcomer.
+
+The loss that trains a language model works the same way. At each position the model spreads shares, or **probabilities**, over every possible next **token** (a piece of text). **Cross-entropy** measures how small a share it gave to the token that actually came next: a big share on the right answer costs little, a tiny one costs a lot. The average over all positions is the loss. An untrained model spreads its shares evenly, so its very first loss is the baseline, which makes a handy check that everything is wired correctly.
+
+**Where you meet it.** Engineers compare a freshly built model's first loss with the value they predicted from the vocabulary size. If it is far off, something upstream is broken, such as targets leaking into inputs or oversized scores. Catching that in the first second saves hours of training on a broken setup.
+
+```scene
+title: The kirana shopkeeper's shelf shares
+step: 🏪 Each morning the shopkeeper splits shelf space across all possible items | probabilities over every next token
+step: 🛒 A customer asks for one item, and that is the real answer | correct next token
+step: 😬 A tiny share for that item hurts badly and a big share hurts little | negative log of its probability
+step: 📒 He averages the hurt over many customers | mean loss over all positions
+step: ⚖️ A shopkeeper with no clue spreads evenly, giving the baseline hurt | starting loss for uniform guessing
+takeaway: Cross-entropy punishes a small share on the right answer, and an untrained model starts at the even-spread baseline.
+```
+
 ## The formula
 
 For a single position with logits $z \in \mathbb{R}^V$ and correct next token $y$:

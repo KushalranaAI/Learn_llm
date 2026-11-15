@@ -13,6 +13,27 @@ Part 4 swaps the byte tokenizer for a **byte-level BPE** tokenizer trained on yo
 
 The short answer: the tokenizer becomes an **artefact of the run**, as important as the weights. The model's first and last layers are indexed by token ID, so a model is only meaningful together with the exact tokenizer that produced its IDs.
 
+## In everyday life
+
+Think of a student taking lecture notes by hand. At first she writes every single letter. Soon she notices that "the", "ing" and "tion" keep coming back, so she invents a short mark for each. Later she sees that her new marks often appear together, and she joins those into one still shorter mark. Her notes shrink, but the key explaining her marks grows longer, and she must keep that key to read the notes later.
+
+A **tokenizer** does this job for a language model. It cuts text into **tokens**, the small pieces the model reads, one per position. **Byte-pair encoding (BPE)** builds those pieces by starting from single **bytes** (the raw units a computer uses to store text) and repeatedly joining the pair that sits side by side most often. The full list of pieces is the **vocabulary**. A bigger vocabulary gives shorter sequences, but the model needs a bigger table of numbers to know every piece.
+
+Unlike the student, a model cannot guess a lost key: its weights only make sense with the exact tokenizer that produced its IDs.
+
+**Where you meet it.** A team building a chatbot for a small language trains its own tokenizer on its own text. With too few pieces, every sentence becomes a long line of positions, and the model sees little of a conversation at once. Learning common pieces from the team's own text fixes that, and saving the tokenizer next to the model keeps the two from ever being separated.
+
+```scene
+title: Shorthand notes that shrink the page
+step: 📝 She writes every single letter of the lecture | starting from byte tokens
+step: 🔍 She notices which two marks sit side by side most often | counting adjacent pairs
+step: 🔗 She invents one short mark for that pair and uses it everywhere | merging the most frequent pair
+step: 🔁 She repeats this until her key reaches a size she can manage | growing the vocabulary
+step: 📉 Her notes now fill far fewer lines, but her key is longer | shorter sequences, bigger tables
+step: 🔑 She keeps the key with the notes, or they cannot be read | saving the tokenizer with the model
+takeaway: A trained tokenizer shortens text by merging common pairs, and it must always travel with the model it was used for.
+```
+
 ## The trade: shorter sequences, bigger ends
 
 Two numbers move in opposite directions when $V$ grows. Sequences get shorter, which helps everything that scales with $n$. The embedding table and the output head get taller, which costs parameters, memory and compute on every token.

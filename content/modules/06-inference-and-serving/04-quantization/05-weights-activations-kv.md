@@ -5,6 +5,26 @@ minutes: 7
 
 "Quantize the model" can mean three different things, with different benefits. A forward pass touches three kinds of numbers: **weights** (fixed, read every step), **activations** (computed fresh for every token) and the **KV cache** (grows with context, read every step). Each can be stored at lower precision, and each helps a different bottleneck.
 
+## In everyday life
+
+Picture a doctor seeing patients through the day. The doctor uses three kinds of information. First, medical knowledge from years of study, which never changes and is used for every patient. Second, today's fresh test results, new for each person. Third, the patient's case file, which grows with every visit and is re-read each time.
+
+Each could be written in a more compact shorthand, and each would help in a different way. Shorter notes on medical knowledge speed up every consultation. A shorter case file matters most for a patient with a very long history.
+
+A language model has the same three. **Weights** are the fixed learned numbers, read on every step. **Activations** are the fresh numbers computed for each new word. The **KV cache** is the model's saved memory of the conversation so far, which grows as the text gets longer. Quantizing (storing with fewer bits) each one saves something different, so "quantize the model" can mean three different jobs.
+
+**Where you meet it.** A service that answers questions over very long documents finds its memory is mostly full of conversation history, not weights. Compressing that history lets it handle more users at once.
+
+```scene
+title: The doctor's three kinds of notes
+step: 📖 Medical knowledge never changes and is used for every patient | weights, read every step
+step: 🧪 Fresh test results arrive for each new patient | activations, computed per token
+step: 🗂️ The case file grows with every visit and is re-read each time | KV cache
+step: ✂️ Shorter shorthand on each kind helps in a different way | weight, activation and KV quantization
+step: 📏 The biggest saving comes from whichever kind is largest | match the method to the bottleneck
+takeaway: Weights, activations and the KV cache are different things, so check which one is big before compressing.
+```
+
 ## Weight-only quantization
 
 Store weights in INT4 or INT8 and dequantize to BF16 inside the kernel just before the multiply. The arithmetic still happens in BF16. This cuts the bytes read from HBM (the decode bottleneck) and the model's memory footprint, but does nothing for compute. It is the main tool for decode and for fitting a model on fewer GPUs, usually written W4A16 (4-bit weights, 16-bit activations) or W8A16.

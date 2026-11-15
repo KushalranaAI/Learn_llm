@@ -9,6 +9,26 @@ The [Transformer Block](/learn/model-foundations/transformer-block) lesson cover
 
 Its importance is out of proportion to its simplicity. In a GPT-2 style model the FFN holds two thirds of each block's parameters, and much of what a model "knows" is thought to be stored in these weights.
 
+## In everyday life
+
+At a clinic, the receptionist first collects a short card for each patient: name, age and a line about the complaint. Then the nurse asks a long list of questions about that one patient. Do you have a fever? Is the pain sharp? Since when? Each answer is a soft yes or no, and the nurse boils them down into a short note that fits on a card of the same size. Each patient is handled alone, with the same questions for everyone. One patient's answers never change the next patient's note.
+
+The **feed-forward network** (FFN) is this step. After attention has let the tokens exchange information, the FFN works on each token's vector by itself. It first widens the vector into a much longer list, like the long questionnaire, which gives the model room to ask many small questions. Then a **nonlinearity**, a rule that lets weak signals fade and strong ones pass, acts like the soft yes or no. This lesson uses one called **GELU**. Finally it narrows the list back to the original size.
+
+Much of what a model knows is thought to be stored in these weights.
+
+**Where you meet it.** Every block of a chatbot's model has one. After attention gathers context for the word "capital" in "the capital of France is", the feed-forward step turns it into features for the next word, which is where stored facts are thought to live. Without it, a block could only mix tokens, never transform each one.
+
+```scene
+title: A clinic's patient questionnaire
+step: 🧾 A patient arrives with a short summary card | One token vector
+step: 📋 The nurse asks a long list of questions about this patient | Widen with the first linear layer
+step: 🙂 Each answer is a soft yes or no, and weak ones fade | The GELU nonlinearity
+step: 📝 The nurse boils the answers down to a note the size of the card | Narrow back with the second layer
+step: 🚪 The next patient gets the same questions, answered separately | Same weights, each position independent
+takeaway: The feed-forward network widens, filters and narrows each token's vector on its own.
+```
+
 ## The maths
 
 For one token vector $\mathbf{x} \in \mathbb{R}^{d}$:

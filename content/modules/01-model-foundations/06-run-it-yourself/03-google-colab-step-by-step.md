@@ -7,6 +7,24 @@ Google Colab gives you a Jupyter notebook running on a Google virtual machine, a
 
 Two properties of Colab shape everything below. First, **the machine is temporary**: when the session ends, every file on it is gone. Second, **sessions end without asking**: a free session can run for up to about 12 hours, disconnects after roughly 90 minutes without interaction, and can be cut short when demand is high. Google's FAQ says free-tier limits fluctuate and GPU access is not guaranteed, and it publishes no weekly GPU quota. So the plan is: code on the VM's fast local disk, checkpoints and logs on Google Drive, and a training command that can be re-run to resume.
 
+## In everyday life
+
+Think of a cyber cafe on the last day to submit an online form. You pay for an hour, sit at a fast computer and get your work done. But the computer is not yours. When your time runs out, or the owner needs the seat, the session ends and everything left on that machine's desktop is wiped. Smart customers keep their documents on a pen drive. They copy what they need onto the desktop at the start and save back to the pen drive every few minutes.
+
+Google Colab works like this. It lends you a powerful computer with a graphics card for a limited time. That card is a **GPU**, a chip that does huge numbers of simple calculations at once, which is what training needs. The loaned machine is **temporary**: its files vanish when the session ends. So you keep durable files on Google Drive, and the training program saves **checkpoints**, which are snapshots of its progress, so that a new session can carry on instead of starting from zero.
+
+**Where you meet it.** A student has a model that takes hours on her laptop but only minutes on Colab's GPU. If the session drops midway and nothing was saved to Drive, the whole run is lost. With regular checkpoints on Drive, she reconnects, repeats the setup and loses only a few minutes of work.
+
+```scene
+title: Working at a cyber cafe
+step: 💻 You sit at a borrowed fast computer for your hour | A Colab session with a GPU
+step: 📂 You copy your files from the pen drive to the desktop | Copy the code to the local disk
+step: 💾 You work on the quick desktop copy and save to the pen drive often | Train and write checkpoints to Drive
+step: ⏳ Time runs out and the cafe wipes the machine | The session disconnects and files vanish
+step: 🔄 Next visit you copy the same files and open your last save | Same command resumes from the checkpoint
+takeaway: A borrowed machine is temporary, so save your progress somewhere that lasts.
+```
+
 ## Step 1: choose a GPU runtime and check it
 
 Open a new notebook at colab.research.google.com, then **Runtime → Change runtime type → T4 GPU → Save**. In the first cell:

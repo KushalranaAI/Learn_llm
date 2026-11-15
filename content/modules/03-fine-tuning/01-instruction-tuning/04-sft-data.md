@@ -7,6 +7,26 @@ Pretraining needs trillions of tokens. SFT, remarkably, can work with thousands 
 
 Because each example pulls the model toward its style, **every example is an instruction about how to behave**. A thousand excellent answers teach excellence. Ten thousand answers with a sprinkling of wrong facts, lazy refusals or inconsistent formatting teach the model that those are acceptable too. The LIMA study made this vivid: about 1,000 carefully curated examples were enough to turn a strong base model into a competitive assistant.
 
+## In everyday life
+
+Think of a cricket coach with a talented young batter. The batter already knows the game. The coach wants a reliable technique, so he shows video clips. A set of clean cover drives teaches a clean shot. But if a few clips show a sloppy grip or lazy footwork, the batter picks those up too, because he copies whatever he sees.
+
+That is the heart of SFT data. **Supervised fine-tuning** shows a model many examples of a request and a good reply. It is not learning new facts. It is learning which of its existing ways of answering to use every time. So every example works as an instruction about how to behave. A few thousand careful examples can beat a pile of careless ones. Mistakes, lazy refusals, or an odd habit like opening every answer with the same phrase get copied as faithfully as the good parts.
+
+Because of this, most SFT work is data work: writing clear guidelines, checking examples, removing **near-duplicates** (records that are almost identical to another) and keeping a healthy mix of task types.
+
+**Where you meet it.** A team building a legal-summary assistant collects thousands of example summaries. Some come from rushed writers and many are near copies of each other. They review and filter the set, drop the repeats and keep varied document types. The tuned model then writes in a steady, careful style instead of copying the sloppy ones.
+
+```scene
+title: The coach picks the clips
+step: 🏏 A talented batter already knows the game | pretrained base model
+step: 🎬 The coach chooses video clips to show him | SFT training examples
+step: 🔍 He throws out clips with a sloppy grip or lazy footwork | filtering and quality checks
+step: 👯 He drops near-copies and covers every kind of shot | deduplication and diversity
+step: 🔁 The batter copies what he sees, habits and all | model imitates the data style
+takeaway: A model copies the style of its training examples, so a small clean set beats a large careless one.
+```
+
 ## How small SFT is, computed
 
 ```steps

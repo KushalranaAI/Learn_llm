@@ -7,6 +7,25 @@ The web repeats itself. The same news story is syndicated to hundreds of sites, 
 
 **Deduplication** removes the copies. **Exact deduplication** is easy: hash each document (or each normalised paragraph) and keep one per hash. The hard part is **near-duplicates**: pages that are 95% identical but differ in a date, an ad block or a footer. Exact hashes see them as completely different. For those we need a similarity measure and a way to find similar pairs without comparing every document with every other.
 
+## In everyday life
+
+If you are in a few WhatsApp groups, you have seen the same forwarded message arrive again and again. Some are exact copies. Others are edited a little: a different greeting, a new emoji, one extra line. You do not need to read them all to know they are the same message. You glance at the main sentences, and if most match, you treat it as one message.
+
+**Deduplication** does this for training text. Copies are a problem because the model would see the same passage thousands of times, waste effort on it, and may **memorise** it word for word. Exact copies are easy to catch by fingerprinting the whole text. **Near-duplicates**, copies with small edits, change the whole fingerprint, so we compare overlap instead: the more shared phrases, the more similar. Comparing every document with every other is hopelessly slow at web scale. So a trick called **MinHash** gives each document a short signature built from a few telltale pieces of its text, chosen in the same random way for every document. Documents whose signatures match in part get compared more carefully.
+
+**Where you meet it.** A team cleaning a news-heavy crawl finds one agency story copied across hundreds of sites, each with a different header. Without deduplication the model sees that story hundreds of times and can repeat it. Near-duplicate removal keeps one copy and frees the budget for text it has not seen.
+
+```scene
+title: Spotting the same forward twice
+step: 📲 The same forwarded message arrives in many groups | Duplicate documents
+step: 👯 Exact copies are caught instantly by matching the whole text | Exact deduplication
+step: 📝 Slightly edited copies slip past because one word changed | Near-duplicates
+step: 🧩 You compare overlapping phrases and count how much is shared | Shingles and Jaccard similarity
+step: 🔖 Each message gets a short signature and similar ones land in the same pile | MinHash signatures and bands
+step: 🧹 You keep one message per pile and drop the rest | Keep one copy per cluster
+takeaway: Comparing short signatures finds near-copies without checking every pair.
+```
+
 ## Jaccard similarity on shingles
 
 Turn each document into a set of **shingles**: overlapping runs of $n$ consecutive words (or characters). The **Jaccard similarity** of two sets $A$ and $B$ is the size of their overlap divided by the size of their union:

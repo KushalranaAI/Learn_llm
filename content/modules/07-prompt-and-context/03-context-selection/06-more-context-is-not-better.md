@@ -10,6 +10,26 @@ There are two opposing forces as you include more retrieved chunks $k$:
 - **Coverage rises.** Retrieval **recall@k**, the chance that the needed passage is among the top $k$, can only go up as $k$ grows, with diminishing returns.
 - **Usability falls.** Given that the needed passage is present, the chance the model uses it correctly, $g(k)$, drops with more distractors.
 
+## In everyday life
+
+You post a question in the family WhatsApp group: which train to take to Pune on Saturday? Ten relatives reply within minutes. Two replies truly help. The rest talk about their own trips, other days, and a bus strike from last year. You now spend longer reading, and you almost miss the one message with the right train number.
+
+Putting extra text in a model's prompt works the same way. It feels safe to include twenty documents when two are needed. But every extra passage costs money and makes the model slower to start answering. Irrelevant passages also act as **distractors**, text that looks related but pulls attention away. The model becomes less likely to use the right passage even though it is present.
+
+Two forces pull against each other. **Coverage** is the chance the needed passage is somewhere in the prompt, and it rises as you add more. **Usability** is the chance the model uses it correctly, and it falls as distractors pile up. The best amount sits somewhere in between, usually well below what fits.
+
+**Where you meet it.** A team widens a document search from five results to twenty. The needed page is found more often, yet end-to-end answers get worse because the model has to dig through the extras.
+
+```scene
+title: Ten replies to one simple question
+step: 📱 You ask one simple question in the family group | the user query
+step: 💬 Ten relatives reply and only two replies help | retrieved chunks, few relevant
+step: 🌀 The off-topic messages distract you from the useful ones | distractors lower usability
+step: ⏳ Reading all of them takes longer and you nearly miss the answer | cost and latency rise
+step: 🎯 Next time you ask for just the one or two most useful replies | choosing a smaller k
+takeaway: More context raises coverage but lowers usability, so the best amount is usually modest.
+```
+
 ## The maths: an optimum $k$
 
 Combining them, the probability of a correct answer is approximately

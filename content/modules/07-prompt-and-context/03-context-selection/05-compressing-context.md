@@ -17,6 +17,26 @@ The methods, from cheap to expensive:
 
 Compression is lossy by definition, so the question is never "can we shrink it" but "how much of what the answer needs survives".
 
+## In everyday life
+
+The night before an exam, nobody can re-read the whole textbook. You make a one-page revision sheet instead. That sheet is much shorter, and it is enough for most questions. But the good student also does one more thing: formulas, dates and definitions are copied exactly, word for word, because a half-remembered formula is worse than none.
+
+Models face the same pressure. Long text costs money on every request and may not fit at all. **Compression** means replacing a long piece of context with a shorter one that keeps what the task needs. A **summary** is one kind: a model rewrites the text in fewer words. Compression always loses something, so the real question is whether the facts you need survive.
+
+That is why the exam trick matters. Exact details such as IDs, amounts and decisions are kept **verbatim** (copied unchanged), and only the rest is summarised. A summary is good for the gist but risky for lookups.
+
+**Where you meet it.** A support chatbot talks to a customer for thirty turns. Resending every turn each time is costly, so older turns become a short summary. The order number and the refund amount are kept as exact lines, so they never get paraphrased wrongly.
+
+```scene
+title: A revision sheet the night before
+step: 📚 The textbook is far too long to re-read before the exam | long context that costs too much
+step: ✂️ You write short notes covering the main ideas | summarising the gist
+step: 🔢 Formulas and dates are copied exactly, word for word | pinned verbatim facts
+step: 🗂️ The notes and the exact list sit together on one page | compressed context for the next call
+step: 🧪 You test yourself on real questions to see what the sheet misses | evaluating with golden questions
+takeaway: Compress the gist freely, copy exact facts unchanged, and test with real questions.
+```
+
 ## The maths: ratio, savings and survival
 
 Let a context have $L$ tokens and compress to $L'$ tokens. The **compression ratio** is $\rho = L'/L$, and the saving per reuse at input price $p$ is $(L - L')\,p$. Compression itself costs something: the compressor reads $L$ tokens and writes $L'$, at its own prices $p_c^{\text{in}}$ and $p_c^{\text{out}}$. If the compressed context is reused $n$ times (every later turn of a conversation, or every query against the same document), compression pays for itself when

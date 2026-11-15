@@ -11,6 +11,28 @@ A pretrained model already knows a great deal. You can steer it two ways. You ca
 
 Neither is better in general. Prompting is quick to change and needs no training run. Fine-tuning has an up-front cost (data, a GPU, an evaluation) but makes every later request cheaper and often more consistent. The decision is mostly arithmetic plus one question: is the thing you want a *behaviour* (a format, a tone, a skill) or *knowledge* (facts that change)? Fine-tuning is good at the first and poor at the second. New facts belong in the context at inference time, not in the weights.
 
+## In everyday life
+
+A post office hires a new clerk. There are two ways to get the forms filled in the right way. One is to hand the clerk a long instruction card with sample forms and have them read it before every single customer. The other is to train the clerk for a week so the habit lives in their head, then let them work with just a short note.
+
+The card needs no training and can be edited in minutes, but the reading is repeated for every customer, forever. The training costs a week once, then every customer is a little faster and the clerk handles the forms more consistently.
+
+This is the choice between **prompting** and **fine-tuning**. Prompting means putting instructions and examples into the text you send on each request, and you pay for those extra words each time. Fine-tuning means running more training on your own examples so the behaviour moves into the model's **weights**, its stored numbers. Which is cheaper depends mostly on how many customers walk in.
+
+The clerk also shows what training cannot do: today's changed postage rate still goes on the notice board.
+
+**Where you meet it.** A ticket-routing feature reads thousands of messages a day and needs each one sorted into a fixed set of labels in a strict format. Pasting twenty examples into every request gets expensive at that volume. Fine-tuning once removes the examples, while changing prices stay in the request text.
+
+```scene
+title: The clerk, the card and the training week
+step: 📮 A new post-office clerk reads a long instruction card before every customer | Long prompt with examples
+step: 🕒 Each customer costs a little extra time while the card is read | Tokens paid on every request
+step: 🎓 The manager trains the clerk for a week instead | Fine-tuning run
+step: ✅ The clerk now fills in forms the right way from memory | Behaviour stored in the weights
+step: 📋 Today's postage rates still go on the notice board | Changing facts stay in the context
+takeaway: Fine-tune stable behaviour you need at high volume, and keep changing facts in the prompt.
+```
+
 ## The break-even calculation
 
 Suppose prompting needs $k$ worked examples of $t$ tokens each to reach the quality you want, on every request. With $R$ requests per month and an input price of $p$ per token, those examples cost

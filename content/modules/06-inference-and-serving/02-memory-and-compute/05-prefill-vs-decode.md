@@ -5,6 +5,26 @@ minutes: 8
 
 One request, two completely different workloads. Prefill pushes thousands of prompt tokens through each weight matrix at once: lots of arithmetic per byte fetched, so the tensor cores are the limit. Decode pushes one token per sequence through the same matrices: almost no arithmetic per byte, so memory bandwidth is the limit. Nearly every serving optimisation is aimed at one phase or the other, and understanding which is which saves you from optimising the wrong thing.
 
+## In everyday life
+
+Think of a doctor with one patient. First the patient hands over a thick folder of old reports. The doctor reads it all in one sitting, with full concentration, connecting the details. That is heavy thinking, done in one go. Then the doctor writes the prescription one word at a time, and for each word glances at a big reference book kept on a far shelf. Now the thinking is light, and the trips to the shelf take the time.
+
+An LLM request has the same two phases. **Prefill** is reading your whole prompt (the text you send) in one pass; it is limited by how much arithmetic the chip can do. **Decode** is writing the reply one **token** (a small piece of a word) at a time; it is limited by how fast the model's **weights** (its billions of learned numbers) can be read from memory.
+
+Unlike the doctor, who glances at one page, the chip must bring the whole reference book again for every single word. Because the two phases are limited by different things, a trick that speeds up one often does nothing for the other.
+
+**Where you meet it.** A chatbot that answers questions from long company documents sends big prompts but short replies, so most of its time goes into prefill. Saving repeated prompt work helps it most. A chatbot that writes long stories needs the opposite fix: faster delivery from memory, or serving more users together.
+
+```scene
+title: A doctor reads, then prescribes
+step: 📁 The patient hands over a thick folder of reports | the prompt arrives
+step: 👓 The doctor reads it all at once with full concentration | prefill, compute-bound
+step: ✍️ The prescription is then written one word at a time | decode, one token per step
+step: 📚 Each word needs another trip to the far reference shelf | weights read from memory
+step: ⌛ Reading was short but heavy, writing is long but light | decode is bandwidth-bound
+takeaway: Prefill is limited by arithmetic and decode by memory, so each phase needs its own kind of speed-up.
+```
+
 ## Two time formulas
 
 Write $\eta_c$ for the fraction of peak compute that real kernels reach (model FLOPs utilisation, typically well under 1) and $\eta_m$ for the fraction of peak bandwidth they reach. Then for a model with $N$ parameters at $b$ bytes each:

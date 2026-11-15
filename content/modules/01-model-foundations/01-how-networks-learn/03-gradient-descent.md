@@ -7,6 +7,26 @@ Imagine standing on a hillside in thick fog. You cannot see the valley, but you 
 
 That is **gradient descent**. The "landscape" is the loss as a function of the parameters: every possible setting of the weights is a point, and the height at that point is the loss. Training starts at a random point and keeps stepping downhill. The fog is real: with millions of parameters nobody can draw the landscape, but we can always compute the local slope.
 
+## In everyday life
+
+Imagine a hostel bathroom with a hot tap and a cold tap, and no markings. You step in and the water is too cold. You cannot see the pipes, but you can feel the result. So you try a small turn of each tap and notice which turn makes the water better. You make that small turn, feel again, and repeat. When the water feels right, you stop.
+
+That is **gradient descent**, the method that trains neural networks. The taps are the model's **parameters**, its adjustable numbers. How uncomfortable the water feels is the **loss**, a score of how wrong the model is. The **gradient** answers: "if I nudge each tap, how does the score change, and how fast?" The model then takes a small step in the direction that lowers the score. The size of that step is the **learning rate**. Nobody needs to see the whole landscape; feeling the slope where you stand is enough.
+
+Where the shower stops fitting: a model has not two taps but millions or billions, and it adjusts all of them at once.
+
+**Where you meet it.** Engineers training a small model to predict house prices never solve for the best settings directly. They start from random settings and let gradient descent nudge them, step by step, until predictions stop improving. The same loop trains language models; only the number of taps changes.
+
+```scene
+title: Finding the right shower temperature
+step: 🚿 You step in, the water feels wrong, and the taps are unmarked | random starting parameters
+step: 🖐 You feel the water and judge how far it is from comfortable | the loss
+step: 🔄 You test which way each tap makes things better | the gradient
+step: 🤏 You turn each tap a small amount that way | an update with a learning rate
+step: 🔁 You feel again and repeat until it is comfortable | repeat until the loss stops falling
+takeaway: Gradient descent improves a model by repeating one move: nudge every parameter slightly downhill.
+```
+
 ## One parameter: the slope tells you which way
 
 Take the simplest possible loss, a function of one weight $w$:

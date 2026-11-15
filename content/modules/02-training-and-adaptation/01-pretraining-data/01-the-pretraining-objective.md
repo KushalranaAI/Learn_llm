@@ -21,6 +21,25 @@ Imagine learning a language by reading a library one word at a time, covering th
 
 **Pretraining** is exactly that game played by a network over trillions of tokens. There are no labels written by people. The text supervises itself: every position in every document is a little exam whose answer is the token that actually comes next. This is called **self-supervised learning**, and it is why the quality and makeup of the data matter so much. The model can only become a summary of what it reads.
 
+## In everyday life
+
+On a long car trip, the radio plays old songs you half know. You hum along and try to guess the next line before it plays. Nobody has to tell you the right answer, because the song reveals it a moment later. Guess right and you barely notice. Guess wrong, especially when you were sure, and it stings, so you remember the line next time. After thousands of songs you can finish lines in styles nobody ever taught you.
+
+**Pretraining** is this game played by a model on a vast amount of text. The model reads some **tokens** (small pieces of words), says how likely each possible next token is, and then sees the real one. The score for that guess is the **loss**: small if the real token had a good chance, large if the model was confident and wrong. The model then nudges its internal numbers, its **parameters**, so the same guess would be a little better. Because the text answers itself, no person has to label anything. This is called **self-supervised learning**.
+
+**Where you meet it.** Every base model behind a chat assistant starts here. Before it ever learns to follow instructions, it reads huge amounts of text only to predict what comes next. Without this stage it would have no grammar, no facts and no feel for code to build on. Later stages shape its manners, while this stage builds its knowledge.
+
+```scene
+title: Guessing the next lyric
+step: 📻 The radio plays a song and stops just before the next word | Earlier tokens as context
+step: 🤔 You guess, with some words seeming more likely than others | Probability over the next token
+step: 🎵 The song continues and reveals the real next word | The true next token
+step: 😬 A confident wrong guess stings far more than a hesitant one | Cross-entropy loss
+step: 🔧 You adjust your ear a little so you guess better next time | Gradient descent on parameters
+step: 🔁 You repeat this across thousands of songs without any teacher | Self-supervised learning at scale
+takeaway: The text supplies its own answers, so a model can learn from everything it reads.
+```
+
 ## One objective for everything
 
 Take a document as a sequence of tokens $x_1, x_2, \dots, x_T$. The model with parameters $\theta$ produces, at each position $t$, a probability distribution over the whole vocabulary given everything before it, $p_\theta(\cdot \mid x_{<t})$. The **next-token cross-entropy** for that document is the average negative log-probability the model gave to the tokens that really occurred:

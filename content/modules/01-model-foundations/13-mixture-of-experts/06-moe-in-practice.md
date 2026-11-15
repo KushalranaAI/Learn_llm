@@ -7,6 +7,25 @@ MoE trades compute for memory and communication. The first topic showed the good
 
 Whether MoE is worth it depends on which of these resources is scarce for you.
 
+## In everyday life
+
+Picture a big government office with a counter for every kind of service, spread across three buildings. The office must keep every counter staffed and its records ready all day, because any visitor might need any counter. One visitor uses only two counters. But when a crowd arrives, nearly every counter gets someone. And if a visitor's counters are in another building, the file has to be carried there and back. The clerks may be quick. The delays come from space, records and carrying.
+
+That is the bill for a mixture of experts. You pay **memory** for all the experts, not just the ones used. At serving time, models write text one **token** (a piece of a word) at a time, and each step is mostly limited by how fast stored numbers can be fetched, not by calculation, so saving calculation saves less time than hoped. When experts sit on different GPUs, an **all-to-all** exchange carries every token to its experts and back in every MoE layer.
+
+**Where you meet it.** A team serves a mixture-of-experts model to many users on one multi-GPU server. The model computes like a smaller one, but it needs memory for all its experts, and traffic between GPUs can dominate. They serve many users at once so that each expert read is shared among many tokens, and they size the hardware by total parameters, not active ones.
+
+```scene
+title: A passport office with many counters
+step: 🏢 The office keeps every counter staffed and its records ready | all experts held in memory
+step: 🙋 One visitor needs only two counters | top-k routing for a token
+step: 👥 A big crowd arrives, and nearly every counter gets a visitor | a large batch touches every expert
+step: 📦 Counters in other buildings need files carried there | all-to-all dispatch between GPUs
+step: 🔙 The finished files are carried back to their owners | all-to-all combine
+step: 🐢 The wait depends on carrying and fetching, not on the clerks' speed | memory and communication bound
+takeaway: A mixture of experts saves calculation but still pays for memory, fetching and traffic between GPUs.
+```
+
 ## Memory: you store the total
 
 Weight memory is total parameters times bytes per parameter. For Mixtral 8x7B in bf16 (2 bytes):

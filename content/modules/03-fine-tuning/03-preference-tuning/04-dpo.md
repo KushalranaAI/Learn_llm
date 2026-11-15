@@ -5,6 +5,26 @@ minutes: 9
 
 RLHF trains a reward model, then runs a reinforcement-learning loop against it with a KL leash. **Direct Preference Optimization** (DPO) asks: if we know exactly which objective that loop is maximising, can we write down its solution and fit it to the preference pairs directly, like an ordinary supervised loss? The answer is yes, and the derivation is short enough to follow line by line. It is one of the most useful pieces of maths in modern post-training.
 
+## In everyday life
+
+Imagine a student preparing for an exam with a stack of past questions. For each question she has two answers: a topper's and a weak one. She could hire an examiner to mark her practice answers and then study from the marks. Or she can skip the examiner and learn straight from the pairs: first note how likely she was to write each answer before studying, then study until the topper's style feels more natural than before and the weak style feels less natural than before.
+
+That shortcut is **Direct Preference Optimization**, or DPO. It uses the same preference pairs as RLHF, but there is no separate scoring model and no practice loop in the middle. The model compares its own odds of writing the chosen and rejected answers against a frozen copy of its earlier self, the **reference model**. A dial called **beta** decides how far it may move from that earlier self.
+
+One limit: the student can only study the pairs she was given. A model trained with DPO also cannot test new answers of its own during training.
+
+**Where you meet it.** A small team wants a model to give shorter, more honest answers but has no budget for a reward model and a reinforcement-learning setup. They gather chosen and rejected pairs and train with DPO, which runs like ordinary supervised training. It is simpler to run, with fewer moving parts to break.
+
+```scene
+title: Studying from topper and weak answers
+step: 📚 A student collects pairs of answers: a topper's and a weak one | Chosen and rejected pair
+step: ✍️ She notes how likely she was to write each, before studying | Reference model log-probabilities
+step: 🔍 She studies until the topper style is likelier than before and the weak style less so | Implicit reward gap
+step: 🚫 No examiner marks her practice answers along the way | No reward model, no RL loop
+step: 🎚️ A dial decides how far she may change her writing | Beta, the strength of the leash
+takeaway: DPO learns from preference pairs directly, with no reward model and no reinforcement-learning loop.
+```
+
 ## Step 1: the optimal policy has a closed form
 
 Start from the KL-regularised objective of the previous topic, for one prompt $x$:

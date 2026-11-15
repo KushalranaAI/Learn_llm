@@ -16,6 +16,26 @@ A student preparing for an exam learns far more from a teacher who says "the ans
 
 A large **teacher** model's output carries it. When it predicts the next word after "The pet barked at the", its probabilities might be $0.87$ for *mailman*, $0.12$ for *cat*, $0.016$ for *spoon*. The ordering says *cat* is a far better alternative than *spoon*, and that relationship (sometimes called **dark knowledge**) is exactly what a hard label throws away. **Knowledge distillation** trains a smaller **student** to reproduce the teacher's whole distribution, not just its top choice.
 
+## In everyday life
+
+Picture a senior doctor training a junior. She reads a patient's symptoms and says only "viral fever", so the junior learns one thing. Now picture her saying, "Most likely a viral fever, possibly dengue, and a broken bone is out of the question." The second version teaches far more, because the junior hears which wrong answers are close and which are silly.
+
+That is the idea of this lesson. A big **teacher** model reads some text and does not just name the next word. It gives every possible next word a **probability**, a score between "never" and "certain". A small **student** model is trained to copy that whole ranking, not only the top pick. The hints hidden in the near misses are sometimes called **dark knowledge**, and copying a big model's judgement into a small one this way is **knowledge distillation**.
+
+The doctor stops fitting in one place. The teacher scores tens of thousands of possible words at once, at every position in the text.
+
+**Where you meet it.** A phone keyboard suggests your next word while you type, so its model must be small enough to run on the phone. Trained only on single right answers, a small model learns slowly. Learning from a large teacher's ranked guesses helps it suggest sensible words sooner.
+
+```scene
+title: A doctor teaches with ranked guesses
+step: 🩺 A senior doctor reads a patient's symptoms | teacher reads the context
+step: 📋 She ranks her suspicions: very likely flu, possibly dengue, almost never a fracture | teacher probabilities over tokens
+step: 🗣️ The old way: the junior is told only the final diagnosis | hard label
+step: 🧠 The new way: the junior also hears which wrong guesses are near and which are absurd | soft targets, dark knowledge
+step: 📈 After many cases, the junior ranks suspicions like the senior | student matches teacher distribution
+takeaway: A student learns more from the teacher's full ranking than from its single top answer.
+```
+
 ## Why this makes small models better
 
 Each training token under a hard label provides about one number of supervision: which class is right. Under distillation, each token provides a full probability vector over the vocabulary, with tens of thousands of numbers' worth of relative judgements. The student learns faster per token and often generalises better, because the soft targets act as a rich regulariser. Empirically, distilled students beat same-size models trained on the same text with hard labels alone, and can match much larger ones on specific tasks.

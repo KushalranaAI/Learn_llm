@@ -19,6 +19,26 @@ Read it right to left in your head, left to right on paper:
 
 The best way to own this formula is to compute it once completely. The numbers below are chosen so every step can be checked with a calculator.
 
+## In everyday life
+
+Picture a cook making a masala for one particular dish. The cook has a row of spice jars. First, the cook tastes the dish and rates how well each jar's label matches what the dish needs. Those ratings are rough and can be loud, so the cook tones them down a little. Then the ratings become shares that add up to one whole portion. Finally the cook spoons in each spice in its share. The result is not any one spice. It is a blend tilted toward the best matches.
+
+That is **scaled dot-product attention**, one formula with four moves. A **score** says how well a query matches each key. The scores are divided by a fixed number, the square root of the key size, which keeps them from growing too loud (the next lesson explains why). **Softmax** then turns each row of scores into shares that add up to one. Last, those shares mix the **values** into the output.
+
+Every word does this in the same step, so a whole sentence becomes a table of scores. Unlike a cook, the model can hold a hundred jars at once, and it checks its work easily: each row of shares must add up to one.
+
+**Where you meet it.** Inside a chatbot reading a long complaint, this formula runs in every layer to decide which sentences matter for the next word of the reply.
+
+```scene
+title: Blending a masala by ratings
+step: 🍲 The dish says what it needs, and you read each jar's label | queries meet keys
+step: 🔢 Every jar gets a rough match rating | raw scores
+step: ⚖️ You tone all ratings down by the same fixed amount | divide by root of key size
+step: 🥧 Ratings turn into shares that add up to one portion | softmax on each row
+step: 🥄 You spoon each spice in its share, and the blend is ready | weighted sum of values
+takeaway: Attention is score, scale, share out with softmax, then blend the values by those shares.
+```
+
 ## The setup
 
 Three tokens, "the", "cat", "sat", with $d_k = 4$ (so $\sqrt{d_k} = 2$) and $d_v = 2$:

@@ -5,6 +5,28 @@ minutes: 7
 
 If position changes recall, then the order of your passages is a decision, not an accident. Most pipelines simply paste passages in retrieval-rank order, best first, and move on. That default places the second-best passage in the second slot, the third-best in the third, and so on down into the trough of the U-curve, while the worst passage ends up at the very end, in the strongest slot of all. We can do better with a short argument.
 
+## In everyday life
+
+Think of the schedule for a school annual day. The audience pays most attention to the opening item and the closing item. Everything in the middle is watched with one eye on the phone. A sensible teacher puts the best performances at the start and the end, and the weaker or shorter ones in the middle.
+
+The default way a model pipeline orders its material is like reading out the programme in the order the items were registered. Models also pay uneven attention across a long prompt. This is the **position effect**: the same passage is used more reliably in some **slots** (places in the prompt) than in others. A **passage** is one retrieved piece of text, and its **value** is how likely it holds the answer.
+
+The idea is simple: **ordering** is a choice. Match the most valuable passages to the strongest slots, instead of letting the retrieval rank decide by accident.
+
+The programme example has one limit. If the passages tell a story in time order, such as the history of a support ticket, keep that order so the story still makes sense.
+
+**Where you meet it.** A customer-support assistant gets five relevant passages. Pasting them best-first puts the second and third best in weak middle slots. Reordering them costs no extra model calls.
+
+```scene
+title: Planning an annual day programme
+step: 🎭 The teacher lists all the performances that are ready | retrieved passages
+step: 👀 She knows the audience watches the opening and closing most closely | slot strength differs by position
+step: ⭐ She ranks the acts from strongest to weakest | passages sorted by value
+step: 🔁 The best act closes the show and the next best opens it | best passage to strongest slot
+step: 😴 The weakest act goes in the middle | weakest passage in weakest slot
+takeaway: Put your most valuable passages in the strongest prompt positions, not in rank order.
+```
+
 ## The maths: the rearrangement argument
 
 Suppose there are $n$ slots with recall $r_1, \dots, r_n$ (how likely the model is to use a passage placed in that slot), and $n$ passages with value $v_1, \dots, v_n$ (the probability that this passage holds the needed fact). Assigning passage $i$ to slot $\sigma(i)$ gives expected utility

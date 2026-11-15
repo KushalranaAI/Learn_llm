@@ -7,6 +7,24 @@ In GRPO the reward function is the whole specification of what you want. The mod
 
 For a maths task such as **GSM8K** (Cobbe et al., 2021: grade-school word problems whose reference answers end in `#### <number>`), two signals are standard. A **correctness reward** parses the model's final answer and compares it with the reference. A **format reward** checks that the output follows the layout you asked for, for example reasoning followed by the answer inside `<answer>...</answer>` tags. The format reward is a scaffold: early on, a small instruct model rarely gets both right, and rewarding the format alone gives the group some variance to learn from.
 
+## In everyday life
+
+Think of a school exam with a marking scheme: ten marks for the right answer, two marks for neat working. The scheme is all the students ever see. They never learn what the teacher really hoped for, only what earns marks. Clever students find the gaps. If any circled answer earns full marks, someone circles three numbers and hopes one is right.
+
+A **reward function** is that marking scheme, written as a small program. It reads the model's answer and returns a number. A **correctness reward** checks the final answer against the known one. A **format reward** checks that the answer follows the layout you asked for, such as the answer inside tags. The model takes any shortcut the program allows, a habit called **reward hacking**, so the rules must be tight. Neatness marks must also stay small next to the marks for being right, or a tidy wrong answer starts to look as good as a right one. Unlike a human marker, the program has no common sense: it rewards exactly what it was written to reward.
+
+**Where you meet it.** A team teaching a small model to solve word problems might write a checker that accepts the last number in the answer. The model then learns to list several candidates, the training score climbs, and real accuracy does not. Demanding exactly one number closes the loophole.
+
+```scene
+title: The exam marking scheme
+step: 📝 The teacher writes a scheme: marks for the right answer, a few for neat layout | correctness and format rewards
+step: 🎓 Students see only the marks, never the teacher's hopes | the reward is the only signal
+step: 🎯 One student circles several answers, since any circle earns marks | reward hacking through a loophole
+step: 🔒 The teacher rewrites it: exactly one circled answer, or zero | exactly one number in one tag
+step: ⚖️ Neatness marks stay small beside marks for being right | format weight below correctness
+takeaway: The model chases whatever the checker rewards, so write the checker as if it were for a clever opponent.
+```
+
 ## The maths: summing components
 
 TRL calls each reward function on the whole batch and adds the results, optionally weighted:

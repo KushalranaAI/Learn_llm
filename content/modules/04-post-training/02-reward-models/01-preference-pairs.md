@@ -16,6 +16,26 @@ A labeller is shown one prompt and two answers and asked which is better. They d
 
 So the unit of data is a **preference pair**, stored as a triple: the prompt $x$, the **chosen** answer $y_c$ and the **rejected** answer $y_r$. The label is not a separate field. It is the position: whatever sits in the `chosen` slot won.
 
+## In everyday life
+
+A chai stall owner wants to know which of two cups is better. Asking each customer for marks out of ten gives messy numbers, because one person's 7 is another person's 9. It is easier and more honest to ask, "Which cup do you prefer?" A tap on one cup is all the answer needed.
+
+A **preference pair** is the AI version of that tap. A person sees one prompt, the question or request, and two answers, and picks the better one. The winner is the **chosen** answer and the other is the **rejected** answer. Together with the prompt they form a triple. There is no separate score to record: whatever sits in the chosen slot is the label. Thousands of such picks are all a **reward model**, a model that learns to give a score to an answer, ever learns from. It has to invent its own scale of goodness, so that picked answers tend to score higher than rejected ones.
+
+One caution: both cups must come from the same order. Both answers must respond to the same prompt, or the pick says nothing useful.
+
+**Where you meet it.** A team that wants a chatbot to sound helpful asks reviewers to compare two candidate replies to the same message and pick the better one. Picking is quick and consistent, while asking reviewers to write perfect replies, or to score each one, is slow and noisy.
+
+```scene
+title: Two cups, one tap
+step: ☕ A customer orders chai and the stall serves two different cups | one prompt, two answers
+step: 👅 The customer tastes both and taps the one they prefer | human picks the better answer
+step: 🏷 The winning cup goes in the preferred slot, the other in the second slot | chosen and rejected slots
+step: 📒 The owner records only who won, never a mark out of ten | no target reward numbers
+step: 🔁 Thousands of taps reveal a pattern of what people like | preference dataset
+takeaway: A preference pair records only which of two answers won, and that single choice is all a reward model learns from.
+```
+
 ## The dataset as a set of triples
 
 Formally, the training set is

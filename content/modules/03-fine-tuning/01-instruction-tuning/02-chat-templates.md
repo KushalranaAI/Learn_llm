@@ -7,6 +7,26 @@ A transformer sees one flat sequence of token IDs. It has no built-in idea of "t
 
 Think of a play script. The text of the lines matters, but so does the format: `HAMLET:` before each speech, stage directions in brackets. An actor trained on scripts in one format will stumble if handed a different one. A model fine-tuned with one chat template behaves best, and sometimes only works properly, when prompted with exactly that template.
 
+## In everyday life
+
+Think of two people on walkie-talkies at a building site. The channel is one continuous stream of sound. To make sense of it they follow a protocol: name who is calling ("Gate to Control"), speak, then say "over" so the other side knows it is their turn. If someone forgets "over", the other person waits, or both talk at once.
+
+A language model has the same problem. It receives one long, flat stream of **tokens**, small chunks of text turned into numbers. It has no built-in idea of who said what. A **chat template** is the agreed protocol: a fixed way of writing a whole conversation as one string, with a marker for each speaker (the **role**: system, user or assistant) and a marker for the end of each turn. These markers are **special tokens**, reserved symbols that never appear in ordinary text.
+
+The "over" matters most. During fine-tuning the model learns to produce its end-of-turn marker when it has finished. If it never learns that, nothing tells the software to stop, and the model carries on and starts writing the user's next message itself. Unlike radio operators, the model cannot improvise a protocol. It must use the exact one it was trained on.
+
+**Where you meet it.** A team puts an open instruct model behind a chat app, but builds the prompt text by hand in a different layout from the one the model was trained on. Answers turn odd and the system instructions get ignored. Using the model's own template function for every request fixes it.
+
+```scene
+title: Walkie-talkie rules for a chat
+step: 📻 Two operators share one channel with no built-in sense of turns | one flat stream of tokens
+step: 💬 Each call begins by naming who is speaking | role markers in the template
+step: 🔚 The speaker says over when finished, so the other side can reply | end-of-turn special token
+step: 🛑 Without over, the other side waits, or invents the next message | model never learns to stop
+step: 📜 Both sides always use the same agreed protocol, word for word | same template in training and use
+takeaway: A chat template is the exact protocol that turns a conversation into one stream the model can follow, including when to stop.
+```
+
 ## Anatomy of a template
 
 A typical template wraps each message in **special tokens**: reserved token IDs that never appear in normal text, such as a start-of-message marker, a role name, and an end-of-message marker. A widely used style (often called ChatML) looks like this:

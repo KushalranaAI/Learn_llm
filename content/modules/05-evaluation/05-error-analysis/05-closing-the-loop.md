@@ -20,6 +20,24 @@ flowchart LR
   H --> A
 ```
 
+## In everyday life
+
+Pilots follow a checklist before every flight, and many of its lines exist because something once went wrong. When a problem appears, investigators find the cause, make one fix, and a new line goes on the checklist so the problem is caught every time in future. They do not change ten things at once, because then nobody knows which change helped.
+
+Error analysis works the same way and must end in action. You **diagnose** the failures, **decide** what to fix first, **change** one thing, and **verify** with a proper comparison against the old version. Verifying also means checking what the fix broke, because curing one failure often creates another. Every fixed failure then joins a **regression set**: a growing list of cases that once failed and must always pass. It is a safety net, not a score. Because you tuned the system on those cases, their pass rate overstates real quality. Add reworded variants of each case too, so the fix is not just memorising one exact input.
+
+**Where you meet it.** A team adds a reranking step to fix missed documents. The new version fixes many failures, but a few new ones appear, which they trace to slower responses. They record the fixed cases in a regression set so that a later change cannot quietly undo the work.
+
+```scene
+title: A checklist that grows after every incident
+step: ✈️ After an incident, investigators read what happened and name the cause | diagnose: sample and code failures
+step: 📌 They choose the most important cause to tackle first | decide: rank by priority
+step: 🔧 They make one targeted change, not ten | change one thing at a time
+step: 🔍 They check that the fix worked and nothing else broke | verify with a paired comparison and recode
+step: 📝 A new checklist line stops the problem returning | add to the regression set
+takeaway: Every fixed failure becomes a permanent test so it cannot quietly return.
+```
+
 ## Which lever matches which failure
 
 | Failure category | First lever to try | Check afterwards |
@@ -58,6 +76,16 @@ Comparing the predicted gain (from the Pareto analysis) with the measured gain t
 Every fixed failure becomes an item in a **regression set**: inputs that once failed and must now pass. This set grows over time and acts as a ratchet; any later change that breaks an old fix shows up immediately. Add also *near-miss variants* (the same failure with different wording or entities), because a fix that works only on the exact string is not a fix.
 
 Keep the regression set separate from the held-out set used to estimate overall quality: because you tuned against the regression items, their pass rate is not an unbiased estimate of anything. It is a safety net, not a thermometer.
+
+## See it: how strict should the gate be?
+
+A regression set only helps if the release check built on it is calibrated. Too tight and good builds are blocked by noise; too loose and a real regression ships. Try this:
+
+```sim
+eval-gate
+```
+
+With the eval set at 300 items and the threshold at 2 points, look at the false-alarm rate and the miss rate. Then raise the eval set size to 1,500 and watch the smallest drop the gate can reliably catch shrink. Finally set the true regression to 0 and see how often a good build is still blocked.
 
 ## When the failures are noisy or unfixable
 

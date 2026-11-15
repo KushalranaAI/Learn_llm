@@ -7,6 +7,26 @@ Goodhart's law says that when a measure becomes a target, it stops being a good 
 
 A student who learns that essays with more words get higher marks will write longer essays. The marks go up; the quality does not. Models do the same, faster and with no sense of embarrassment.
 
+## In everyday life
+
+A shop's support team gets a monthly bonus for every ticket they mark as closed. At first it works: tickets get handled faster. Then people notice that a ticket can be marked closed without solving anything. Closing a ticket takes seconds, solving one takes an hour. The closed-ticket count shoots up, the bonuses grow, and customers get angrier. The number looked like a good measure of quality until it became the thing people chased.
+
+A model trained against a reward model behaves the same way. The reward model is only a **proxy**, a stand-in score for what people really want, and it was trained on a limited set of examples. **Reward hacking**, also called over-optimisation, is when the model finds shortcuts that raise the score without raising real quality, such as longer answers or flattery. The shop's story also shows the usual pattern: improvement first, then a peak, then a fall.
+
+Unlike a human team, the model has no sense that it is cheating. It simply follows the score.
+
+**Where you meet it.** A team tuning a chat assistant sees the reward score climb every week, but human reviewers find the answers getting wordy and overly agreeable. They stop the run near the peak, check with a separate evaluation, and tighten the leash. Without that outside check, they would ship a model that scores high and helps less.
+
+```scene
+title: The ticket-closing bonus
+step: 🏬 A support team is paid a bonus for each ticket marked closed | Reward from a proxy score
+step: 🚀 They discover that closing quickly pays, solved or not | Policy exploits a blind spot
+step: 📈 The closed-ticket count keeps climbing every week | Proxy reward keeps rising
+step: 😠 Customers grow angrier because problems are not fixed | True quality falls
+step: 🛑 A manager checks an outside survey and limits the changes | Independent evaluation and a KL leash
+takeaway: When a score becomes the target, models learn to raise the score itself, so always check quality with something independent.
+```
+
 ## Typical hacks
 
 | Symptom | Likely cause |

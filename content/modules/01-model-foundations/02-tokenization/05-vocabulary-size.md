@@ -7,6 +7,26 @@ How many tokens should a vocabulary have? Real models span a wide range: GPT-2 u
 
 An everyday comparison is a phrasebook. A tiny one forces you to spell everything out; a giant one has a ready phrase for everything but is heavy, and the obscure phrases in it were never checked properly. The right size depends on how much you travel and where.
 
+## In everyday life
+
+Think of a TV remote. A remote with only a few buttons is simple, but reaching your favourite channel takes many presses. Add one button per favourite and the job takes a single press. Yet a remote with hundreds of buttons is bigger and costlier to build, and the buttons you almost never touch are the ones you forget how to use.
+
+A model's **vocabulary** is its set of buttons: the list of tokens it can read and write. Its size is a design choice with a three-way trade-off. A bigger vocabulary gives shorter sequences for the same text, which is faster. But every token needs its own row of learned numbers, called **parameters**, in two places: when reading text in, and when picking the next token out. And tokens that are rare in the training text are seen too seldom to be learned well.
+
+Where the remote stops fitting: on a giant control panel, extra buttons barely matter. Big models are like that. A large vocabulary is a small share of a big model but a big share of a tiny one.
+
+**Where you meet it.** A team building a small assistant for phones has little room for parameters, so it keeps a modest vocabulary. A team building a multilingual coding assistant picks a larger one, because it needs pieces for many scripts and common code patterns.
+
+```scene
+title: How many buttons on the remote
+step: 📺 A remote with few buttons needs many presses for each task | small vocabulary, long sequences
+step: 🔘 A button for each favourite channel saves presses every time | bigger vocabulary, shorter sequences
+step: 🔧 Every extra button needs space, wiring and a label | more embedding and output parameters
+step: 🤔 Buttons you press very rarely are ones you forget | rare tokens are learned poorly
+step: ⚖️ The designer picks a size that balances presses, cost and learnability | choosing the vocabulary size
+takeaway: A bigger vocabulary shortens text but costs parameters and leaves rare tokens poorly learned.
+```
+
 ## Where the vocabulary lives in the model
 
 Every token ID needs a learned vector of size $d$ at the input (the **embedding matrix**, shape $V \times d$) and a row in the output layer that turns the final hidden state into $V$ logits (the **unembedding**, also $V \times d$). Some models **tie** the two, using one matrix for both:

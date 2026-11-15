@@ -11,6 +11,28 @@ A bus costs roughly the same to drive whether it carries one passenger or forty.
 
 A decode step is that bus. The fixed cost is reading the model's weights from memory, about 16 GB for an 8B model in BF16, which takes about 4.8 ms on an H100 regardless of how many sequences ride along. Each extra sequence adds only its own KV-cache reads and a sliver of arithmetic. Serving many users in the same step, **batching**, is the single most important reason LLM serving is affordable.
 
+## In everyday life
+
+Think of a college canteen at lunch break. Before each round of cooking, the cook walks to the storeroom and carries back the heavy sacks of rice and flour. That walk takes the same time whether there is one order or twenty. If every student needed a separate walk, the queue would never end.
+
+So the cook takes many orders and cooks them together in one round. Each round moves every order forward by one small step. The walk is shared, and each extra order adds only a little: a slip of paper noting how far that order has got.
+
+This is **batching**. The model's **weights** (the billions of learned numbers) must be read from GPU memory at every **decode step**, the step that writes one new token (a piece of a word) for each user. That read is the slow, fixed part. A **batch** is the group of users served in the same step, so they split the cost of one read. The slips are the **KV cache**, the memory each conversation keeps about what it has already seen.
+
+The canteen also shows the limit. The counter has room for only so many slips, and more slips make every round a bit slower.
+
+**Where you meet it.** A shopping app's support chatbot gets far more messages during a festival sale. If the server handled one customer per step, replies would crawl and each answer would cost more. Batching lets one GPU serve many customers at once, until so many arrive that everyone's replies slow down.
+
+```scene
+title: One storeroom walk, many orders
+step: 🚶 The cook walks to the storeroom and carries back the heavy sacks | reading model weights from memory
+step: 🍛 Many students have ordered, and the cook handles them in the same round | batching many sequences
+step: ➕ Each extra order adds only a slip noting how far it has got | per-sequence KV cache
+step: ⏰ One round moves every order forward by one small step | one decode step for the batch
+step: 🧮 Slips pile up: rounds slow down and the counter can hold only so many | KV memory ceiling
+takeaway: Users in one batch share the costly weight read, so extra users are cheap until the KV cache grows large.
+```
+
 ## A step-time model
 
 Combine the pieces from the previous lesson. With weight bytes $W = N b$, per-sequence KV bytes $K = \bar{n}\, s_{kv}$ (average context times KV bytes per token), bandwidth $\beta$ and peak compute $P$:

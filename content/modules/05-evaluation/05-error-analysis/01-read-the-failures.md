@@ -16,6 +16,24 @@ An 80% pass rate is a thermometer reading. It says the patient has a fever, not 
 
 The method comes from qualitative research and is called **open coding**. You read each failure and write a short, descriptive label for what went wrong, without deciding the categories in advance. Labels repeat; similar ones get merged; and a small set of categories (the **taxonomy**) emerges from the data rather than from your assumptions.
 
+## In everyday life
+
+A shop owner sees that one in five items comes back. "Returns are 20%" is a number, not a reason. So she sits at the returns counter, picks a few dozen items at random and writes a sticky note on why each came back: "zip broke", "wrong size label", "colour differs from photo". She does not fix the categories first. Soon the same notes repeat, similar ones get merged, and a short list of real causes appears.
+
+This is **open coding**: read each failure and write a short, plain-words label before you invent any categories. The list you end up with is a **taxonomy**, a named set of causes. You read a **random sample** rather than the failures that look interesting, because the interesting ones mislead you. You also glance at a few passes, since a metric can mark an answer right for the wrong reason. Unlike a returned shirt, an AI answer can go wrong early in a chain of steps, so label the first thing that went wrong, not the last.
+
+**Where you meet it.** A team's help assistant passes most of its tests. Instead of tweaking the prompt blindly, someone reads 40 random failures and writes a label for each. A few causes turn out to cover most of the failures, and now the team knows what to fix.
+
+```scene
+title: The returns counter and the sticky notes
+step: 🛍️ A shop sees that one in five items comes back | the overall failure rate
+step: 🎲 The owner picks returned items at random, not the odd ones | random sample of failures
+step: 🗒️ For each she writes a short note on why it came back | free-text open coding label
+step: 🧩 She groups similar notes together | grouping labels
+step: 📋 A short list of main reasons appears | failure taxonomy
+takeaway: Read real failures, label them in plain words, and let the categories come from the data.
+```
+
 ## Step 1: sample the failures properly
 
 You rarely need to read all failures. A random sample is enough to reveal the common causes, and the arithmetic of rare categories tells you how big it needs to be. If a failure category accounts for a share $q$ of failures, the chance that a random sample of $k$ failures contains at least one of them is

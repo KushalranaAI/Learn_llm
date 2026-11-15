@@ -7,6 +7,26 @@ The training loss answers one question: how well does the model predict the text
 
 That is what the 10% held back in `ByteDataset` is for. The validation buffer never produces a gradient. Every few hundred steps, the loop pauses, measures the average loss on both splits with the model frozen, and prints the two numbers side by side. While they move together, the model is learning patterns that transfer. When training keeps falling and validation stalls or rises, it has started fitting the specific bytes of the training file: [overfitting](/learn/model-foundations/how-networks-learn), now on a real language model.
 
+## In everyday life
+
+Before an exam, a student works through old question papers. Her score on those papers climbs. But the score can mislead. If she has simply memorised the answers to those exact papers, she will do well on them and badly in the real exam, where the questions are new.
+
+A sensible teacher keeps a few papers sealed. The student never practises on them. Every few weeks she sits one, and the teacher compares two marks: the practice papers and the sealed ones. While both improve together, she is learning the subject. When the practice marks keep climbing and the sealed marks stall or fall, she is memorising. More of the same practice will not help then. A wider set of papers will.
+
+A model faces the same trap. The **training loss** says how well it predicts text it has practised on. The **validation loss** is measured on a slice of text held back and never used to update the model. A growing gap between them is **overfitting**: memorising instead of learning patterns that carry over. Unlike the student, the model cannot tell, so you must watch the two numbers. And the sealed slice is only one sample: if its style differs from the practice text, part of the gap is not memorisation.
+
+**Where you meet it.** A hobbyist trains a small model for hours and wants to know when to stop. They log both losses every few hundred steps and keep the saved copy from the best validation moment, so later memorising cannot spoil it. With only the training loss to look at, it would keep falling and they would never know.
+
+```scene
+title: The sealed exam paper
+step: 📚 The student practises on old question papers all term | training data
+step: 🔒 The teacher keeps a few papers sealed, never used for practice | validation split
+step: 📝 Every few weeks she sits one practice paper and one sealed paper | evaluate both losses
+step: 📈 Practice marks keep rising but sealed marks stall or fall | training loss falls, validation loss rises
+step: 💾 The teacher remembers when her sealed result was best | best-validation checkpoint
+takeaway: Judge learning by the loss on text the model never trained on, and keep the version where it was best.
+```
+
 ## Averaging over batches
 
 A single batch's loss is noisy. `estimate_loss` draws $K$ random batches (the repo's `eval_iters`, default 50) from each split and averages:

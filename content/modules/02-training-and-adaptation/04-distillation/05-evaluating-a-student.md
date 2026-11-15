@@ -5,6 +5,26 @@ minutes: 6
 
 A distilled model is only worth shipping if it is good enough and the saving repays the cost of making it. Both are measurable, and the arithmetic is short.
 
+## In everyday life
+
+Before buying an electric scooter, you ask two questions. Is it good enough for my daily route? And will the fuel I save repay the higher price? You do not judge it on a smooth showroom track. You test ride it on your own roads, and you count how many months of savings it takes to break even.
+
+A smaller **student** model made by distillation needs the same two checks. The first is quality: how close is it to the big **teacher** it copied? Cheap proxies such as KL (a score for how different two sets of word probabilities are) and top-1 agreement (how often both pick the same word) can be computed during training. The real test is your own task: the student's score divided by the teacher's, on examples it has never seen. The second check is the **break-even point**: the number of **tokens** (small pieces of words) served after which the compute you save equals the compute you spent building the student.
+
+The scooter stops fitting in one way. A student can look fine on average and still fail on the rare roads your product depends on, so test those on purpose.
+
+**Where you meet it.** A company with a help chatbot weighs a small student against its big model. It checks quality on real past questions and works out how many days of traffic repay the cost of building the student.
+
+```scene
+title: Is the scooter worth buying?
+step: 🛵 You pay extra upfront for an electric scooter | build cost of the student
+step: ⛽ Each trip then costs less than the old petrol bike | compute saved per served token
+step: 📆 You count trips until the savings cover the price | break-even point
+step: 🛣️ You test ride your own daily route, not the showroom track | held-out task evaluation
+step: ✅ You buy only if the ride is good enough and the savings repay | quality retained and break-even
+takeaway: Ship a student only if it keeps enough quality on your task and the savings repay the build.
+```
+
 ## Three ways to compare student and teacher
 
 | Metric | What it measures | Computed on |

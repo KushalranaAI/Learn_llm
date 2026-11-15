@@ -7,6 +7,27 @@ Imagine judging a contest by adding up scores from many judges. With three judge
 
 A dot product is that kind of sum: $d_k$ products added together. As the head dimension grows, raw scores spread out, and softmax, which exponentiates them, turns a moderate spread into an all-or-nothing choice. The $\sqrt{d_k}$ in the attention formula is the correction that keeps the spread the same at any width.
 
+## In everyday life
+
+Think of a TV quiz show that crowns its winner after many rounds. Each round gives a small bonus or penalty. After five rounds, the totals of the contestants sit close together. After five hundred rounds, the totals drift far apart, even if all players are equally good, because so many small pieces have been added up. Now suppose the host shares the prize money by a rule that exaggerates gaps. After five hundred rounds, one lucky player would take almost everything and the rest almost nothing.
+
+A **dot product** is that kind of running total. It adds up one small piece for every number in the query and key lists, and the count of those numbers is the key size. In attention, scores feed into **softmax**, the exaggerating rule that turns scores into shares. Bigger keys give a wider spread of scores, and the shares become all-or-nothing. When that happens we say softmax **saturates**, and the model learns slowly, because a lesson from a weight of almost zero is almost silent.
+
+The fix is simple. Divide every score by the square root of the key size, so the spread stays about the same at any size.
+
+**Where you meet it.** Every transformer applies this fix, so a small model and a very wide one both train from a healthy start instead of getting stuck.
+
+```scene
+title: A quiz show that gets too lopsided
+step: 🎤 The quiz show adds up small points over many rounds | a dot product sums many terms
+step: 📈 More rounds mean wider gaps between totals, even by luck | score spread grows with key size
+step: 🏆 A gap-exaggerating prize rule hands nearly everything to one player | softmax saturates
+step: 😶 The others get almost nothing, so the show learns little from them | gradients nearly vanish
+step: ⚖️ The host divides every total by a size tied to the round count | divide by root of key size
+step: 🎁 The prize is shared in a softer, fairer way again | stable weights and gradients
+takeaway: Dividing by the square root of the key size keeps scores in a healthy range so softmax stays soft.
+```
+
 ## The variance argument
 
 Assume, as is roughly true at initialisation, that the components of a query $\mathbf{q}$ and a key $\mathbf{k}$ are independent with mean $0$ and variance $1$. The score is

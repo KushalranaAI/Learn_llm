@@ -1,0 +1,22 @@
+{
+  "title": "SFT from Scratch",
+  "summary": "Turn the tiny GPT you built into an instruction follower with plain PyTorch: format examples with a chat template, mask the loss so only the answer is learned, batch them with a padding collator, order them from easy to hard, run the training loop, and check the result against gold answers.",
+  "objectives": [
+    "Format (instruction, response) pairs with a template and an end marker, and count how many token positions in an example actually contribute to the loss",
+    "Build masked labels so the loss covers only the response, and explain what goes wrong if the prompt is left in the loss",
+    "Write a collator that pads and truncates a batch, and show that padded positions are ignored by the loss",
+    "Order or bucket instruction data to keep batches efficient without breaking the shuffle",
+    "Run an SFT loop, read its loss curve, and compare the model's samples with gold responses using exact match and token F1"
+  ],
+  "prerequisites": "The GPTModern model from [Modern architecture](/learn/model-foundations/modern-architecture) and the training loop from [Scaling the training loop](/learn/model-foundations/scaling-the-training-loop). The ideas (templates, loss masking, SFT data) are explained in [Instruction tuning](/learn/fine-tuning/instruction-tuning); here you write them by hand.",
+  "sims": ["sampling"],
+  "labs": [],
+  "sources": [
+    {
+      "title": "Training language models to follow instructions with human feedback",
+      "authors": "Ouyang et al.",
+      "year": 2022,
+      "note": "InstructGPT: supervised fine-tuning on demonstrations is the first stage of the alignment pipeline"
+    }
+  ]
+}

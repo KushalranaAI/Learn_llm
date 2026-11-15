@@ -7,6 +7,27 @@ LoRA removes the optimizer-state bill, but the frozen base model still sits in G
 
 The gradients still flow through the quantised weights to reach the adapters, but the weights themselves are never updated, so the rounding error in the base is fixed noise the adapters learn to work around.
 
+## In everyday life
+
+Think of the photos on your phone. Storage fills up, so a chat app shrinks a photo before sending it. The shrunk copy takes far less space, a little detail is lost, and you can still tell who is in it. If you want to draw on a photo, you do it on a separate layer in full quality, and the original stays untouched.
+
+QLoRA applies this idea to a model. Fine-tuning with **LoRA** adds a small trainable add-on to a frozen model, but the frozen model itself still takes a lot of GPU memory. QLoRA stores that frozen part in a shrunk form. **Quantisation** means storing each number with fewer bits, so every number is rounded to one of only a few allowed values. Here it is 4 bits, which allows just 16 values. To keep the rounding fair, numbers are shrunk in small groups, each with its own range. When the model computes, one layer at a time is briefly expanded back to full size. The trainable add-on stays in full quality throughout.
+
+Unlike a photo, nobody ever looks at the shrunk copy directly. The model only uses each layer after expanding it.
+
+**Where you meet it.** A small team wants to fine-tune a large open model but has only one mid-range GPU. The frozen base alone does not fit in memory at full size. Stored in 4 bits, it fits, at the price of slower training and a small loss of precision.
+
+```scene
+title: Shrinking the album, editing on a layer
+step: 📱 The photo album is too big to fit on the phone | frozen base weights fill memory
+step: 📉 Each photo is shrunk to a few allowed shades | 4-bit quantisation
+step: 🎨 Shades are spaced where most pixels fall, not evenly | NF4 levels
+step: 🧩 Photos are shrunk in small tiles, each with its own range | block-wise scaling
+step: 🔍 Viewing a photo briefly expands it to full quality | dequantising on the fly
+step: 📝 Your edits live on a separate full-quality layer | LoRA adapters in BF16
+takeaway: QLoRA shrinks the frozen model to 4 bits and trains only a small full-quality add-on on top.
+```
+
 ## Block-wise quantisation
 
 Quantisation maps each weight to one of $2^4 = 16$ levels. To keep the error small, weights are processed in **blocks** (QLoRA uses 64 weights per block), and each block gets its own scale $s = \max_i |w_i|$ so the block's largest value uses the full range:

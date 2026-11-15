@@ -7,6 +7,25 @@ A pretraining corpus is not one dataset. It is a blend: a very large amount of f
 
 The decision is captured in a **data mixture**: a weight for each source saying what fraction of training tokens should be drawn from it. The weight is not the same as the source's share of the raw data. Teams deliberately **upsample** small, valuable sources (show them more than once) and **downsample** huge, noisy ones (never get through all of them).
 
+## In everyday life
+
+Think of a student preparing for a big exam with a fixed number of study hours. The syllabus has one huge, messy textbook, a few thin but dense chapters, and a pile of past papers. Reading every page of the huge book would eat all the hours. So the student makes a timetable: a modest share for the huge book, repeated revision of the small, valuable chapters, and a short mock test to check the plan before committing to it.
+
+A pretraining run faces the same choice. The model sees a fixed number of tokens in total, and there are many sources: filtered web text, code, books, papers. A **data mixture** is the timetable, the share of training tokens drawn from each source. Teams **upsample** small, valuable sources (show them more than once) and **downsample** huge, noisy ones (use only part of them). Unlike a student, a model that sees the same chapter too many times starts to memorise it instead of learning from it, so repetition has limits.
+
+**Where you meet it.** A team building an assistant that should also write code finds it weak at code after training mostly on web pages. They raise the share of code tokens in the mixture, and they test the new mixture on a small model before spending the big training budget.
+
+```scene
+title: A study timetable for the exam
+step: 📚 The student lists the sources: a huge textbook, thin dense chapters, past papers | Sources of data
+step: ⏳ The total study hours are fixed, so each source gets a share | Mixture weights over a token budget
+step: 🔁 Small but valuable chapters are revised several times | Upsampling, more epochs
+step: 📖 The huge, messy book is only partly read | Downsampling
+step: 📝 A short mock test checks the plan before the real weeks begin | Small proxy models
+step: 🎯 In the last days the student shifts toward the best material | Late-stage upweighting
+takeaway: The mixture decides how often the model sees each kind of text, and it is a deliberate choice.
+```
+
 ## From weights to epochs
 
 Let the training run see $D$ tokens in total. Source $i$ has $S_i$ unique tokens available and mixture weight $w_i$, with $\sum_i w_i = 1$. Then

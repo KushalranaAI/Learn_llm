@@ -5,6 +5,26 @@ minutes: 7
 
 For image classifiers with a thousand classes, storing the teacher's full output is trivial. For a language model, the "class" is the next token out of a vocabulary of 32,000 to 256,000, at every one of trillions of positions. That changes the engineering. There are three practical recipes.
 
+## In everyday life
+
+Learning to drive from an expert can go four ways. The instructor can sit beside you for every lesson and comment on each turn. She can write notes on the few likeliest moves at each turn, for you to study later. You can read route diaries she has already written. Or you can drive while she corrects your own mistakes.
+
+Those are the four ways to **distil** a language model, meaning to teach a small **student** model from a big **teacher** model. The costly part is the teacher's time: it must run on every training **token** (a small piece of a word), so a big teacher can cost more than the student's own training. Keeping only the top few guesses per token, called **top-k** storage, saves memory. Training on the teacher's finished text is **sequence-level** distillation. Letting the student write answers while the teacher scores each token is **on-policy** distillation, and it fixes the habit of practising only in situations the teacher produced.
+
+The instructor stops fitting in one place: a model's "lesson" is millions of short passages of text, not road trips.
+
+**Where you meet it.** A company wants a small model that solves maths problems. A big model writes worked solutions, a checker keeps only the correct ones, and the small model is trained on those. It is cheap, works through any text interface, and is the most common recipe.
+
+```scene
+title: Four ways to learn from an instructor
+step: 🧑 The instructor rides along for every lesson and comments on each turn | online logit distillation
+step: 📓 To save her time, she writes notes on the likeliest moves at each turn | cached top-k logits
+step: 📖 The learner studies route diaries she wrote earlier, with no live comments | sequence-level distillation
+step: 🚗 Best of all, the learner drives and she corrects the learner's own mistakes | on-policy distillation
+step: 🗺️ Some routes are kept secret to test the learner honestly | held-out validation set
+takeaway: Pick the recipe by what access you have to the teacher and how much compute you can spend.
+```
+
 ## Recipe 1: online logit distillation
 
 Run teacher and student side by side on the same text. At each position, the teacher's forward pass gives logits; the student's gives its own; the loss from the previous topic is averaged over positions. Nothing is stored.

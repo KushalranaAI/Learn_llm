@@ -5,6 +5,25 @@ minutes: 8
 
 Quantization is a trade: you pay in quality and get memory, speed and money back. The skill is measuring the price accurately. "Perplexity went up by 2%" and "the model now fails 8% more of our invoices" are both true statements about the same quantized model, and only the second one matters to a product.
 
+## In everyday life
+
+A small restaurant wants to save money by switching to a cheaper cooking oil. The owner asks a few friends to taste the food, and the overall rating hardly changes. Is it safe to switch? Not yet. Regulars who come only for the fried dishes may notice at once. A good average can hide a problem on the one dish that matters. So a careful owner tastes the dishes that really bring customers in, uses enough tasters that one grumpy person does not decide the result, and keeps the old oil in the store so the change can be undone.
+
+Checking a compressed model is the same. **Quantization** stores the model's numbers with fewer bits to save memory, and it costs a little quality. **Perplexity** is a quick overall score of how surprised the model is by ordinary text; lower is better. It is like the average rating: smooth and cheap, but it can miss trouble on your own tasks. The reliable check is a **test set** of your own examples, scored the same way before and after.
+
+**Where you meet it.** A team compresses a model to cut its hosting bill. The overall score barely moves, but on their own set of invoices a few more fail. They only spot it because they tested their real task.
+
+```scene
+title: Switching to cheaper oil
+step: 🍛 The owner wants to cut costs with cheaper oil | lower precision to save memory
+step: ⭐ A quick taste test shows the overall rating barely changes | perplexity as a first signal
+step: 🍟 Regulars of the fried dishes notice a difference | task-specific quality drop
+step: 🧪 The owner tests the dishes that matter, with enough tasters | your own test set
+step: 🎲 A tiny difference among few tasters may just be luck | statistical noise
+step: 🔙 The old oil stays in the store in case of complaints | keep the full-precision model to roll back
+takeaway: A good average score is not proof; test your own task before shipping a smaller model.
+```
+
 ## Perplexity as a first signal
 
 The cheapest check compares **perplexity** on held-out text before and after quantization. For $T$ tokens with the model assigning probability $p_t$ to the true token $t$:

@@ -7,6 +7,25 @@ With pairs in hand, the training loop is short. sentence-transformers wraps the 
 
 This topic gives a complete script that runs on a laptop CPU with all-MiniLM-L6-v2, then shows what to change for a larger model on a T4. If you have not set up a Python environment for training yet, [Run fine-tuning yourself](/learn/fine-tuning/run-fine-tuning-yourself) covers it.
 
+## In everyday life
+
+Think of a driving school taking on a learner who already drives a little. The instructor needs four things: the learner, a syllabus of exercises, a way of scoring each exercise, and a plan for the course, covering how long each lesson lasts, how gently to start and how many weeks to run. Before any lesson, the instructor does a test drive to record where the learner stands. Lessons start gently, because a big correction on day one can undo habits that already work. Partway through, a mock test checks progress. At the end, the final test is compared with the first one.
+
+Training an embedding model with the sentence-transformers library has the same shape. You provide a **model** (one that already works), a **dataset** of pairs, a **loss** (the scoring rule from the contrastive lesson) and **training arguments** (the course plan). The **learning rate** is how big each correction is, and **warmup** is the gentle start. An **evaluator** is the mock test that runs during training. Take care with the syllabus format: the trainer treats the first column as the question and the second as the answer, whatever the columns are called.
+
+**Where you meet it.** Before tuning a search model on company documents, you test it and write down the score. After training, the same test shows whether it improved. If it did not beat the first score, you keep the original model and avoid shipping a worse one.
+
+```scene
+title: A driving school course plan
+step: 🚗 Before any lesson, the instructor records the learner's starting test | baseline evaluation
+step: 📋 The syllabus lists question first, answer second, in that order | dataset column order
+step: 🐢 The first lessons are gentle, then the pace picks up | warmup, then the learning rate
+step: 🧩 No two cards in one lesson show the same exercise | no-duplicates batch sampler
+step: 📝 A mock test runs partway through the course | evaluator during training
+step: 🏁 The final test is compared with the first | before and after score
+takeaway: Measure the base model first, feed pairs in the right column order, and keep the tuned model only if it beats that baseline.
+```
+
 ## How the trainer reads your dataset
 
 The trainer does not look at column *names* to decide roles; it uses column *order*. For `MultipleNegativesRankingLoss` the first column is the anchor, the second the positive and any further columns are negatives. Any column called `label` or `score` is treated as a label, which this loss does not want. So select and order columns explicitly before training.

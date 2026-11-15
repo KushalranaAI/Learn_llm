@@ -11,6 +11,24 @@ You already know the idea from [Verifiable rewards and group-relative advantages
 
 The recipe for one training step has four parts. **Group sampling**: for each prompt $q$, sample $G$ completions $o_1, \dots, o_G$ from the current policy. **Group-relative advantage**: score each completion, then compare it with the group's average. **Clipped update**: raise the probability of tokens in above-average completions and lower it for below-average ones, but never by more than a small ratio per step. **KL leash** (optional): penalise drifting too far from the starting model, the **reference model**.
 
+## In everyday life
+
+Imagine a home cook who wants to improve her dal. She makes it four times in one evening, changing small things each time, and asks the same taster to score every pot. The raw scores matter less than one question: which pots beat her own average that evening? The ones above average show her what to repeat. The ones below show what to drop.
+
+GRPO works the same way. The model gets one question and writes several different answers, called a **group**. A checker gives each answer a score, the **reward**. Each answer is then compared with the group's average, and the gap is its **advantage**: how much better or worse it was than its siblings. The model nudges itself towards answers with a positive gap and away from the rest, in small steps. An optional **KL leash** (a penalty that keeps the new model close to the **reference model**, its own starting copy) stops it forgetting how it used to speak. If every pot tastes the same, nobody beats the average, and the cook learns nothing that evening. Unlike the cook, the model adjusts the odds of every single word it wrote.
+
+**Where you meet it.** A team that trains a small model on school maths problems can mark each answer right or wrong with a simple program, with no human judge. Comparing answers within a group removes the need for a second large network that guesses how good each answer should be, and that saves a lot of memory.
+
+```scene
+title: The cook and the pots of dal
+step: 🍲 The cook makes the same dal several times in one evening | group of sampled answers
+step: 👅 A taster scores every pot | reward from a checker
+step: 📊 Each pot is compared with the evening's average | group-relative advantage
+step: 🔧 She changes her habits, but only a little per evening | clipped update
+step: 👵 She keeps her family recipe in mind and never strays far | KL leash to the reference model
+takeaway: GRPO learns from how each answer compares with its own group, so no separate judge network is needed.
+```
+
 ## The objective
 
 Shao et al. (2024, DeepSeekMath) write GRPO as maximising

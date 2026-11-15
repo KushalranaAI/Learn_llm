@@ -7,6 +7,26 @@ minutes: 10
 
 So Colab work has one rule beyond the CPU setup: **anything you want to keep must be written somewhere that outlives the session**, either Google Drive or the Hugging Face Hub, and written often.
 
+## In everyday life
+
+At a cyber cafe you pay for a computer by the hour. You can do real work on it, but the machine is not yours. When your time ends, or the power goes out, it restarts clean and everything on the desktop is gone. Sensible people save to their pen drive every few minutes, and if the session dies they sit at another machine, plug in the drive and carry on.
+
+**Google Colab** is exactly this for model training. It lends you a computer in the cloud, often with a free GPU, but the session can end at any time and the files on it disappear with it. A **checkpoint** is a saved copy of the training state, and the habit of the chapter is to write checkpoints to somewhere that survives, such as Google Drive, regularly. After a disconnect you reconnect, run the setup cells again and **resume** from the last checkpoint.
+
+The cafe picture stops at one point: a lost session also loses your installed libraries, so those need to be reinstalled each time.
+
+**Where you meet it.** A learner trains a small model on the free tier, and the session drops after two hours. Because checkpoints were going to Drive every few minutes, she loses only a few minutes of training. Without them the whole run would be gone, and a perfect adapter would have vanished with the machine.
+
+```scene
+title: The cyber cafe and the pen drive
+step: 💻 You sit at a cafe computer that is lent to you for limited time | Colab session on a borrowed machine
+step: 📄 You keep working and files pile up on the desktop | Files on the temporary VM disk
+step: 💾 Every few minutes you copy your work to a pen drive | Checkpoint saved to Drive
+step: ⚡ A power cut restarts the PC and the desktop is wiped | Disconnect erases the VM
+step: 🔄 At another PC you open the pen drive copy and carry on | Resume from checkpoint
+takeaway: On borrowed machines, save to somewhere permanent often, so a disconnect costs minutes and not the whole run.
+```
+
 ## Getting a GPU and checking it
 
 Open a new notebook, then **Runtime → Change runtime type → T4 GPU → Save**. Confirm in a cell:

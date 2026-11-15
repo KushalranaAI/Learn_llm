@@ -9,6 +9,27 @@ PPO in `part_8` answers token by token. It places the reward-model score on the 
 
 GRPO gives up on per-token credit. Every token of completion $i$ receives the same advantage $\hat A_i$, so a good answer is reinforced as a whole and a bad one is discouraged as a whole. This is **outcome supervision**: the signal says which completion won, not which step won it. It sounds crude, and it is, but across many groups the tokens that keep showing up in winners accumulate positive pushes and those that show up in losers accumulate negative ones. DeepSeekMath also tried process supervision, with a per-step reward, as a variant; the outcome version is what most replications use.
 
+## In everyday life
+
+In a school group project, the whole team gets one mark for the finished report. Nobody marks each sentence. So the paragraphs that helped and the ones that did not all share the same mark that day. Over many projects, a habit that keeps showing up in high-scoring reports, like opening with a clear summary, earns credit again and again. A habit that keeps showing up in poor reports gets the blame.
+
+GRPO gives credit to a language model in just this way. The reward model reads a whole completion and gives one score. A **token** is a small chunk of text, a word or part of a word, and a completion is a string of them. Working out which token deserved the credit is hard, so GRPO gives every token of a completion the same **advantage**: how much better or worse than the group's average the whole answer was. This is called **outcome supervision**. It judges the result, not each step.
+
+One point does not fit a fair teacher. The loss here is averaged over all the tokens in the batch, so a long completion carries more total weight than a short one with the same advantage.
+
+**Where you meet it.** A team trains a model that drafts replies, and the reward model returns one score per reply. Copying that reply's advantage onto each of its tokens lets the usual training code run unchanged. The price is that nobody learns which step of the reply mattered.
+
+```scene
+title: One mark for the whole report
+step: 👥 The team hands in one report and gets one mark | one reward per completion
+step: 🧮 The mark is compared with how the other teams did | group-relative advantage
+step: 📄 Every paragraph in the report gets that same verdict | advantage copied to every token
+step: ✅ After a good mark, the habits in that report are encouraged | token log-probabilities pushed up
+step: ❌ After a poor mark, the same habits are discouraged | token log-probabilities pushed down
+step: 📏 A longer report has more paragraphs, so it counts for more | token-mean loss weights by length
+takeaway: GRPO judges the whole answer and gives every one of its tokens the same share of the credit or blame.
+```
+
 ## The loss with a broadcast advantage
 
 Index completions by $i$ and their tokens by $t = 1, \dots, |o_i|$. With $\rho_{i,t} = \pi_\theta(o_{i,t}) / \pi_{\text{old}}(o_{i,t})$ (context omitted), the repo's policy loss averages over every response token in the batch:

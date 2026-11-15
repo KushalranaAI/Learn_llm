@@ -7,6 +7,28 @@ Static benchmarks need a right answer. Much of what people want from a chat mode
 
 Chess solved the same problem decades ago. You cannot give a chess player an exam, but you can watch who beats whom, and the **Elo** system turns wins and losses into ratings that predict future results. Arenas borrow the idea.
 
+## In everyday life
+
+At a fair, two chai stalls put up a sign: "Try both, blind, and vote." Nobody scores the tea out of ten. You taste cup A, taste cup B, and simply point to the one you like more. After hundreds of tasters, you can tell which stall is generally preferred, and by roughly how much.
+
+Many things we want from a chat model are like tea. A good explanation or a friendly email has no single right answer, but people can easily say which of two replies they prefer. A **pairwise arena** collects exactly these votes. Each vote is a small contest, and the contest results are turned into a **rating** for every model, a single number where a higher rating means "usually preferred".
+
+The ratings are only meaningful as differences. A model rated far above another wins most head-to-head votes, while two models rated close together are nearly a coin flip.
+
+The tea analogy also shows a trap. If one stall always serves a bigger, prettier cup, it may win votes for looks, not taste.
+
+**Where you meet it.** A team building a writing helper runs its own small arena. Staff see two anonymous drafts for the same request and pick the better one, with the order of the two drafts swapped half the time. A ranking of their candidate models emerges without anyone writing a marking scheme.
+
+```scene
+title: The blind chai taste-off
+step: 🍵 A stall owner has two chai recipes and no scoring sheet | two models, no single right answer
+step: 🙈 Each taster sips both cups blind and points to a favourite | anonymous pairwise vote
+step: 🧮 Votes are tallied; the winner's share shows how much stronger it is | preference rate gives rating gap
+step: 📏 All stalls get one number each, which only makes sense as differences | Bradley-Terry ratings
+step: 🎨 A fancier cup might win votes for looks, so appearance must be adjusted for | style control
+takeaway: Arenas turn many simple this-or-that votes into a ranking, but only prompts like yours can predict your results.
+```
+
 ## The model behind the ratings
 
 The **Bradley-Terry** model gives each model $i$ a strength $R_i$ and says the probability that $i$ is preferred over $j$ depends only on the difference. On the familiar Elo scale,

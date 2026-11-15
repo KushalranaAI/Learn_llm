@@ -7,6 +7,24 @@ A raw web crawl is mostly not text you would want a model to imitate. It contain
 
 So a pretraining pipeline is a series of **filters**, each removing a slice of documents for a specific reason. The surprising lesson of recent open datasets is how much this matters: models trained on the same number of carefully filtered tokens beat those trained on lightly filtered ones, often by a wide margin.
 
+## In everyday life
+
+Before cooking, many households sort a sack of rice. First a sieve takes out husk and dust. Then someone picks out the wrong grains. Finally, someone sits with a plate and removes stones by hand. That is slow, so it is done last, on the smaller amount that is left. A sack can lose a good part of its weight before it reaches the pot, and the meal is better for it.
+
+A raw web crawl is that sack. It holds menus, spam pages, gibberish, duplicated boilerplate and personal data, mixed in with useful text. A pretraining pipeline is a series of **filters**. Each removes documents for one reason, and each acts only on what the earlier ones left. Cheap rules run first, such as **language identification** (guessing which language a page is in). Slower ones run last, like a **quality classifier**, a small model that scores how much a page resembles good text. Like a sieve, a filter can also throw away grain that was fine, so every filter has a cost that has to be weighed.
+
+**Where you meet it.** A team preparing text for a new model finds that a lightly filtered corpus makes it copy the style of spam pages, while the same amount of carefully filtered text gives better results. They judge each filter by training a small test model, not by how clean the samples look.
+
+```scene
+title: Sorting a sack of rice
+step: 🌾 A sack arrives with husk, dust, stones and some good grain | Raw web crawl
+step: 🧹 A sieve quickly removes the obvious dust and husk | Cheap heuristic rules
+step: 🔎 Wrong grains are picked out so only the wanted kind stays | Language identification
+step: 👀 Slow hand-picking of stones runs last, on what remains | Quality classifier
+step: 🍚 A small test pot shows whether the sorting really helped | Train a small proxy model
+takeaway: Cheap filters first, careful ones last, and judge each by the model it produces.
+```
+
 ## The pipeline as a product of keep-rates
 
 If stage $k$ keeps a fraction $r_k$ of whatever reaches it, the fraction of the raw crawl that survives $K$ stages is

@@ -7,6 +7,27 @@ The usual recipe has two stages: SFT on demonstrations, then DPO on pairs with t
 
 The authors' observation is that SFT alone raises the probability of rejected-style answers too: training on good answers to a prompt also makes similar but worse answers more likely, because they share most of their tokens. A small contrastive push against the rejected answer, applied *during* SFT, is enough to fix that.
 
+## In everyday life
+
+A handwriting class usually has two stages. First, students copy model letters. Later, a teacher shows a good and a messy version side by side and says which to avoid. Now imagine one course that merges the two. Each workbook page shows a good sample and a messy sample of the same sentence. The student copies the good one carefully, and gets a small reminder not to write like the messy one.
+
+**ORPO** does this for a model. Normally you first run **SFT**, training on good examples, and then a preference step such as DPO, which needs a frozen reference copy. ORPO has one stage and no reference copy. The main part of its training is ordinary SFT on the **chosen** answer. On top, it adds a small penalty that pushes down the **rejected** answer. The penalty compares how likely the model finds each answer using the **odds ratio**, the same idea a bookmaker uses with betting odds. One setting controls how loud the reminder is. Too quiet and the messy style survives. Too loud and the student turns timid, and general quality drops.
+
+Unlike the handwriting course, ORPO needs the chosen answers to be genuinely good, because they are now the only model letters.
+
+**Where you meet it.** A small team with one GPU and a pile of paired data wants a tuned model but has no time for two training runs. ORPO lets them start from a base model and finish in a single run, trading some flexibility for the saved effort.
+
+```scene
+title: One workbook, copy and avoid
+step: 📖 Each workbook page shows a good sample and a messy sample | preference pair
+step: ✍ The student mostly copies the good sample | SFT loss on the chosen answer
+step: 👎 A small reminder says not to write like the messy one | odds ratio penalty on rejected answer
+step: 🎚 How loud the reminder is becomes a setting | lambda, the penalty weight
+step: 🏫 There is no earlier class and no frozen sample of old writing | one stage, no reference model
+step: 🤏 Too loud a reminder makes the student timid | too large a weight hurts quality
+takeaway: ORPO folds SFT and preference learning into one stage, with a small penalty against the rejected answer.
+```
+
 ## Odds and the odds ratio
 
 ORPO measures how likely the model finds an answer by its per-token average probability, $P_\theta(y \mid x) = \exp\!\big(\tfrac{1}{m}\sum_{t=1}^{m} \log p_\theta(y_t \mid x, y_{<t})\big)$, for an answer of $m$ tokens. The **odds** of the answer are

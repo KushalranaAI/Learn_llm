@@ -23,6 +23,24 @@ flowchart LR
   A --> D
 ```
 
+## In everyday life
+
+At a bank counter, a clerk fills out a form carefully, one field at a time. It is slow because every field needs full attention. Now suppose a quick helper fills in the next few fields from habit: the same name, the same address, the usual amount. The clerk looks over all of those fields in a single glance and keeps them in order until the first mistake. At that field the clerk writes the right answer, and the helper starts again from there. Checking several fields at once takes about as long as writing one.
+
+That is **speculative decoding**. A language model writes one **token** (a small piece of text, often a word or part of one) at a time, and the big model is slow because each step reads all its stored numbers from memory. A small, fast **draft model** guesses the next few tokens. The big **target model** checks all the guesses together in one pass, keeps the correct ones, and fixes the first wrong one. The result is exactly what the big model would have written alone, only faster.
+
+**Where you meet it.** A coding assistant often rewrites lines that look much like the existing code. A small guesser gets many tokens right, so the user sees text appear faster.
+
+```scene
+title: The helper pre-fills the form
+step: 📝 A quick helper pre-fills the next few fields of a form from habit | draft model proposes tokens
+step: 👓 The careful clerk checks all those fields in one glance | one pass of the target model
+step: ✅ Fields are kept in order up to the first mistake | accept the longest agreeing prefix
+step: ✏️ At the first wrong field, the clerk writes the correct one | corrected token from the target
+step: 🔁 The helper pre-fills the next fields and the cycle repeats | next round of draft and verify
+takeaway: Several guesses can be checked for the price of one careful step, and the final text stays exactly the big model's.
+```
+
 ## The acceptance rule keeps the output exact
 
 Speculative decoding does not change what the target would have produced; it only changes how fast. For each proposed token $x$, let $q(x)$ be the draft's probability for it and $p(x)$ the target's probability at that position. Accept $x$ with probability

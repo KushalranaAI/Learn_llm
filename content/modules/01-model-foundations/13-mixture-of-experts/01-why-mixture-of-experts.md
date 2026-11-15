@@ -18,6 +18,26 @@ This separates two numbers that are identical in a dense model:
 
 A dense model has one dial. An MoE model has two. You can grow total parameters by adding experts while active parameters, and therefore FLOPs per token, stay fixed.
 
+## In everyday life
+
+A large wedding caterer sets up many live counters: dosa, chaat, tandoor, sweets and more. No guest visits them all. Each guest walks to two or three counters and eats there. Yet the caterer must staff, stock and power every counter all evening, because any guest might walk to any of them. The bill depends on how many counters exist, but how long a guest waits depends only on the counters that guest uses.
+
+That is a **mixture of experts**. The **experts** are separate feed-forward networks (small blocks of learned numbers that each **token**, a piece of a word, passes through), and a small **router** chooses a few of them for each token. **Total parameters** count everything stored, like all the counters. **Active parameters** count only what one token actually uses, like the two counters one guest visits. So the model can know more without doing more work per token.
+
+Unlike guests, tokens do not choose for themselves. The router picks for them.
+
+**Where you meet it.** A company wants its chat assistant to know more subjects without making every reply slower. Simply making the model bigger makes every reply costlier. A mixture of experts adds capacity in stored experts while each reply still uses only a few of them, though the whole set must still fit in memory.
+
+```scene
+title: A wedding with many counters
+step: 🎪 The caterer sets up many counters, each cooking something different | many experts in one layer
+step: 🚶 A guest arrives with an empty plate | a token enters the layer
+step: 🧭 A guide points the guest to two counters | the router picks the top-k experts
+step: 🍽 The guest eats only there, and the other counters stay idle for this guest | active parameters
+step: 🏗 Every counter is still staffed and stocked, as any guest might come | total parameters held in memory
+takeaway: Many experts are stored, but each token runs only a few, so capacity grows faster than per-token work.
+```
+
 ## Counting total and active parameters
 
 Let one expert have $P_e$ parameters and let the router be a single $d \times N$ linear layer. For one MoE layer:

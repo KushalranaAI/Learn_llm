@@ -7,6 +7,28 @@ A chat model has no memory between calls. The feeling of an ongoing conversation
 
 That design is simple and robust, but it means a conversation gets more expensive with every turn, and not linearly. Each new turn pays again for all the old ones.
 
+## In everyday life
+
+Imagine calling a helpline where, every time you call, a new agent picks up who has never heard of you. Luckily there is a case file. Before saying a word, the agent reads the whole file from the first note to the latest one, and only then answers. After the call, a new note is added to the file.
+
+Your first call is quick, because the file is a page long. By your twentieth call the file is thick. Each call takes longer to read and costs the helpline more, because the agent always starts from page one.
+
+A chat model works exactly like that. It has no memory between calls. Your app re-sends the whole **history**, meaning the system prompt plus every earlier message and reply, on every turn. The history is measured in **tokens**, small pieces of text, and you pay for all of them each time. So a long conversation grows more expensive with every turn, and faster than you might expect. It can also run into the **context window**, the maximum amount of text the model can read in one go.
+
+The usual fixes are the same ones a helpline would use: keep only the last few notes, write a short summary page for older calls, or look up an old note only when needed.
+
+**Where you meet it.** A support chatbot handles long troubleshooting chats. Teams keep a short summary of key facts, such as the account and the goal, plus the latest few turns, so cost and length stay under control.
+
+```scene
+title: The helpline case file
+step: 📞 A new agent answers each call and remembers nothing | a stateless model call
+step: 📁 The agent reads the entire case file before replying | the full history is re-sent
+step: 📝 After the call, one more note joins the file | history grows each turn
+step: 📚 By call twenty the file is thick and reading is slow and costly | cost and context window grow
+step: 🗒️ The helpline keeps a summary page plus the last few notes | summary and sliding window
+takeaway: A chat model re-reads everything each turn, so long conversations need trimming.
+```
+
 ## The maths: the cost of history
 
 Let the system prompt be $S$ tokens and let each turn (one user message plus one assistant reply) add $m$ tokens of history. On turn $t$ the prompt holds the system prompt plus $t$ turns' worth of messages (counting the current user message as part of turn $t$, which is a small overestimate), so its length is about $n_t = S + t\,m$. The total input tokens over a conversation of $T$ turns is

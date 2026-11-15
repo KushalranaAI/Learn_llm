@@ -5,6 +5,26 @@ minutes: 7
 
 Video is images with a time axis: dozens of frames per second, each frame hundreds of tokens. Taken naively it is hopeless; taken with care it is a budgeting problem you can solve with arithmetic.
 
+## In everyday life
+
+On a mobile plan with 1.5 GB a day, every app you open spends from the same pack. A text message costs almost nothing. A photo costs more. A few minutes of video can burn the whole day, because it is many pictures every second. So you choose: lower the quality, watch only the clip that matters, or read the transcript when you only need the words.
+
+A language model works the same way. It has one shared allowance, the **context window**: the most **tokens** (small pieces of words, pictures or sound) it can read at once. Text, images, audio and video all spend from it, and you are billed for every token you send. A video costs the frames per second, times the seconds, times the tokens per frame, so it adds up fast. Cutting the bill means fewer frames, smaller frames, or converting to text first.
+
+The data pack stops fitting in one way. A model does compute work for every token it reads, so more tokens means slower and costlier replies, not just a fuller pack.
+
+**Where you meet it.** A support tool accepts a screenshot, a voice note and a typed question in one request. Without a token budget, an oversized screenshot quietly becomes most of the cost. Teams track tokens per request by type, so a change shows up before the bill does.
+
+```scene
+title: Spending a daily data pack
+step: 📱 Your daily data pack is limited and every app spends from it | context window as a shared budget
+step: 🎞️ A video is many pictures per second, so it burns data fast | frames times tokens per frame
+step: 🔉 You lower the quality or watch fewer moments | fewer frames, pooling
+step: 📝 If you only need the words, you read the transcript | transcript first
+step: 🧾 You check data used per app so the bill holds no surprises | tracking tokens per modality
+takeaway: Every modality spends from one token budget, so convert to text or cut frames when you can.
+```
+
 ## Frames times tokens per frame
 
 If you sample $f$ frames per second for $T$ seconds and each frame becomes $n$ tokens, the video costs

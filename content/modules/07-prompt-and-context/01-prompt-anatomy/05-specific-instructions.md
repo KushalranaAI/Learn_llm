@@ -24,6 +24,26 @@ Summarise the support ticket in <ticket> tags for an on-call engineer.
 
 The second prompt is longer, and in a real system the full specific version (with edge cases and an example) often adds a couple of hundred tokens. Whether those tokens are worth it is not a matter of taste: it is arithmetic.
 
+## In everyday life
+
+Say you go to a tailor and ask for "a nice shirt". The tailor has to guess the fit, the collar, the fabric, the sleeve length and the deadline. Maybe the guess is right. Often it is close but wrong, so you come back for alterations. That costs another trip, more cloth and more waiting.
+
+Now suppose you hand over your measurements, a photo of the collar you like, and say "full sleeves, ready by Friday, and tell me if the cloth is not enough". The note takes five minutes to write. The shirt almost always fits the first time.
+
+A **specific prompt** works like that second visit. It says who the answer is for, what shape it should take, how long it should be, and what to do when something is missing. A vague prompt leaves the model to guess, and every wrong guess means a **retry**: calling the model again, which costs money and makes the user wait longer. Unlike the tailor, the model will not come back to say it was unsure. It may invent a confident answer instead, so telling it what to do when information is missing matters a lot.
+
+**Where you meet it.** A support team summarises tickets for the on-call engineer. "Summarise this ticket" returns long, uneven text that code cannot use. A prompt that asks for three fixed points and says to write "unknown" when something is missing gives answers the next step can use.
+
+```scene
+title: The tailor and the vague order
+step: 👕 You ask for a nice shirt and the tailor has to guess | a vague prompt
+step: ❌ The shirt arrives and the sleeves are wrong | an unusable answer
+step: 🔁 You go back for alterations, paying again in time and cloth | a retry costs tokens and delay
+step: 📏 Next time you bring measurements, a photo and a deadline | a specific prompt
+step: ✅ The shirt fits on the first try | high success rate, fewer retries
+takeaway: A longer, specific prompt can be cheaper overall, because it avoids repeated attempts.
+```
+
 ## The maths: expected cost with retries
 
 Say each attempt produces a usable answer with probability $p$, attempts are independent, and you retry until one succeeds. The number of attempts $A$ is geometrically distributed, with expectation

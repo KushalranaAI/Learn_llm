@@ -7,6 +7,24 @@ Backpropagation needs to know what happened on the way forward. To compute the g
 
 Unlike model states, activation memory does not depend mainly on the parameter count. It grows with the **micro-batch size** $b$, the **sequence length** $s$, the model width $h$ and the number of layers $L$. For long-context training it is often the largest item in GPU memory.
 
+## In everyday life
+
+During a long maths exam you check a ten-page calculation by working backwards. To do that you need the intermediate lines from the way forward, so you keep all your rough work. But the rough-work sheets run out. A clever student writes down only every few lines. When she needs a line she did not keep, she restarts from the nearest saved line and redoes the few steps in between. She uses far less paper and spends a bit more time.
+
+A model does this during training. On the way forward, each layer leaves behind intermediate results called **activations**, which the backward pass needs to work out how to improve the model. Keeping all of them can fill a GPU's memory, especially for long inputs. **Gradient checkpointing** keeps only a few saved points, the **checkpoints**, and recomputes the rest when they are needed. You pay extra computing time to save memory. Unlike the student, the training code does the redoing on its own.
+
+**Where you meet it.** A team fine-tunes a model on long documents and gets an out-of-memory error even though the weights fit. They switch on checkpointing and the job fits, at the price of slower steps. Without it, they would have to cut the document length or rent more GPUs.
+
+```scene
+title: Rough work on limited paper
+step: ✏️ She solves a long calculation, writing every line of rough work | forward pass stores activations
+step: 📄 The rough sheets run low long before she finishes | activation memory fills the GPU
+step: 📌 She keeps only every few lines as marked save points | checkpoints
+step: 🔙 Checking backwards, she redoes missing lines from the nearest save | recomputation in backward pass
+step: ⏳ She finishes with less paper but a bit more time | trade compute for memory
+takeaway: Checkpointing saves memory by recomputing some work instead of storing it.
+```
+
 ## How big are the activations?
 
 A careful count for a standard transformer layer in 16-bit precision (Korthikanti et al., 2022) gives

@@ -7,6 +7,27 @@ Two arrows drawn from the same point can agree (point the same way), disagree (p
 
 There are two standard answers. The **dot product** measures agreement *and* length together. **Cosine similarity** measures agreement only, by dividing the lengths out. Knowing which one a system uses, and why, saves a lot of confusing bugs.
 
+## In everyday life
+
+Two friends each rate the same ten dishes from one to five, and you want to know how alike their tastes are. One way is to go dish by dish. Where both give high marks, that adds a lot of agreement. Where one loves a dish and the other hates it, that takes agreement away. Add everything up and you get a single score.
+
+That score is the **dot product**, a number that grows when two lists of numbers, called **vectors**, agree. In a language model each word or passage is a vector, and checking how well two vectors agree is the basic way to ask whether two things are related. There is a catch. If one friend gives every dish big enthusiastic marks, the total is inflated even if their tastes only partly match. **Cosine similarity** fixes this by ignoring how loud each friend is and comparing only the pattern of likes.
+
+Neither is better everywhere. Search usually wants the pattern alone. Some parts of the model, such as attention, let loudness count on purpose.
+
+**Where you meet it.** A company's search box ranks help articles for each question. If long, repetitive articles keep winning, the score is probably rewarding loudness. Switching to cosine, or first making every vector the same length, lets the best-matching article come out on top.
+
+```scene
+title: Two friends rating the same dishes
+step: 🍛 Two friends each rate the same dishes | two embedding vectors
+step: 🤝 Where both score a dish high, agreement adds up | matching entries reinforce each other
+step: ➕ Adding dish by dish gives one overall agreement score | dot product
+step: 📢 A friend who scores everything loudly inflates the total | dot product depends on length
+step: 🎯 Compare only the pattern of likes, not how loud each is | cosine similarity
+step: 🔎 Search then ranks by pattern, so wordy documents do not win unfairly | normalised vectors for search
+takeaway: The dot product rewards agreement and size; cosine similarity rewards agreement alone.
+```
+
 ## The dot product
 
 For two vectors $\mathbf{a}$ and $\mathbf{b}$ with $d$ components each, the dot product multiplies matching components and adds:

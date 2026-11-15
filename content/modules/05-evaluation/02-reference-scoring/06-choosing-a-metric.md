@@ -7,6 +7,27 @@ Every metric in this lesson answers a slightly different question. Exact match a
 
 A good way to decide is to think about the two errors from lesson 1. A **false pass** credits a wrong answer; a **false fail** rejects a right one. Each metric has a characteristic profile, and the costs of the two errors differ by use case. For a regression gate in CI, false passes are dangerous (you ship a bug). For a leaderboard of prompt variants, systematic false fails that hit all variants equally matter less.
 
+## In everyday life
+
+Before trusting a new kitchen weighing scale, you put a packet of rice on it, then on the shopkeeper's scale that you already trust. If they agree on a few packets, you start using it. If it reads two hundred grams high every time, you either fix it or remember to subtract.
+
+Picking a metric for a model needs the same habit. There is no single perfect ruler. Exact match, word overlap, phrase overlap, meaning similarity and rule checks each measure something slightly different, like a tape, a scale and a thermometer. The skill is choosing the tool that fits your question, then testing it against trusted human judgement before relying on it.
+
+Two kinds of mistake matter. A **false pass** is a wrong answer the metric accepts. A **false fail** is a right answer it rejects. Which one hurts more depends on the job. When a metric guards a release, false passes are the danger. When you only compare two versions, a steady bias hurts less. To test a metric, people label a sample of answers and you count how often the metric agrees with them. Unlike a kitchen scale, a text metric can be accurate on one task and misleading on the next, so check it again when the task changes.
+
+**Where you meet it.** A team building a question-answering feature labels a hundred or so answers by hand and checks how often each candidate metric agrees with those labels. They often find that a trusted metric lets wrong answers through on the cases that matter, and they add an exact check on the key number to fix it.
+
+```scene
+title: Testing a new kitchen scale
+step: ⚖️ You buy a cheap scale and wonder if you can trust it | A candidate metric
+step: 🍚 You weigh the same packets on it and on the shopkeeper's scale | Human labels as the trusted reference
+step: 🔎 You count packets it called fine that were off, and the reverse | False passes and false fails
+step: 🧮 You work out how often it is right when it says fine | Metric precision and recall
+step: 🛠️ You decide: good enough to compare packets, or fix it before using at the till | Choose by use: gate or comparison
+step: 🔁 You test again when you start weighing a new kind of item | Re-validate when the task changes
+takeaway: Pick the metric that fits the question, then check it against human labels before you trust it.
+```
+
 ## Metric profiles at a glance
 
 ```sim

@@ -7,6 +7,26 @@ Attention is a meeting. Every token gets to hear from the others and leaves with
 
 This is the network from the first lesson of this module, a matrix, a non-linearity, then another matrix. It is applied at every position and every layer. It widens the vector to a larger hidden size $d_{ff}$, bends it with an activation, and projects it back to $d$ so the result can be added to the residual stream. Most of a transformer's parameters live here, and so does much of what we informally call its "knowledge". Interpretability work finds that individual FFN neurons often respond to recognisable patterns and that FFN layers store many factual associations.
 
+## In everyday life
+
+Picture a loan clerk checking one applicant's form. The form has a few fields. The clerk's checklist is far longer: dozens of small rules, such as "salary credits regular?" or "existing loans high?". Most rules do not apply and stay silent. The few that do apply each add a short remark. At the end the clerk combines the remarks into a brief note and clips it to the file. The clerk handles one form at a time and never glances at the next applicant's papers.
+
+That is the **feed-forward network** (FFN, also called the MLP) inside each block. It takes one token's vector and widens it into a much longer list, one entry per rule. Each rule is a **neuron**. An **activation function**, such as ReLU or GELU, decides which neurons stay quiet and which fire. The firing neurons then add up their stored remarks, and a second grid of numbers squeezes the result back to the original width. That note is added to the residual stream.
+
+Unlike a clerk, no human wrote these rules. Training writes them, and researchers find that much of a model's stored knowledge sits here. Most of a model's learned numbers live in this part.
+
+**Where you meet it.** When a chatbot answers a factual question, the facts it recalls are largely held in these layers.
+
+```scene
+title: A clerk and a long checklist
+step: 📄 One applicant's form lands on the clerk's desk | one token's vector
+step: 📋 The checklist has far more rules than the form has fields | expand to a larger hidden size
+step: ✔️ Rules that do not apply stay silent, and the rest fire | activation such as ReLU or GELU
+step: 🗒️ The firing rules add their stored remarks into one short note | second matrix projects back
+step: 📎 The note is clipped to this applicant's file only | added to the stream, per position
+takeaway: The feed-forward network thinks about each token on its own, widening, switching rules on and off, and narrowing back.
+```
+
 ## The equations
 
 The classic FFN, used in the original transformer and GPT-2:

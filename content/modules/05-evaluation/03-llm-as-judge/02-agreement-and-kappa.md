@@ -7,6 +7,26 @@ To trust a judge you compare it with people. Take a sample of outputs that human
 
 Agreement alone can flatter a judge badly. Imagine 95% of outputs are good. A "judge" that ignores the output and always says *pass* agrees with humans 95% of the time. It has learned nothing. Some agreement happens **by chance** whenever both raters say *pass* a lot, so we need a measure that subtracts the agreement you would expect from two raters guessing with their own pass rates. That measure is **Cohen's kappa**, $\kappa$.
 
+## In everyday life
+
+Two friends in a dry desert city try to predict whether it will rain tomorrow. It almost never rains, so both say "no rain" nearly every day. They agree almost all the time. Does that make them good forecasters? No. They would agree that often even if they never looked at the sky.
+
+That is the trap when you check a judge model. The **agreement rate** is the share of items where the judge and a human give the same verdict. If nearly all outputs are good, a judge that says "pass" to everything still agrees with humans almost every time, and it has learned nothing. Part of any agreement comes from **chance**, from both raters leaning the same way.
+
+**Cohen's kappa** corrects for this. It first works out how much agreement luck alone would give, based on how often each rater says pass. Then it asks how much of the remaining room above luck the judge actually filled. Zero means no better than luck, and one means perfect agreement. So kappa rewards a judge for catching the rare cases, like the one rainy day, where it counts.
+
+**Where you meet it.** A team that uses a judge model to flag unsafe chatbot replies compares it with human reviewers on a few hundred replies. Nearly all replies are safe, so plain agreement looks great. Kappa reveals that the judge misses most of the rare unsafe replies, so the team fixes the rubric before trusting it.
+
+```scene
+title: Two forecasters in a dry city
+step: 🌵 In a dry city it almost never rains | Most outputs pass
+step: 🤝 Two friends both say no rain and agree nearly every day | High agreement rate
+step: 🎲 You work out how much agreement pure luck would give | Chance agreement
+step: 🌧️ The few rainy days are the ones you really need predicted | Rare failures matter
+step: 📏 You measure how far beyond luck each friend gets | Cohen's kappa
+takeaway: High agreement can be luck, and kappa tells you how much the judge adds beyond chance.
+```
+
 ## The maths
 
 Put the two raters' verdicts in a 2×2 table with $N$ items. Let $p_o$ be the observed share of items where they agree. If the judge says *pass* with overall rate $q_J$ and the human with rate $q_H$, then two raters choosing independently would both say *pass* with probability $q_J q_H$ and both say *fail* with probability $(1 - q_J)(1 - q_H)$. The **chance agreement** is

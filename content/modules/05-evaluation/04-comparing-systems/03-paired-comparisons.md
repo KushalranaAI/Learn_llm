@@ -7,6 +7,24 @@ When two systems answer the same 500 questions, the questions are shared. Some a
 
 Think of two runners timed over the same ten courses. Course difficulty makes both times vary a lot, but the *difference* between runners on each course is much steadier. Pairing removes the course-to-course noise.
 
+## In everyday life
+
+A tea-stall owner wants to know whether her new chai recipe beats the old one. She hands the same 50 regulars both cups. Many say "both are fine" or "both are bad". Those answers tell her nothing about which recipe is better. The useful regulars are the ones whose verdict changed: they liked the new cup but not the old one, or the other way round. Count those people and the answer is much clearer than comparing two piles of ratings.
+
+That is a **paired comparison**: both systems answer the same items, so you compare them item by item. The items where exactly one system passes are called **discordant**, which simply means "they disagree". **McNemar's test** looks only at those and asks whether wins for one side are more common than a fair coin would give. It beats comparing two separate pass rates because the difficulty shared by both systems cancels out. Items where both pass or both fail are not wasted, they just carry no vote.
+
+**Where you meet it.** An engineer runs the old and new versions of a chatbot prompt on the same set of customer questions. The two overall scores look too close to call. Counting the questions the new version fixed against the ones it broke can reveal a clear winner that the overall scores hide, and it lists exactly which questions got worse.
+
+```scene
+title: Chai tasting: only the changed minds count
+step: ☕ The owner serves the same regulars both the old and the new chai | same items run through A and B
+step: 😐 Many regulars like both or dislike both, so she sets them aside | both pass or both fail
+step: 🔀 She keeps only the people who prefer one cup over the other | discordant items
+step: 🧮 She counts how many prefer the new cup and how many the old | wins and losses, b and c
+step: 🪙 She asks if that split is more lopsided than a fair coin would give | McNemar's test
+takeaway: When both systems see the same items, only the items where they disagree carry information.
+```
+
 ## The 2×2 table
 
 Cross-tabulate the two systems' results item by item:

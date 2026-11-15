@@ -21,6 +21,28 @@ Think of ordering at a busy coffee bar. You walk in (travel time), wait behind o
 
 An LLM request has exactly the same shape. Users of a chat product care first about how quickly *something* appears on screen, then about how smoothly the rest flows. A batch job summarising a million documents cares only about the total. Before optimising anything, you need words and formulas for each phase.
 
+## In everyday life
+
+Picture a print shop. You carry in a long document, join the queue, and wait your turn. The operator opens your whole file at once, checks the pages and sets up the machine. Then the printer pushes out the sheets one at a time while you stand and watch.
+
+The total time you spend has distinct parts, and they behave differently. A longer queue delays everything. A thicker file lengthens the setup. A bigger job lengthens the sheet-by-sheet printing, which is usually the longest part.
+
+An AI request has the same four parts. First the request travels over the **network**. Then it waits in a **queue** until the server is free. Then comes **prefill**, where the model reads your whole prompt in one go. Finally comes **decode**, where it writes the answer one **token** (a small piece of a word) at a time. The first token appearing marks the end of the wait before anything shows up on screen.
+
+Unlike the print shop, the model keeps notes about what it has read so each new token does not start the reading over.
+
+**Where you meet it.** A team builds a study assistant that attaches long textbook pages to each question. Students complain it feels slow. By timing each part separately, the team finds whether the delay is a busy queue, long reading of the pages, or long answers, and fixes the right one.
+
+```scene
+title: A trip to the print shop
+step: 🚶 You walk to the shop carrying your file | network time
+step: 🧾 You stand in the queue until the operator is free | queue wait
+step: 📄 The operator reads your entire file in one go and sets up | prefill of the whole prompt
+step: 🖨️ The first sheet slides out of the printer | first token appears
+step: 📑 The remaining sheets come out one after another | decode, one token per step
+takeaway: A request is network, queue, prefill and decode, and long answers usually take the most time.
+```
+
 ## Four phases
 
 A streamed request passes through four stages before the last token reaches the user:

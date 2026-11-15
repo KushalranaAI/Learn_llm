@@ -7,6 +7,24 @@ A floating-point number is like a measurement written in scientific notation wit
 
 **Mixed-precision training** does the heavy matrix multiplications in a 16-bit format, which is two to many times faster on modern GPUs and halves the memory traffic, while keeping the numerically sensitive parts (the master weights, optimizer states and some reductions) in 32-bit.
 
+## In everyday life
+
+A shopkeeper adds up bills all day using quick, rounded numbers: nearest rupee, sometimes nearest ten. It is fast and good enough for each bill. But her master ledger, where small amounts add up over months, is written in exact paise. If she rounded the ledger to the nearest ten rupees as well, a daily gain of a few paise would round to nothing and her balance would never move.
+
+Training a model has the same split. A computer stores each number in a fixed budget of bits. A **floating-point format** decides how those bits are shared between how big or small a number can be (its **range**) and how finely it separates nearby numbers (its **precision**). **Mixed-precision training** does the heavy arithmetic in a short 16-bit format, which is faster and uses less memory, but keeps the **master weights**, the precise copy that collects tiny updates, in a longer 32-bit format. Unlike the shopkeeper, a model also meets numbers so huge or so tiny that the range of the short format matters, and the 16-bit formats differ on exactly that point.
+
+**Where you meet it.** A team training in a short format sees the loss stop improving, or turn into broken not-a-number values. Without this idea they might blame the data. In fact, tiny updates were rounded away or numbers overflowed, and keeping a precise master copy and choosing a format with enough range fixes it.
+
+```scene
+title: Rounded bills, exact ledger
+step: 🧾 She adds each bill quickly using rounded numbers | 16-bit forward and backward passes
+step: ⚡ Rounding makes the day's work fast and light | faster maths, less memory
+step: 🪙 Tiny daily gains would vanish if the ledger were rounded too | small updates lost in 16-bit
+step: 🔐 She keeps the master ledger in exact paise | 32-bit master weights
+step: 🔄 Each evening she updates the ledger and rounds a fresh copy | cast back to 16-bit
+takeaway: Do the heavy work in short numbers, but keep the precise copy where tiny updates add up.
+```
+
 ## The three formats
 
 A normal floating-point number with $e$ exponent bits and $f$ fraction bits represents

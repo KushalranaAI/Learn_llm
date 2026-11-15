@@ -7,6 +7,26 @@ The most reliable metric is one that does not need to interpret language at all.
 
 Many LLM tasks that look open-ended contain a checkable core. A support reply has free-form wording but a refund amount that must equal the policy figure. A summary has style but a list of entities that must all appear. Extracting those checkable pieces and testing them in code is usually the highest-value evaluation work you can do, and it leaves only the genuinely subjective part for judges.
 
+## In everyday life
+
+Think of the form on a bank or government website. You type your mobile number and the page instantly says it must be ten digits. The page does not understand you. It just applies a rule, the same way every time, in a blink. Rules like this catch most mistakes before a person ever looks.
+
+A **programmatic check** does the same job for a model's output: a small piece of code that tests one rule. Is the output valid **JSON**, a strict layout that programs can read? Does it contain the order number? Is it under 150 words? Does the generated program pass its **unit tests**, small automatic tests that run the code and compare the results? Each check gives a clear pass or fail with nothing to interpret.
+
+A check proves only what it tests. The form accepts a ten-digit number that is not yours, and valid JSON can still hold wrong values. So checks are stacked, cheapest first. When a model writes code, you can also let it try several times. **pass@k** asks how likely it is that at least one of k tries passes the tests.
+
+**Where you meet it.** A tool that turns invoice emails into records first checks that the output can be read, then that every required field is present, then that the total matches the invoice. Without those checks, a neat-looking record with a wrong total slips through. With them, each failure gets a clear label such as format or content.
+
+```scene
+title: A web form that checks every field
+step: 📝 You fill in the form and press submit | The model's output
+step: 🔢 The page checks the number is in the expected format | Output parses
+step: 📋 It checks that no required box is empty | Schema is valid
+step: 🧾 It compares the amount you typed with the bill | Fields match the reference
+step: 👀 Only what passes every rule reaches a person | Judge for the free text
+takeaway: Cheap rule checks go first, and each one only proves the thing it tests.
+```
+
 ## Execution-based scoring for code
 
 For code generation, the standard metric is **functional correctness**: does the generated program pass hidden tests? Because sampling is random, one attempt can fail where another succeeds. That leads to **pass@k**: the probability that at least one of $k$ sampled attempts passes. It matters because many real workflows sample several candidates and keep one that passes the tests.

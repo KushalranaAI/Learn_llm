@@ -7,6 +7,26 @@ A learned reward model is a stand-in for human judgement, and stand-ins can be f
 
 The reward is often just a number from a checker: $r = 1$ if the answer is correct, $0$ otherwise (sometimes plus a small bonus for following the required format).
 
+## In everyday life
+
+A bowler is practising at the nets. A marker is placed on the pitch, and a sensor beeps when the ball lands on it. There is no opinion involved: the ball either hit the spot or it did not. The bowler bowls an over of six balls at the same spot and compares each ball with how that over went on average. A hit in an over where most balls missed is a big lesson. A miss in an over where most balls hit stands out too.
+
+This is the idea behind **verifiable rewards**: when a checker can tell right from wrong, such as unit tests for code or an answer key for maths, you do not need a learned judge that can be fooled. **GRPO** adds the over-by-over comparison. The model writes a **group** of answers to one prompt, and each answer is judged against its own group's average, so no extra value model is needed.
+
+One twist the nets make clear: if all six balls hit, or all six miss, that over teaches nothing.
+
+**Where you meet it.** A team teaching a small model to solve maths word problems checks only whether the final number matches the known answer. The model tries each problem several times and learns from the ones that worked. Without a checker the model could learn to sound convincing; with it, only correct answers get rewarded.
+
+```scene
+title: An over at the nets
+step: 🏏 The bowler aims at one marked spot and bowls six balls | Sample a group of answers per prompt
+step: 🎯 A sensor beeps for each ball that lands on the spot | Verifiable checker gives the reward
+step: 📊 Each ball is judged against the average of that over | Group-relative advantage
+step: 👍 Balls that beat the average are repeated, weak ones dropped | Reinforce good, suppress bad answers
+step: 🤷 If all six hit or all six miss, there is no lesson | Zero advantage when all rewards tie
+takeaway: With an objective checker and a group of tries, a model can learn from its own attempts without a learned judge.
+```
+
 ## Dropping the value model: GRPO
 
 PPO needs a value model to estimate how good a state is, so it can compute advantages. That is a second large network to train and store. **Group Relative Policy Optimization** (GRPO) removes it. For each prompt, sample a **group** of $G$ responses from the current policy, score them all, and measure each one against the group's own average:

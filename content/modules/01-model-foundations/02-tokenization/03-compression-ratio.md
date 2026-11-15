@@ -7,6 +7,27 @@ A tokenizer is a compressor. Its job is to describe text with as few symbols as 
 
 Compression is not uniform. A tokenizer trained mostly on English prose compresses English prose well and other inputs less well, in the same way a shorthand invented for law lectures is clumsy in a chemistry class. Measuring the ratio on *your* traffic, not on a vendor's headline figure, is the practical skill.
 
+## In everyday life
+
+When you move house, two numbers tell you how well you packed: how many things you own, and how many boxes you used. Things divided by boxes shows how snugly you packed. Put a whole crockery set into one box and you save many boxes at once. Later you bundle odd leftovers, a torch with a towel, and each such bundle saves a box or two at best.
+
+A tokenizer faces the same game with text. The **compression ratio** is how much text, on average, each token carries, for example how many letters per token. A higher ratio means fewer tokens for the same message, so replies come faster, cost less, and more text fits in the model's **context window**, the limit on how much it can read at once. The same pattern shows up in packing: the first merges save the most, and each later one saves less. That is **diminishing returns**, where each extra effort pays back less than the one before.
+
+Packing also depends on what you pack. A tokenizer built mostly on English prose packs English snugly but packs code or other languages less well, like a box plan that fails in a flat full of odd-shaped tools. So measure on your own data, not on a headline figure.
+
+**Where you meet it.** A team building an app that summarises customer emails wants to know whether a long thread fits in the model's window. They run the real tokenizer on a sample of their own emails and measure the ratio. Without that, they guess from English averages and find some threads get cut off.
+
+```scene
+title: Packing boxes when you move house
+step: 📦 You count how many things you own and how many boxes you used | characters versus tokens
+step: ➗ Things divided by boxes tells you how snugly you packed | compression ratio
+step: 🍽️ Bundling an obvious set, like a crockery set, saves many boxes | early merges save the most
+step: 🧦 Later bundles join odd bits and save only a box or two | later merges save less
+step: 📉 Eventually more bundling hardly changes the box count | diminishing returns
+step: 🚚 A flat full of odd shapes packs worse with the same plan | ratio depends on your data
+takeaway: Each extra merge pays back less, and the ratio you get depends on the text you measure.
+```
+
 ## Measuring it
 
 The most common definitions, for a text with $C$ characters, $W$ words, $Y$ bytes and $T$ tokens:

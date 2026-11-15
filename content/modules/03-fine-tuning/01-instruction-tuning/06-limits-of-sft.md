@@ -7,6 +7,27 @@ SFT is the most accessible adaptation technique, so it gets asked to do everythi
 
 A helpful mental model: pretraining builds a library; SFT trains the librarian. Training the librarian to answer politely, in a set format, about a set range of topics works well. Handing the librarian three new books once and expecting them to quote every page does not.
 
+## In everyday life
+
+Picture a student who studied every subject well during the year. A week before one subject's mock test, she crams only that subject. Her score in it goes up. But when a surprise quiz comes in her older subjects, she does worse than before, because that material slipped while she was busy cramming.
+
+That is the first limit of **supervised fine-tuning** (SFT), which means training a model further on examples of requests and good replies. A narrow round of training can make the model worse at things it used to do well. This is called **catastrophic forgetting**. A common remedy is **replay**: keep revising a little of the old material alongside the new.
+
+The second limit is facts. Seeing a new fact once or twice does not make the student reliable on it. She may remember the shape of the answer and then state a wrong one with confidence. SFT is good at teaching behaviour, format and tone. For fresh or private facts it is usually better to let the model look things up while it answers, like keeping the reference book open on the desk. That lookup idea is called **retrieval**.
+
+**Where you meet it.** A team fine-tunes an assistant on one narrow task, then finds it has become worse at general questions. They also try to teach it this quarter's product details through SFT and get confident wrong answers. Mixing general examples back in, and looking up product pages at answer time, fixes both problems.
+
+```scene
+title: Cramming one subject before the test
+step: 📚 A student does well in every subject during the year | pretrained general ability
+step: 🎯 She crams only one subject for a mock test | narrow SFT on one task
+step: 📈 Her score in that subject goes up | target task improves
+step: 📉 Her older subjects slip because she stopped revising them | catastrophic forgetting
+step: 🔄 She mixes some old topics back into her revision | replay data
+step: 📖 For facts that keep changing, she keeps the reference open | retrieval at answer time
+takeaway: SFT is great for behaviour and format, so check what it breaks, and use lookup for fresh facts.
+```
+
 ## Behaviour is cheap, knowledge is expensive
 
 During pretraining a fact that appears many times across varied documents is stored robustly. In SFT a fact might appear in one or two examples. The model can learn to reproduce that exact answer to that exact question, but generalising it (answering the same fact asked differently, combining it with other facts) is unreliable.

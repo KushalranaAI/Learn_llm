@@ -7,6 +7,26 @@ Preferences are comparisons, but reinforcement learning needs a number: a score 
 
 Chess ratings are the right intuition. Nobody measures a player's strength directly; we only see who beat whom. Yet from enough game results we can assign each player a rating such that the rating gap predicts the probability of winning. A reward model does the same for responses.
 
+## In everyday life
+
+Think of a singing contest on TV. The judges mostly do not hand out scores at first. They watch two singers and say which one was better. Yet the show needs a leaderboard, and the leaderboard needs a number for every singer. So the judges turn their many head-to-head verdicts into one score out of ten per contestant, chosen so that a bigger gap between two scores means the judges were more sure about the winner.
+
+That is the job of a **reward model**: a network that reads a prompt and one response and gives back a single score. It is trained on the preference pairs so that chosen answers score higher than rejected ones. The rule that links score gaps to the chance of winning is called the **Bradley-Terry model**. Once trained, the reward model can score any new answer on its own, without a human in the room.
+
+Where the picture stops fitting: the judges can explain themselves, but a reward model only produces a number, and it can be wrong in ways nobody sees at first.
+
+**Where you meet it.** A team training a customer-help assistant has thousands of human verdicts but needs to score millions of fresh answers during training. They train a reward model on the verdicts, then let it do the scoring. Without it, every training step would need a person; with it, the scoring runs all day on its own.
+
+```scene
+title: From head-to-head verdicts to scores
+step: 🎤 Judges watch two singers and only say who was better | Preference pair
+step: 🔢 The show wants one score out of ten for each singer | Reward model output
+step: ⚖️ A bigger score gap should mean the judges felt more sure | Bradley-Terry model
+step: 🛠️ If the scores disagree with a verdict, the scoring is adjusted | Training on observed preferences
+step: 🆕 A brand-new singer can now be scored without a panel | Scoring a new response alone
+takeaway: A reward model turns many better-or-worse verdicts into a score that can rate any single answer.
+```
+
 ## The Bradley-Terry model
 
 The **Bradley-Terry** model says the probability that $y_w$ is preferred to $y_l$ depends only on the difference of their scores, passed through the **sigmoid** $\sigma(z) = 1/(1 + e^{-z})$:

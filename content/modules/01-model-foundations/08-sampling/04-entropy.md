@@ -7,6 +7,26 @@ Look at two next-token distributions. In one, a single token has 95% and the res
 
 Entropy measures how spread out a distribution is: how much uncertainty there is about which token comes next. It is the expected amount of surprise, and it underlies almost every quality number you will meet for language models, including cross-entropy loss and perplexity.
 
+## In everyday life
+
+Think of two weather forecasts for tomorrow. In Mumbai in the middle of July, the forecaster says rain is almost certain. On a day between seasons, the forecaster says it could be sunny, cloudy, drizzly or stormy, each about equally likely. Both name a most likely outcome, but they are in very different states of mind. The first is sure. The second is torn.
+
+You would like one number that says how torn a forecaster is. Start with surprise. If the forecaster was sure of rain and it snows, you are astonished. If they said rain and it rains, you shrug. Rare outcomes surprise you, expected ones do not. Now average that surprise over everything the forecaster thought might happen, weighting each outcome by how likely they thought it was. A sure forecaster has almost no average surprise. A torn one has plenty.
+
+That average is **entropy**. For a language model the outcomes are the possible next **tokens** (pieces of a word), and entropy says how unsure the model is at this moment. It also tells you roughly how many choices the model is really weighing. One limit: entropy measures confidence, not correctness. A forecaster can be sure and still wrong.
+
+**Where you meet it.** A team reviewing answers from a question-answering assistant can flag the moments where the model was unsure, such as a date or a name, and send those answers for a human check. Without such a signal, every answer looks equally trustworthy.
+
+```scene
+title: The forecaster who is sure or torn
+step: 🌧️ A forecaster lists chances for each kind of weather tomorrow | probabilities over next tokens
+step: 😲 A rare outcome would shock you and an expected one would not | surprise of a token
+step: ⚖️ Each surprise is weighted by how likely the forecaster thought it was | probability-weighted average
+step: 📊 Adding up gives one number for how torn the forecaster is | entropy
+step: ☂️ A sure forecast gives a low number and a scattered one a high number | low versus high entropy
+takeaway: Entropy is the average surprise: low when the model is sure, high when it is torn between many tokens.
+```
+
 ## Surprise, then its average
 
 The **surprise** (or information content) of seeing a token with probability $p$ is

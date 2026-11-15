@@ -7,6 +7,27 @@ On a map, the step from Paris to Berlin is an arrow: so far east, so far north. 
 
 This was the striking result of the word2vec work in 2013: relationships between words appear as consistent **offsets** (difference vectors) in embedding space, so simple vector arithmetic can complete analogies. Nobody programmed a "gender direction" or a "plural direction". They emerged because predicting surrounding words is easier when similar relationships are stored in similar ways.
 
+## In everyday life
+
+Go shopping with two items in mind: a plain kurta and a festive kurta. The difference between them is a change: add embroidery and a little shine. Now look at a plain saree. Apply the same change and you can picture the festive saree, even before you see it in the shop. The change works like an arrow you can carry from one item to another.
+
+Trained embeddings behave this way. An **embedding** is a list of numbers, a **vector**, that describes one word. Relationships such as man to woman, or king to queen, show up as roughly the same step between the lists, called an **offset**. Nobody programmed this. It appears because storing similar relationships in similar ways helps the model predict text. Add such a step to one word, find the nearest word, and you can complete an analogy.
+
+The shop comparison stops fitting at one point. You land near the festive saree, not exactly on it, and sometimes the nearest item is wrong. These patterns also copy the habits of the text they came from, including stereotypes.
+
+**Where you meet it.** An online shop's search relies on the idea underneath: things with similar meanings sit close together. Engineers use it to find near-duplicate listings or group similar items, and researchers use directions to study what a model has learned.
+
+```scene
+title: Carrying a change from kurta to saree
+step: 👕 A plain kurta and a festive kurta differ by added embroidery | two points and the step between them
+step: 👗 The same change turns a plain saree into a festive saree | same offset, different starting word
+step: 🧵 Nobody wrote the rule; the pattern simply shows up in the data | directions emerge from training
+step: 🔍 To finish an analogy, apply the change and look for the closest item | king minus man plus woman
+step: 📍 You land near the festive saree, not exactly on it | nearest neighbour, not exact
+step: ⚠️ The pattern also copies stereotypes found in the source text | bias in embedding directions
+takeaway: Relationships between words appear as consistent steps in embedding space, though only approximately.
+```
+
 ## Analogy as vector arithmetic
 
 To answer "man is to king as woman is to ?", compute a target vector and find the word whose embedding is closest to it by cosine similarity:

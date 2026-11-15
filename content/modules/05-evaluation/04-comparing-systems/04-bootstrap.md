@@ -7,6 +7,25 @@ The standard error formulas so far work for pass rates and simple differences. B
 
 To resample, draw $n$ items **with replacement** from your $n$ items. Some items appear twice or three times, others not at all. Compute your metric on that resampled set. Repeat thousands of times. The spread of the resulting values approximates how much the metric would vary across real fresh samples.
 
+## In everyday life
+
+A teacher has marks for 30 students and wants to know how much the class average would change with a different batch of students. She cannot call in new students. So she writes each mark on a paper chit and drops all the chits into a bowl. She draws one, notes the mark, puts the chit back and draws again, until she has 30 draws. That is a pretend new class. She works out its average, then repeats the whole thing many times.
+
+The **bootstrap** is exactly this trick. Treat the data you have as a stand-in for the whole world and re-draw from it again and again. Drawing **with replacement** (putting each chit back) means some students show up twice and others not at all, so every pretend class is different. The spread of all the pretend averages shows how much to trust the real one. It works for averages, medians or any messy number, which is why it is so handy. But it cannot invent students you never collected: if your 30 marks are unrepresentative, so is the answer.
+
+**Where you meet it.** A team wants an error bar on the slowest-case response time of an assistant, a number with no simple formula. They keep the per-item results and redraw them thousands of times. The spread of the redrawn values gives the error bar, and no new model runs are needed.
+
+```scene
+title: Drawing chits from a bowl, again and again
+step: 📝 The teacher writes each student's mark on a chit and drops all chits in a bowl | per-item eval scores
+step: 🥣 She draws a chit, notes the mark and puts it back | resample with replacement
+step: 👥 She repeats until she has as many draws as students | one bootstrap sample
+step: 🧮 She works out the average of that pretend class | compute the metric
+step: 🔁 She does this thousands of times and notes how the averages spread | bootstrap distribution
+step: 📏 The middle bulk of those averages gives her a range | percentile interval
+takeaway: Re-drawing from the data you have shows how much any number could wobble, with no new formula.
+```
+
 ## The algorithm
 
 For a metric $T$ (any function of the data) on a dataset of $n$ items:

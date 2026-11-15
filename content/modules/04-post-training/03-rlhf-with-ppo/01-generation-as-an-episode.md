@@ -11,6 +11,26 @@ Supervised fine-tuning gives the model a target for every token: here is the rig
 
 The first step is translation. Reinforcement learning talks about agents, states, actions and episodes. A language model talks about prompts, tokens and completions. Once the two vocabularies line up, the code reads like ordinary RL code.
 
+## In everyday life
+
+Think of a cab driver on one trip. At every junction he picks a turn. Nobody tells him after each turn whether it was right. Only when the passenger steps out does a rating arrive: one number for the whole ride. Over many trips he has to work out which turns made the ride good and which wasted time.
+
+This is what **reinforcement learning** looks like. It means learning by trying things and getting a score afterwards, instead of being shown the right move. The language model plays the driver and is called the **policy**, the thing that chooses what to do. Each token it writes is one turn, called an **action**. The prompt plus the tokens written so far is the **state**, the place it currently stands. One whole answer, from prompt to the end marker, is an **episode**, one trip. The **reward** is the score from the reward model, and it is **sparse**: it arrives once, after the last token.
+
+Fine-tuning on examples was different, because it showed the right next token at every step. Here there is only a grade at the end. One part does not fit a cab ride: each turn is picked from thousands of possible tokens, and the road never surprises you, since each token simply gets added to the text.
+
+**Where you meet it.** A chat assistant is improved using scores from a reward model. The score arrives only when the reply is finished, so the training method must work out which words in a long reply earned the credit.
+
+```scene
+title: One cab ride, one rating
+step: 🚕 A passenger gives the driver a destination | the prompt
+step: 🧭 At every junction the driver picks one turn | each token is an action
+step: 🗺 The route so far decides which turns are open next | state: prompt plus tokens so far
+step: 🏁 The ride ends when the passenger gets out | episode ends at the end marker
+step: ⭐ One rating arrives after the ride, not after each turn | sparse reward on the last token
+takeaway: Writing an answer is a sequence of choices, and the single score at the end must be traced back to them.
+```
+
 ## The dictionary
 
 | RL term | In text generation | In `train_ppo.py` |

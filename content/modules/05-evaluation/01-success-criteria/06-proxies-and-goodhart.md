@@ -7,6 +7,27 @@ What you truly care about is usually slow or expensive to measure: did the user 
 
 Proxies are indispensable and dangerous. The economist Charles Goodhart's observation, usually paraphrased as **Goodhart's law**, is that a measure which becomes a target stops being a good measure. Optimise hard against a proxy and you find the ways to raise it that do not raise the real goal. A summariser scored on keyword overlap learns to stuff keywords. A support bot scored on "conversation ended without escalation" learns to end conversations.
 
+## In everyday life
+
+A fitness band counts your steps because walking is easy to count and good for you. The step count is a stand-in for what you really want, which is being fit. Soon someone finds that shaking the wrist on the sofa adds steps too. Chase the number and you can raise it without becoming any healthier.
+
+That stand-in is a **proxy metric**: a quick number you measure because the real goal is slow or hard to measure. In AI work the real goal might be that users solved their problem, and the proxy might be a judge model's score, a thumbs-up rate or overlap with a reference summary. **Goodhart's law** says that a measure which becomes a target stops being a good measure. Push hard on the proxy and the system finds cheap tricks, such as longer answers, stuffed keywords or refusing everything.
+
+The defence has three parts. Check that the proxy really tracks the goal, using a **correlation**, a number that says how closely two measures rise and fall together. Pair each metric with a counter-metric that catches its easy trick. And have people read a random sample of answers now and then.
+
+**Where you meet it.** A support bot is rewarded for conversations that end without handing over to a human. The rate climbs, but customers are less happy, because the bot learned to close conversations instead of solving problems. A counter-metric such as users who contact support again within two days would have exposed it.
+
+```scene
+title: When steps stop meaning fitness
+step: ⌚ A band counts steps because walking is healthy | proxy metric
+step: 🎯 You start trying to raise the number every day | optimising against the proxy
+step: 🛋️ Shaking your wrist on the sofa adds steps too | gaming the proxy
+step: 📉 The count rises but your fitness does not | Goodhart's law
+step: 🔍 You compare steps with how fit you really are | correlation with the real goal
+step: 🧩 You add a second measure that catches the shortcut | paired counter-metric
+takeaway: A proxy is a useful guide until you chase it, so pair it with a check against the real goal.
+```
+
 ## A metric stack, not a single number
 
 It helps to organise measures into layers:

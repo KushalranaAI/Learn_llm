@@ -7,6 +7,27 @@ Because the model sees token IDs, not letters, some things that are trivial for 
 
 The mental model to keep: a token is an opaque ID. The model learns what ID 9246 *means* from context, but it is never directly shown that ID 9246 is spelled c-a-t. Any knowledge of spelling, letter counts or digit positions has to be inferred indirectly from training text.
 
+## In everyday life
+
+Picture a child who learned to read by recognising whole words by their shape, the way you recognise a shop sign. She reads quickly. But ask how many times the letter r appears in a word she knows, and she struggles, because she never looked inside the shape. Write the same word in capitals and it looks like a different shape to her. A word she met once or twice leaves only a hazy impression.
+
+A language model reads this way. It never sees letters. It sees **tokens**, pieces of text each stored as a number, and must learn from context what each one means. Many odd failures trace back to this. Capital letters and spaces change which token you get. Long numbers are cut into chunks that shift with the number's length. Letters are hidden inside tokens. And rare tokens can be **under-trained**, meaning the model saw them too seldom to learn them, so they behave strangely.
+
+A good teacher fixes this by changing the task, not the child: spell the word out letter by letter, or hand the sum to a calculator.
+
+**Where you meet it.** A team notices its assistant miscounts letters and gets long sums wrong. They print the token pieces of a failing prompt and see exactly why. Then they send counting and arithmetic to a small program instead of asking the model.
+
+```scene
+title: The child who reads by word shape
+step: 🧒 A child recognises whole words by shape and never sees inside them | tokens are opaque IDs
+step: 🔠 The word in capitals looks like a different shape to her | case and spaces change the token
+step: 🔢 Long numbers are read in chunks that shift with their length | digit chunking
+step: 🔍 Asked to count the letter r, she cannot see inside the shape | letters hidden inside tokens
+step: ✏️ Spelling the word out letter by letter lets her count at once | spell out with separators
+step: ❓ A word she met only once leaves a muddled impression | under-trained glitch tokens
+takeaway: The model sees token IDs, not letters, so spelling and digit tasks need a different approach.
+```
+
 ## Quirk 1: spaces and capitals change the token
 
 With GPT-style pre-tokenization a leading space is part of the word, so *cat*, *␣cat*, *Cat*, *␣Cat* and *CAT* are typically five different tokens with five separately learned embeddings. Practical consequences:

@@ -5,6 +5,27 @@ minutes: 8
 
 Everything in this lesson so far used toy networks: 17 parameters, four XOR points. It is fair to ask what any of it has to do with a model that writes essays. The honest answer is: almost everything. A large language model is a parameterised function, trained with cross-entropy, by mini-batch gradient descent, with gradients from backpropagation. What changes is the shape of the function, what goes in and comes out, and the scale.
 
+## In everyday life
+
+Remember the fill-in-the-blank exercises from English class? Take any newspaper article, cover everything after the first few words, and guess the next word. Uncover it and you see whether you were right. The article itself is the answer key, so nobody has to mark your work. And one article gives you a fresh question at every word.
+
+A large language model trains this way. Text is cut into **tokens** (word pieces), and at each position the model gives a probability to every possible next token. The real next token is the correct answer. This is called **self-supervised** learning, because the labels come from the text itself. How little probability the model gave the real token becomes the **loss** (a score of how wrong it was), and gradient descent nudges the model's numbers to lower it. Everything else in this lesson, from the learning rate to backpropagation to batches, is the machinery used here, with a bigger model and far more text.
+
+Unlike the student, the model has no teacher in the room: the score and the nudges are all it gets.
+
+**Where you meet it.** A company building a language assistant cannot pay people to label trillions of words. Self-supervised training skips the labelling, because the next word in any document already is the label. That is why very large amounts of ordinary text can serve as training data.
+
+```scene
+title: A cloze test with a hidden answer key
+step: 📰 Take any article and cover everything after the first few words | text with the rest hidden
+step: 🤔 Guess the next word | predicting the next token
+step: 👀 Uncover it: the article itself is the answer key | self-supervised labels
+step: 📉 Score how little belief you put on the real word | cross-entropy loss
+step: 🔁 Move to the next word and get a fresh question each time | many predictions per sequence
+step: 📚 Repeat over millions of articles, tuning your habits each time | training at scale
+takeaway: An LLM learns by guessing the next word of ordinary text and being scored against what really came next.
+```
+
 ## The task: classify the next token
 
 Text is first split into **tokens** (pieces of words, the next lesson) and each token gets an integer ID from a vocabulary of size $V$. The model reads a sequence of IDs $t_1, \dots, t_n$ and, at each position, outputs a probability for every possible next token. It is a classifier with $V$ classes, run once per position:

@@ -7,6 +7,26 @@ When you train on a prompt-response pair, the model makes a prediction at every 
 
 So SFT applies a **loss mask**: a 0/1 weight per token that switches the loss off for the prompt and on for the response. The forward pass still reads the whole sequence (the response must be conditioned on the prompt), but only response positions contribute to the gradient.
 
+## In everyday life
+
+Picture a board exam. The question paper is printed, and you write your answers in a booklet. The examiner marks only the booklet. Nobody gives you marks for how well you copied out the question. You still have to read the question carefully, though, because a good answer depends on it.
+
+SFT training works the same way. Each training example is a request followed by a reply. The model reads the whole thing and guesses every next word, including the words inside the request. **Loss** is the number that says how wrong those guesses were, and training pushes it down. If we counted loss on the request too, the model would partly learn to predict what users type, typos included. That is not our goal. We want it to write good replies.
+
+A **loss mask** is the examiner's rule. It puts a count-this or ignore-this label on every token (a **token** is a small chunk of text). Request tokens get ignore. Reply tokens get count. The model still reads the full request, so the mask changes what is graded, not what is seen.
+
+**Where you meet it.** A team fine-tunes a model on customer emails paired with agent replies. Without a mask, a large part of the learning goes into imitating customers' messy writing. With the mask, all the learning signal goes into the agents' replies.
+
+```scene
+title: Marking only the answer booklet
+step: 📄 The question paper is handed out and the student reads all of it | whole sequence is read
+step: 📝 The student writes the answer in the booklet | response tokens
+step: 🧐 The examiner ignores the printed question paper when marking | loss mask is zero on the prompt
+step: ✅ Every answer line is marked and the marks are averaged | loss on response tokens only
+step: 🔚 Writing the end of the answer is marked too, so she learns to stop | end-of-turn token stays unmasked
+takeaway: The model reads the whole conversation but is graded only on the reply it should write.
+```
+
 ## The masked loss
 
 For a tokenized example $x_1, \dots, x_T$ with mask $m_t \in \{0, 1\}$:

@@ -7,6 +7,24 @@ Bridges are built from steel that can crack and concrete that can crumble. Engin
 
 This lesson has given you the reasons. This topic puts the fixes into one pipeline and counts, with numbers, what each layer buys.
 
+## In everyday life
+
+When you deposit a cheque, the bank does not trust a single glance. One clerk checks the details, another compares the signature, a system checks the balance, and a large amount goes to a manager. No single check is perfect. Together they stop most bad cheques, and the extra checking is worth more as the amount grows.
+
+Building with language models works the same way. The model is the first clerk: quick and often right, but sometimes sure about a wrong fact, unaware of recent or private information, and prone to slips in long exact calculations. A **pipeline** is the chain of checks you place around it: look up real data, answer from sources, abstain when unsure, verify what can be verified, and send the hardest cases to a person. Each layer removes only some of the errors. Stacked together, they remove most of them. The price is some speed, some cost, and a share of questions that end up with people instead of being answered automatically.
+
+**Where you meet it.** A bank's help chatbot first fetches the customer's real account details with a tool, answers only from the bank's policy pages, shows its sources and passes unclear cases to staff. The model itself is unchanged, yet far fewer wrong answers reach customers, because the system around it catches them.
+
+```scene
+title: How a cheque is cleared in layers
+step: 📄 A cheque arrives at the counter, like a request arriving at the system | The request
+step: 🏦 The clerk pulls up the real account records instead of trusting memory | Tool call or retrieval
+step: 📝 The clerk writes the entry using only what the records show | Generate from sources
+step: 🔍 A second clerk checks the details and the signature | Citation check
+step: 🧑 An unclear or very large cheque goes to the manager | Abstain or human review
+takeaway: No single layer is perfect, but stacked checks make the whole system reliable.
+```
+
 ## Each layer removes a share of the errors
 
 Think of the system as a series of filters. Let $E_0$ be the number of wrong answers the bare model would give on a workload. Each layer $j$ removes a fraction $f_j$ of the errors that reach it, so after $m$ layers

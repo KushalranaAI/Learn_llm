@@ -7,6 +7,26 @@ Constrained decoding guarantees that output parses. It does not guarantee that o
 
 An analogy: you ask someone to answer only "yes" or "no", but cut them off after the first letter. They start to say "nope", you hear "n", and you force the rest to be "no". Fine. But if they started to say "not sure, probably yes" you have still recorded "no".
 
+## In everyday life
+
+You have seen autocorrect go wrong on a phone. You type a slightly unusual word, and the keyboard only accepts real dictionary words. It looks at the letters so far, finds a valid word that starts the same way, and swaps it in. The sentence is now spelled correctly and still says something you never meant.
+
+**Constrained decoding** can do the same thing to a model. A **mask** (a filter that hides forbidden next tokens) forces every answer to follow the required format, such as one of a fixed list of labels. It works one token at a time and does not look ahead. So if the model wanted to say something the format does not allow, the mask pushes it onto whichever valid path shares the same beginning. The result is valid, but it may not be what the model really preferred. Valid also does not mean right: a correctly formatted label can still be the wrong label.
+
+You can keep this under control. Describe the format in the prompt as well, so the model rarely needs correcting. Put a reasoning field before the answer field. Add an honest escape option like "unknown". And check meaning in code.
+
+**Where you meet it.** A tool tags documents with a category from a fixed list. When none of the options fits, the format forces a confident pick anyway. Adding "other" and "unknown" options stops it from looking like knowledge.
+
+```scene
+title: When autocorrect knows best
+step: ⌨️ You type a word the dictionary does not know | the model wants text the format forbids
+step: 🚫 The keyboard only accepts dictionary words | the mask blocks invalid tokens
+step: 🔄 It swaps in a real word with the same first letters | forced onto a valid path
+step: 🤔 The sentence is spelled correctly but says the wrong thing | valid output, wrong value
+step: 🛟 A keep-as-typed option and a re-read would have saved it | an unknown option and checks in code
+takeaway: A mask guarantees the format, not the meaning, so give the model an honest way out.
+```
+
 ## The maths: local masking versus the global constraint
 
 Let the valid outputs be the strings "yes" and "no", and suppose the model's first-token probabilities are $P(\texttt{n}) = 0.6$ and $P(\texttt{y}) = 0.4$. After `n`, the model would continue with `ope` (making "nope", not allowed) with probability 0.9 and `o` with probability 0.1. After `y`, it continues with `es` with probability 1.

@@ -5,6 +5,27 @@ minutes: 7
 
 You now know the maths. This topic is the checklist an engineer actually follows: which hyperparameters to set, how to verify a run, and what to do with the adapter afterwards.
 
+## In everyday life
+
+Think of your phone. It has one operating system and dozens of apps. Each app is small because it leans on the system for the heavy work. Nobody installs a complete copy of the operating system for every app. And if you use one app all day, the maker could even build it into the system itself, so nothing needs switching.
+
+Adapters work like that. After fine-tuning with **LoRA**, you get a small file called an **adapter**: the extra numbers that carry your customisation. A company serving many customers keeps one copy of the big base model in GPU memory and loads each customer's adapter when a request arrives. Requests for different customers can run together and share the heavy part. **Merging** means folding an adapter into the base weights to get an ordinary model of the same size and speed. It suits the case where one variant dominates.
+
+The analogy gives you the rules. An app built for one system version can break on another. In the same way, an adapter only works with the exact base model, the same **tokenizer** (the tool that splits text into pieces) and the same prompt layout it was trained on. So test it through the path production will use.
+
+**Where you meet it.** A platform hosts custom assistants for a hundred small businesses. A full model copy per business is far too heavy, so it keeps one shared base and a small adapter for each. The common failure is training with one prompt layout and serving with another.
+
+```scene
+title: One phone, many small apps
+step: 📱 A phone has one operating system shared by every app | one shared base model
+step: 📲 Each app is small and adds only its own features | small LoRA adapter
+step: 🧰 Opening an app uses the system for the heavy work | shared base weights do the work
+step: 🔀 Many apps run side by side without copying the system | many adapters, one base
+step: 🧱 A favourite app can be built into the system image | merging the adapter
+step: 🚫 An app made for another system version breaks | adapter needs its exact base
+takeaway: Keep one base model with many small adapters, or merge a single adapter in, and always match the base it was trained on.
+```
+
 ## A starting recipe
 
 | Setting | Starting value | Note |

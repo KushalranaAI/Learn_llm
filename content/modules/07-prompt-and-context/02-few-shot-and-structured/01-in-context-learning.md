@@ -27,6 +27,26 @@ Label:
 
 Why does this work? During pretraining the model read enormous amounts of text that contains repeated patterns: tables, Q&A pages, lists of examples. Continuing a pattern is precisely what next-token prediction rewards. The examples do two jobs. They pin down **which task** this is (sentiment, not topic; three labels, not two), and they show the **format** of the answer (one lowercase word after "Label:").
 
+## In everyday life
+
+On your first day at a post office, the supervisor gives you three letters that are already sorted. One went into the "local" bin, one into "other state", one into "parcels and large". She does not explain any rules. She hands you a fresh letter and says, "Now you."
+
+You glance at the three examples and work out what is being sorted, and which bin names to use. You drop the new letter in the right bin. Nobody trained you for weeks. You just saw the pattern and continued it.
+
+A language model can do this too. It is called **in-context learning**: you put a few example inputs and outputs in the prompt, then a new input, and the model continues the pattern. A prompt with a few examples is called **few-shot**, and one with none is **zero-shot**. The examples do two jobs. They tell the model which task this is (sorting by place, not by size), and they show the format of the answer. Unlike you, the model forgets everything afterwards. Nothing inside it changes, and you pay for the examples again on every call.
+
+**Where you meet it.** A shop wants to label customer reviews as positive, negative or mixed. Writing three labelled reviews into the prompt makes the model use exactly those three labels, in the same short style, with no training needed.
+
+```scene
+title: The new post office sorter
+step: 📮 The supervisor shows three letters already sorted into bins | few-shot examples in the prompt
+step: 👀 You notice what is being sorted and what the bins are called | the model infers the task
+step: ✉️ A fresh, unsorted letter lands on your desk | the new input
+step: 🗂️ You drop it into the bin that matches the pattern | the model continues the pattern
+step: 🚪 Next day you start from nothing again | no weights change, nothing persists
+takeaway: Examples in the prompt tell the model the task and the answer format, with no training.
+```
+
 ## The maths: examples as evidence
 
 A useful way to think about ICL is as inference over a hidden task. Let $c$ be the task the prompt is "about" (for example sentiment versus topic), and $E = (e_1, \dots, e_k)$ the examples. The model's prediction for a new input $x$ behaves like an average over tasks, weighted by how well each task explains the examples:

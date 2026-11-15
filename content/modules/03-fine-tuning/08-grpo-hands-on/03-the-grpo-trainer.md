@@ -7,6 +7,25 @@ You do not have to write the sampling loop, the log-probability bookkeeping or t
 
 Unlike SFT ([SFT with LoRA, step by step](/learn/fine-tuning/sft-with-lora-step-by-step)) the dataset has **no target answers to imitate**. It only needs a `prompt` column; any other columns, here `ground_truth`, are passed through to the reward functions by name.
 
+## In everyday life
+
+Picture a quiz night run by an organiser. She does not write the players' answers or judge by feel. She is handed three things: a list of questions, a scoring sheet and the house rules, such as how many tables there are and how many players sit at each. Then she runs the same round again and again. Each question goes to a whole table. The judges score every reply, each player is compared with the rest of their own table, and everyone adjusts before the next round.
+
+The **GRPOTrainer** in the TRL library is that organiser. You hand it a **dataset** of prompts (the questions, with no model answers to copy), your **reward functions** (the scoring sheet) and a **config**, the settings chosen to fit your GPU. One rule trips up beginners: the answers collected in a step must split evenly into groups. If every table needs eight players and you have seats for twenty-seven, the night cannot start, and the trainer refuses to run. Unlike quiz night, all the players here are one model answering again and again, and what it adjusts is its own habits.
+
+**Where you meet it.** A student with a free cloud notebook wants a small model to get better at maths word problems. Writing the sampling and scoring loop by hand is slow and easy to get wrong. With the trainer, they supply prompts, a checker and settings, and the loop runs for them.
+
+```scene
+title: Running one quiz night
+step: 📋 The organiser receives questions, a scoring sheet and house rules | dataset, reward functions, GRPOConfig
+step: 🪑 Seats must divide evenly into tables, or the night cannot start | completions divisible by group size
+step: 🎤 Each chosen question goes to a whole table of players | several completions per prompt
+step: 📝 Judges score every reply on the sheet | reward functions summed
+step: 📊 Each player is compared with their own table's average | group advantage
+step: 🔧 Players adjust their habits, and the results are saved | optimizer update, saved adapter
+takeaway: The trainer runs the whole sample, score, compare and update loop; you supply prompts, rewards and settings that fit your GPU.
+```
+
 ## The batch arithmetic
 
 The one constraint that trips everyone: the number of completions processed per optimizer step must split evenly into groups.

@@ -7,6 +7,26 @@ Time to fine-tune something and see it change. The task is chosen to be *visibly
 
 Because the check is mechanical (does `json.loads` succeed, and is the label right?), you get a number before and a number after rather than a vague impression. That habit, a fixed held-out test and a score, is the core of every serious run later.
 
+## In everyday life
+
+A restaurant hires a new waiter. Ask him to take an order and he chats happily about the weather and the menu, but the kitchen needs a plain slip: table number, dish, quantity. The manager does not just hope for the best. She keeps twenty sample orders aside, has the waiter write slips for them, and counts how many are correct. Then she gives him a hundred practice slips to learn from. Finally she tests him again on the same twenty kept-aside orders and compares the two counts.
+
+That before-and-after habit is the heart of this lesson. You fine-tune a tiny model so it answers reviews with a strict JSON label instead of chatting. A **held-out test** is the set of examples the model never trains on, so it shows what changed. The training itself uses **LoRA**, which learns small add-on pieces, called an **adapter**, instead of changing the whole model.
+
+A word of caution from the waiter: if the test orders look just like the practice ones, a perfect score proves the process works, not that he can handle any order.
+
+**Where you meet it.** A developer needs a model to return a fixed format that a downstream program can read. Before tuning, the model often adds extra words that break the program. After a short fine-tune on a few examples, it returns clean output, and the saved adapter is small enough to share by email.
+
+```scene
+title: The waiter and the order slip
+step: 🧾 A new waiter chats about each order instead of writing the kitchen slip | Base model ignores the format
+step: 📝 The manager tests him on orders kept aside and counts correct slips | Held-out test, before score
+step: ✏️ He practises on a hundred example slips | LoRA fine-tune on 100 examples
+step: 🔁 The manager tests the same kept-aside orders again | After score
+step: 📂 His practice notes are small enough to hand to a colleague | Small adapter saved and reloaded
+takeaway: Score the model before and after on examples it never trained on, so you can see what the fine-tune really changed.
+```
+
 ## The numbers for this run
 
 The model is **SmolLM2-135M-Instruct**: 30 layers, $d = 576$, an MLP width of 1,536 and 3 key/value heads of size 64 (so $W_k$ and $W_v$ map 576 to 192). LoRA at $r = 16$ on all linear layers adds, per layer,

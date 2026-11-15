@@ -7,6 +7,26 @@ So far, decode time was "weights divided by bandwidth". That is right for short 
 
 This topic adds the KV term to the decode formula, then shows how engineers check how close a real system is to the hardware limit.
 
+## In everyday life
+
+A tuition teacher has thirty students, and each one has a notebook of everything covered with them so far. Before saying the next sentence to a student, the teacher flips through that student's notebook to stay consistent. With few students and thin notebooks, this is quick. With many students and thick notebooks, the flipping takes longer than anything else. Notebooks are personal, so the teacher cannot share the reading between students.
+
+That notebook is the **KV cache**: the notes a model keeps for each conversation, so it does not redo work on what it has already read. At every **decode step** (the step that writes one new **token**, a small piece of a word), the model reads the cache of every conversation in the batch. Longer chats and more users mean more bytes to read, on top of the model's own **weights** (its billions of learned numbers).
+
+Engineers also score how well the hardware is used: the share of its best possible speed that you actually reach. For memory this is **MBU** (memory bandwidth utilisation), and for arithmetic **MFU** (model FLOPs utilisation).
+
+**Where you meet it.** A support chatbot runs well in the morning but slows by evening, with no change to the software. Users started longer conversations, so each reply needs more notebook-reading. The team can predict this from the number of users and the typical conversation length.
+
+```scene
+title: A teacher and thirty notebooks
+step: 📓 Each student has a notebook of everything covered so far | per-conversation KV cache
+step: 👀 Before each sentence, the teacher reads that student's notebook | reading the KV cache
+step: 📚 The notebooks of different students cannot be combined | KV reads are not shared
+step: 📈 More students or thicker notebooks mean longer flipping | KV bytes grow with users and context
+step: 🎯 The teacher checks what share of the best pace was reached | MBU
+takeaway: Every user's cache must be read at each step, so longer chats and bigger batches make each reply slower.
+```
+
 ## Bytes of KV per token
 
 For a model with $L$ layers, $h_{kv}$ key-value heads of dimension $d_h$, storing $b_{kv}$ bytes per number, each token of context holds a key and a value vector per layer:

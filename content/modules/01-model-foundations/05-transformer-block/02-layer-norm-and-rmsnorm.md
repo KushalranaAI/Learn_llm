@@ -9,6 +9,26 @@ Inside a transformer the residual stream keeps growing, because every block adds
 
 This works **per token**, across the $d$ features of one vector. It does not mix tokens and it does not depend on the batch. That is why it behaves the same in training and in inference, one token at a time.
 
+## In everyday life
+
+Imagine you run an admissions desk and report cards arrive from schools that mark out of 10, out of 100 or out of 500. If you compared the raw marks, the cards with big numbers would shout and the others would whisper. So you first rescale each card on its own, by its own typical mark, so that every card lands in the same range. Doubling all marks on a card changes nothing after the rescaling.
+
+That is **normalisation** in a transformer. Every block adds to the stream, so the numbers in a token's vector can grow large and uneven. Before attention and before the feed-forward step, the model rescales each token's vector to a standard size. **LayerNorm** first shifts the numbers so their average is zero, then rescales by their spread. **RMSNorm** skips the shift and only rescales by the typical size, which is a bit cheaper and works about as well. After that, a learned **gain** per number lets the next step stress what it prefers.
+
+Each token is treated alone, never mixed with other tokens or with the batch, so it behaves the same in training and when answering.
+
+**Where you meet it.** When a team trains a large chat model for weeks, norms keep the numbers in range so the training does not blow up midway.
+
+```scene
+title: Rescaling report cards from different boards
+step: 📄 Report cards arrive, each marked on its own scale | token vectors of uneven size
+step: 🧮 You find the typical size of marks on one card | spread, or root mean square
+step: ➗ You rescale every mark on that card by that size | normalisation
+step: 🎚️ A learned weight per subject lets the next desk stress what it likes | learned gain
+step: 🔒 Doubling all marks on a card gives the same rescaled card | scale invariance
+takeaway: Normalisation rescales each token's vector alone, so the sub-layers never have to cope with wildly different sizes.
+```
+
 ## LayerNorm
 
 For one token's vector $\mathbf{x} = (x_1, \dots, x_d)$:

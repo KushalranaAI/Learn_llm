@@ -5,6 +5,27 @@ minutes: 9
 
 Every neural network you will ever train runs the same four-beat loop: get a batch, compute the loss, compute the gradients, update the weights. The [gradient descent](/learn/model-foundations/how-networks-learn) lesson did it by hand for a handful of numbers. For a GPT it is the same loop over 3.35 million numbers, with three upgrades that make it work reliably on transformers: the **AdamW** optimiser instead of plain gradient descent, **gradient clipping** to survive the occasional huge gradient, and logging that tells you whether things are going well before the run is over.
 
+## In everyday life
+
+Think of tuning a guitar that has many pegs. You pluck a string, listen, and judge how far off it sounds. Then you turn the pegs a little, each in the direction that should help. You pluck again and repeat until it sounds right. It is a loop of try, judge, adjust.
+
+Two practical things show up. First, pegs differ: some change the pitch a lot for a small turn, others barely move it. A good tuner turns each peg by a sensible amount instead of giving every peg the same twist. Second, sometimes you pluck badly and the sound seems wildly off. If you obeyed that one pluck with a giant twist, you could snap a string, so a careful tuner caps the size of any single adjustment. And each round must be judged afresh, not added to the verdicts of earlier rounds.
+
+Training a GPT repeats the same beats. Take a batch of text, measure the **loss** (how wrong the predictions are), work out which way to nudge each of the millions of numbers (the **gradients**), and update them. The **optimiser**, here AdamW, is the tuner who gives each number a sensible step size. **Gradient clipping** is the cap on any one adjustment. The gradients are cleared before every new round, or old verdicts pile up.
+
+**Where you meet it.** A student training a small model on a laptop watches the loss and gradient size printed every few dozen steps. If the loss never moves or jumps wildly, the printout points to a broken loop, such as gradients cleared at the wrong moment.
+
+```scene
+title: Tuning an instrument peg by peg
+step: 🧹 Before each pluck you clear the last verdict from your mind | zero the gradients
+step: 🎸 You pluck the string and listen to how far off it sounds | forward pass and loss
+step: 👂 You work out which way each peg should turn | backward pass, gradients
+step: 🛡️ One wild pluck must not cause a giant twist, so you cap each turn | gradient clipping
+step: 🔧 Each peg turns by a size that suits that peg | AdamW update
+step: 🔁 You repeat many times until the sound is right | the training loop
+takeaway: Training is a repeating loop of measure, work out the direction, cap it, and nudge every number.
+```
+
 ## AdamW in one paragraph
 
 Plain gradient descent moves every weight by $\eta g$, the learning rate times its gradient. Transformers have weights whose gradients differ in scale by orders of magnitude (embeddings, attention, LayerNorm gains), and no single learning rate suits all of them. Adam keeps two running averages per weight, of the gradient $g$ and of its square, and divides one by the square root of the other. Every weight then moves by roughly $\eta$ per step regardless of how big its raw gradient is. With step counter $k$:

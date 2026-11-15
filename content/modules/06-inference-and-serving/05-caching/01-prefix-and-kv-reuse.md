@@ -11,6 +11,26 @@ Most real prompts are mostly the same text. A support bot sends the same 6,000-t
 
 **Prefix caching** (also called KV reuse) keeps the KV cache of recently processed prompts. When a new request begins with exactly the same tokens as a cached one, the server skips prefill for that shared **prefix** and computes only the new tail.
 
+## In everyday life
+
+Imagine an exam tutor who is given a long case study. The tutor reads it page by page and makes sticky notes as they go. Each note depends on everything read earlier, since page ten is understood through pages one to nine. Then a student arrives with a question.
+
+Next comes a second student with the same case study and a different question. A sensible tutor does not read it all again. The tutor reuses the sticky notes and reads only the new question. But if this student's copy starts with an extra paragraph before the case study, the old notes no longer fit.
+
+A language model works this way. It reads the prompt and keeps notes for each piece of text, called the **KV cache** (its saved working notes about the text so far). Reading the prompt in the first place is called **prefill**. **Prefix caching** keeps those notes for the **prefix**, the opening part of the prompt, so a new request that starts with the same text skips that work.
+
+**Where you meet it.** A company help bot sends the same long policy text before every customer question. Without reuse, it re-reads the policy every time and customers wait. With reuse, only the new question needs reading.
+
+```scene
+title: The tutor and the sticky notes
+step: 📚 A tutor reads a long case study and makes sticky notes page by page | prefill builds the KV cache
+step: 📝 Each note depends on everything read before it | keys and values depend on earlier tokens
+step: 🙋 A second student arrives with the same case study and a new question | new request with the same prefix
+step: ♻️ The tutor reuses the notes and reads only the new question | prefix cache hit
+step: ✂️ If the student's copy starts differently, none of the old notes fit | cache miss from the first difference
+takeaway: Put the text that never changes first and the text that changes last, so the saved notes can be reused.
+```
+
 ## Why it works, and why only prefixes
 
 In a causal transformer, the key and value vectors of token $t$ depend only on tokens $1 \dots t$. They do not depend on anything after $t$. So if two requests share their first $P$ tokens, their KV entries for those $P$ positions are *identical*, and one copy can serve both. This holds only for a *prefix*: if the shared text sits after a difference, every token after the difference has different context and therefore different keys and values.

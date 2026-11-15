@@ -22,6 +22,26 @@ flowchart LR
   LLM --> OUT["Answer text"]
 ```
 
+## In everyday life
+
+At a cricket ground, a scorer watches the match and fills a sheet in his own shorthand. A radio commentator who has never seen the match cannot read that shorthand. So a helper rewrites the sheet into the plain words the commentator is used to. When a listener phones in with a question, the commentator looks at the rewritten notes and the question together, and answers.
+
+A **vision-language model** is built the same way. The scorer is the **vision encoder**, which turns an image into lists of numbers. The helper is the **projector**, a small network that converts those numbers into the form the language model uses for words. The commentator is the **language model**. The notes become **image tokens**, placed in the sequence in front of the question's text. Training goes in two stages: first only the helper learns, from pictures with captions, then the commentator practises on questions and answers.
+
+The commentator stops fitting in one way. A human would say "I can't read that", but a model may confidently describe things that are not on the sheet. This is called **hallucination**.
+
+**Where you meet it.** A customer-support app lets users upload a screenshot of an error and ask what it means. Without the projector, the language model could not use the picture at all.
+
+```scene
+title: A commentator reads the scorer's notes
+step: 🏏 A scorer watches the match and fills a sheet in shorthand | vision encoder turns the image into vectors
+step: 🔤 A helper rewrites the shorthand into the commentator's plain words | projector into the language model's space
+step: 📄 The rewritten notes sit on the desk next to the listener's question | image tokens plus text tokens
+step: 📻 The commentator answers using both the notes and the question | language model generates the answer
+step: 🎓 First the helper is trained, then the commentator practises on questions | two-stage training
+takeaway: A small projector lets a language model read what a vision encoder sees.
+```
+
 ## The projector, with numbers
 
 Take a CLIP ViT-L/14 at 336 x 336 pixels. Patch size 14 gives $336/14 = 24$ patches per side, so $24 \times 24 = 576$ patch vectors, each of width $d_v = 1024$. The LLM (say a 7B model) has width $d = 4096$. A two-layer MLP projector maps $1024 \to 4096 \to 4096$:

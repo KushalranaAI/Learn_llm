@@ -7,6 +7,26 @@ People learn arithmetic before algebra. **Curriculum learning** applies the same
 
 There is a second, purely mechanical reason to order by length that has nothing to do with learning: examples of similar length padded together waste far fewer slots. The repo's curriculum is a one-line sort, so it is worth being precise about which of these two effects it actually delivers, and what it costs.
 
+## In everyday life
+
+A cricket coach plans the net sessions for a young batter. A common plan starts with slow throw-downs and moves on to fast bowling and bouncers later. That is the idea of **curriculum learning**: show easy material first and harder material later, hoping the learner builds the basics before facing the tough stuff. The coach also needs a way to tell what is easy. For text, length is a cheap guess. A short question with a one-word answer is probably easier than a long paragraph followed by a long reply.
+
+Sorting by length has a second, plain benefit. A **batch** is a group of examples handled together, and its rows must be the same length, so putting similar lengths together wastes less filler.
+
+The plan has traps. Short does not always mean easy. And if the coach repeats the same easy-to-hard cycle every day with no mixing, the batter learns the routine, not the game. The **loss**, the number that says how wrong the model is, then rises and falls with the place in the cycle instead of with real progress.
+
+**Where you meet it.** A team sorts its fine-tuning data by length to save compute. If the long examples all come from one topic, such as code, then the end of every pass trains on code only. Shuffling inside small groups keeps the saving with less bias.
+
+```scene
+title: A coach orders the net drills
+step: 🏏 The coach sorts drills from easy to hard, using length as the guess | sort by prompt length
+step: 📋 Slow throw-downs fill the first session and bouncers the last | short batches first, long batches last
+step: 🔁 When the list ends, the coach starts the same list again | loop restarts the sorted order
+step: 😵 The batter memorises the routine instead of learning to play | fixed cycle repeated for many epochs
+step: 🔀 A smarter coach shuffles the drills inside small groups | length bucketing with shuffling
+takeaway: Sorting by length saves padding, but a fixed easy-to-hard cycle can bias training, so shuffle within groups.
+```
+
 ## The repo's curriculum
 
 `llm_from_scratch/part_6/curriculum.py`:

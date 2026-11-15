@@ -5,6 +5,24 @@ minutes: 7
 
 Two separate pressures push a model onto more than one GPU. The first is **capacity**: the weights plus the KV cache simply do not fit. The second is **speed**: more GPUs mean more total memory bandwidth, so a single request's decode steps can be faster. Both have a price, which is moving data between GPUs.
 
+## In everyday life
+
+Imagine a huge encyclopedia set, so many volumes that no single shelf can hold them. You spread the volumes over several shelves. Now suppose a question needs information from every volume. One person reading them all would be slow. If a few friends each take a share of the volumes and read at the same time, the job finishes sooner. But they must meet afterwards to share what they found, and walking between rooms takes time.
+
+A large language model is like that encyclopedia. Its **weights** (the learned numbers that make up the model) plus its working notes can be larger than the memory of one **GPU** (the graphics chip that runs it). So the model is split across several GPUs. That solves **capacity**: whether it fits at all. It can also help **speed**, because each GPU reads only its own share at the same time. The cost is the **interconnect**, the links between GPUs, which are much slower than each GPU's own memory. A second room with a full copy of the set serves more readers; that is a **replica**.
+
+**Where you meet it.** A company wants to serve a very large open model. It does not fit on one card, so it is spread across several cards in one machine. When more users arrive, it adds more machines, each with a full copy.
+
+```scene
+title: The encyclopedia across the shelves
+step: 📚 A huge encyclopedia set will not fit on a single shelf | model too big for one GPU
+step: 🗄️ The volumes are spread over several shelves | weights split across GPUs
+step: 👥 Friends each read their own volumes at the same time | combined memory bandwidth
+step: 🚶 They must meet to share findings, and walking takes time | communication between GPUs
+step: 🏠 A second room with a full set serves more readers | replicas for more throughput
+takeaway: Split a model across GPUs only as far as needed to fit it, and add copies to serve more people.
+```
+
 ## Capacity: will it fit?
 
 Memory needed on the GPUs combined is

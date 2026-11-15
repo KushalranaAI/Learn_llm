@@ -5,6 +5,28 @@ minutes: 8
 
 Every serving team eventually has the same argument. Finance wants bigger batches, because each GPU-hour then produces more tokens and the cost per token falls. Product wants smaller batches, because each user then sees tokens arrive faster. Both are right. The way to settle it is to write the latency target down and solve for the largest batch that meets it.
 
+## In everyday life
+
+A tuition teacher has to choose a class size. With five students, each gets quick answers and lots of attention, but each student's share of the teacher's fee is high. With sixty students, the cost per student is small, but each one waits longer for a reply, and past a point the room is simply full.
+
+There is no single correct size. It depends on what you promise. If you promise every student a reply within a few seconds, that promise fixes the biggest class you can run. If the room holds only so many, the room fixes it.
+
+LLM serving faces the same choice. The **batch size** is how many users the GPU serves in one step. A larger batch gives more **throughput** (tokens produced per second across all users) and a lower **cost per token**, but each user sees tokens arrive more slowly. That per-user speed is measured as **TPOT** (time per output token). Teams write the target down, solve for the biggest batch that still meets it, and check that GPU memory can hold that many users' notes.
+
+Unlike a class, the savings flatten out: the first extra users cut the cost a lot, the last ones barely at all.
+
+**Where you meet it.** A company offers a fast chat tier and a cheaper bulk tier on one model. The chat tier runs small batches so replies are quick. The bulk tier, for jobs like summarising many documents overnight, packs in large batches because nobody is waiting, which makes each token cheaper.
+
+```scene
+title: Choosing a tuition class size
+step: 🏫 A teacher can teach a few students or a large class | choosing a batch size
+step: ⚡ A small class gets quick replies but costs more each | high speed, high cost per token
+step: 💰 A big class costs little per student but replies slow down | throughput versus TPOT
+step: 📝 The teacher writes the promised reply time on the board | the TPOT target
+step: 🔢 That promise and the size of the room cap the class | largest batch within target and memory
+takeaway: Decide the per-user speed you need, then run the largest batch that still meets it and fits in memory.
+```
+
 ## Solving for the batch limit
 
 From the first topic, a memory-bound decode step takes

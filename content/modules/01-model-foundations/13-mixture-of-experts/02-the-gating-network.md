@@ -9,6 +9,27 @@ The router is one linear layer. It turns the token vector $\mathbf{x} \in \mathb
 
 The hard choice is what makes the layer sparse. It is also what makes training subtle, because "pick the top 2" has no gradient. The router learns only through the soft weights attached to the experts it picked.
 
+## In everyday life
+
+A cricket captain faces a new batter. He does not bowl all his bowlers, and he does not pick at random. He studies the batter, rates each bowler for this batter, and picks the best two. Then he decides how the overs are shared, giving more to the higher-rated one. Afterwards he sees how the chosen bowlers did, and that shapes his next choice.
+
+In a mixture of experts, the **router** (or **gate**) is the captain. For each **token** (a piece of a word), it gives every expert a score and turns the scores into shares that add up to one. **Top-k routing** keeps only the k best experts, here the best two, and ignores the rest. The kept shares are **renormalised**, meaning rescaled so they again add up to one, and the layer's answer is the blend of the chosen experts' answers, weighted by those shares.
+
+Unlike a real captain, the router learns only about bowlers it picked. Experts left out get no feedback for that token.
+
+**Where you meet it.** Inside a language model's layer, the router decides for each token which experts handle it. If it picks poorly, the wrong expert works on the token and the layer's answer is worse. A good router sends each kind of token to the experts that handle it well and blends their answers by how confident it was.
+
+```scene
+title: A captain picks two bowlers
+step: 👀 The captain studies the new batter | the router reads the token
+step: 📊 He rates every bowler for this batter | router scores called logits
+step: 🧮 He turns the ratings into shares that add up to one | softmax
+step: 🏆 He keeps the two best bowlers, and the others rest | top-k selection
+step: 📏 He rescales the two shares so they add up to one again | renormalising the gate weights
+step: 🏏 The overs are shared by those shares, and results are blended | weighted sum of expert outputs
+takeaway: The router scores every expert, keeps the best few, and blends their answers by their shares.
+```
+
 ## The equations
 
 With router weights $W_g \in \mathbb{R}^{N \times d}$ and bias $\mathbf{b}_g \in \mathbb{R}^N$:

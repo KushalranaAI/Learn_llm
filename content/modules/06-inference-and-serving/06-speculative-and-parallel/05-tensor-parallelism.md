@@ -5,6 +5,26 @@ minutes: 8
 
 Tensor parallelism cuts each weight matrix into slices, one per GPU. Every GPU does part of every layer, all GPUs work on the same token at the same time, and they exchange partial results a few times per layer. It is the main way to make one request faster across several GPUs, and the communication it needs explains why GPU interconnects matter so much.
 
+## In everyday life
+
+Four housemates have to total a very long list of shared expenses, hundreds of lines. One person adding them alone would take ages. So each takes a quarter of the lines and adds their own part at the same time. Then each calls out a subtotal, and everybody adds the four subtotals to reach the same grand total. Now all four know the answer and can move on to the next page.
+
+This is **tensor parallelism**. Inside a language model, the main job is multiplying and adding huge grids of numbers. A **weight matrix** is one such grid of learned numbers. Instead of one **GPU** (a graphics chip) working through the whole grid, each GPU holds a slice and does its slice at the same time. The partial answers are then combined with an **all-reduce**, the step where every GPU shares its piece and all of them end up with the full total.
+
+The catch is that this sharing happens inside every layer, over and over, so a slow link between the GPUs eats into the gain. Unlike housemates calling out numbers, the chips swap big blocks of data.
+
+**Where you meet it.** A company wants one chat answer to arrive faster than a single card can manage. It splits the model across the fast-linked cards in one machine, and every step of the answer uses all of them at once.
+
+```scene
+title: Four friends total one long bill
+step: 🧾 A very long bill must be totalled quickly | one big matrix multiplication
+step: ✂️ Each of four friends takes a quarter of the lines | weight matrix split across GPUs
+step: 🧮 All four add up their own lines at the same time | partial results on each GPU
+step: 📣 Everyone calls out a subtotal and all reach the same grand total | all-reduce
+step: 🔁 The next page of the bill needs another round of subtotals | all-reduces repeat in every layer
+takeaway: Splitting the work speeds each step up, but the sharing happens in every layer, so fast links between GPUs matter.
+```
+
 ## Splitting a matrix multiply
 
 Take $Y = XW$ with $X$ of shape $B \times d$ and $W$ of shape $d \times d_{ff}$. Two ways to split $W$ across $p$ GPUs:

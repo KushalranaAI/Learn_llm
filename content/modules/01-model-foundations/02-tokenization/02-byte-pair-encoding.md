@@ -7,6 +7,27 @@ minutes: 9
 
 Think of someone who takes notes in a lecture and notices they keep writing "t", "h", "e" in a row. They invent a shorthand squiggle for "the". Then they notice "ing" and make a squiggle for that. After a while they have a personal shorthand tuned to the lectures they attend. BPE builds exactly that shorthand, tuned to its training text.
 
+## In everyday life
+
+Think of a restaurant owner reading a month of order slips. Every slip lists items one by one: dal, rice, papad, dal, rice, lassi. She notices that dal and rice appear side by side more often than any other pair. So she puts a combo called Dal-Rice on the menu. Next month she counts again, with the combo now treated as a single item, and spots a new popular pair. She makes another combo.
+
+That is **byte-pair encoding**, or BPE, the way most language models build their tokenizer. It starts with the smallest pieces, single characters. It counts which two neighbouring pieces occur together most often and glues them into one new piece. Each gluing is a **merge**, and each merge is saved as a **merge rule** in a list. Repeat until the menu is the size you want. The owner decides by counting only, with no understanding of food, and she is greedy: she always takes the most popular pair right now.
+
+A new customer's order is bundled by replaying the combos in the order she created them. Items that never became combos still work, they just stay single.
+
+**Where you meet it.** Before a chatbot can learn from text, a team needs a fixed list of pieces. BPE builds that list from the team's own training text, so common words become single pieces and rare words get split. Without it, someone would have to choose by hand which words deserve a piece.
+
+```scene
+title: The owner who invents combo meals
+step: 📒 The owner reads order slips where every item is written separately | text split into single characters
+step: 🔎 She counts which two items appear side by side most often | count adjacent pairs
+step: 🍛 She puts one combo on the menu for that top pair | merge into one new symbol
+step: 🔁 She recounts with the combo included, then makes the next one | repeat for a chosen number of merges
+step: 📋 The menu remembers combos in the order they were made | ordered merge rules
+step: 🧾 A new order is bundled by replaying those combos in order | encoding replays the merges
+takeaway: BPE builds its vocabulary by repeatedly gluing together the pair that appears most often.
+```
+
 ## The algorithm
 
 **Training** a BPE tokenizer on a corpus:

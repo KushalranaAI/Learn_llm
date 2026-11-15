@@ -1,0 +1,27 @@
+{
+  "title": "Reward Models from Scratch",
+  "summary": "Build and train the reward model that RLHF depends on: turn human comparisons into (prompt, chosen, rejected) triples, then give a transformer a one-number head so it scores a response, and train it so the chosen response scores higher than the rejected one.",
+  "objectives": [
+    "Build preference data as (prompt, chosen, rejected) triples and explain why comparisons are easier to collect than absolute scores",
+    "Describe how a reward model reuses a transformer body with a one-number head, and which token's hidden state it reads",
+    "Write the pairwise Bradley-Terry loss and compute it by hand for a pair of scores",
+    "Train the model and check it by accuracy on held-out pairs"
+  ],
+  "prerequisites": "The theory of why we collect comparisons, and the Bradley-Terry model behind them, is in [Preference tuning](/learn/fine-tuning/preference-tuning/why-preferences). You need the SFT prompt template from [SFT from scratch](/learn/post-training/sft-from-scratch).",
+  "sims": [],
+  "labs": [],
+  "sources": [
+    {
+      "title": "Deep reinforcement learning from human preferences",
+      "authors": "Christiano, Leike, Brown, Martic, Legg and Amodei",
+      "year": 2017,
+      "note": "Learning a reward function from pairwise human comparisons"
+    },
+    {
+      "title": "Training language models to follow instructions with human feedback",
+      "authors": "Ouyang et al.",
+      "year": 2022,
+      "note": "InstructGPT: a reward model trained on ranked comparisons feeds the RL stage"
+    }
+  ]
+}

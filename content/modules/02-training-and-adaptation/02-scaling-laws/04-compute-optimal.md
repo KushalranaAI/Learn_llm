@@ -7,6 +7,24 @@ You have been given a fixed budget of compute $C$. You can spend it on a large m
 
 Think of it as filling two leaky buckets with a fixed amount of water. Pour everything into one and the other stays empty. The lowest total "emptiness" comes from balancing them so the last drop helps both equally.
 
+## In everyday life
+
+A kirana owner has a fixed sum to grow her shop. She can rent a bigger space or stock more goods. A huge empty shop sells nothing, and a tiny shop piled to the ceiling cannot show customers what it has. The best result comes from growing both together. When her budget grows next year, she enlarges the space and the stock together instead of pouring everything into one.
+
+This lesson asks the same question about training a model. You have a fixed amount of **compute**, the total arithmetic you can afford. You choose how many **parameters** the model has (the shop's size) and how many **tokens**, small pieces of text, it reads (the stock). Spending more on one leaves less for the other, so some split gives the lowest **loss**, the score of how wrong the guesses are. The surprising finding is that the best split grows both sides together at about the same pace. Unlike the shop, nobody sees the best split by looking around; it comes from the formula of the earlier lesson.
+
+**Where you meet it.** A research lab with a fixed training budget wants the best model that money can buy. Without this idea it might build a giant model and run out of budget before the model has read enough text, wasting its size. The compute-optimal split tells it how big to make the model and how much text to feed it.
+
+```scene
+title: Growing a kirana shop on a budget
+step: 💰 The owner has a fixed sum to spend | compute budget
+step: 🏬 A bigger shop uses money that could have bought stock | more parameters, fewer tokens
+step: 📦 More stock uses money that could have enlarged the shop | more tokens, fewer parameters
+step: ⚖️ She finds the mix where one more rupee helps both equally | compute-optimal split
+step: 📈 With a bigger budget next year she grows both together | scale parameters and tokens together
+takeaway: For a fixed budget, grow model size and training text together rather than only one.
+```
+
 ## Deriving the optimum
 
 Minimise $L(N, D) = E + A N^{-\alpha} + B D^{-\beta}$ subject to $6ND = C$. Substitute $D = C/(6N)$ so there is one variable:

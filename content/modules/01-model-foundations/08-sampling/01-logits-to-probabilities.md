@@ -16,6 +16,26 @@ Ask a model to continue "The capital of France is" and it does not answer with a
 
 This lesson is about that last step. It looks small, but it is where you control how creative, repetitive, safe or reproducible a model is, and it is where the numbers come from that engineers use to measure models (log-probs and perplexity).
 
+## In everyday life
+
+Your friends are choosing a film for Saturday night. Each friend has a gut feeling about every option and gives it a rough mark: a high mark for the thriller, a middling one for the comedy, a negative one for the horror nobody wants. The marks can be any size, and a mark on its own tells you little.
+
+To choose fairly, you turn the marks into chances that add up to one whole, like cutting a pie. The thriller gets the biggest slice and the horror a thin sliver. What counts is the gap between marks, not the marks themselves: raise every film's mark by the same amount and the pie is cut exactly the same. No film's slice ever shrinks to nothing. Then you spin a wheel marked with those slices.
+
+A language model does this at every step. Its raw marks are **logits**, one for each **token** (a piece of a word) in its **vocabulary**, the fixed list of tokens it knows. The step that turns marks into slices is **softmax**. Unlike your friends, the model has tens of thousands of options, so even the thin slivers add up to something real.
+
+**Where you meet it.** A coding assistant finishing your line has to pick one token out of the whole vocabulary. Without a way to turn raw scores into chances, it could not pick at all, and you could not ask it how sure it was. Softmax is what makes both possible.
+
+```scene
+title: Choosing a film by gut marks
+step: 🎬 Each friend gives every film a rough gut mark, even a negative one | logits, one per token
+step: 🔄 The marks are turned into chances that add up to one whole | softmax
+step: 🥧 A bigger gap between marks gives the leader a much bigger slice | logit gaps set probability ratios
+step: 🌱 Even the least wanted film keeps a thin slice | no probability is exactly zero
+step: 🎡 The group spins a wheel cut by those slices and picks one film | sampling a token
+takeaway: Only the gaps between logits matter, and softmax turns them into chances that add up to one.
+```
+
 ## Where the logits come from
 
 After the last transformer block, the model has a vector $\mathbf{h} \in \mathbb{R}^{d}$ for the final position ($d$ is the model width, 768 for GPT-2 small). The **unembedding** (or LM head) is a matrix $W_U$ of shape $V \times d$, where $V$ is the vocabulary size. One matrix-vector product gives a logit per token:

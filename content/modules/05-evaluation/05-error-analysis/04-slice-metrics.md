@@ -7,6 +7,24 @@ An overall pass rate is an average across very different kinds of input, and ave
 
 A **slice** is a subset of the eval set defined by a property of the input: language, topic, input length, user tier, document type, presence of a tool call. **Slice metrics** are the same metric computed per slice. They are the standard way to find where a system fails, to catch regressions that cancel out in the average, and to check fairness across groups.
 
+## In everyday life
+
+A food delivery app reports one average delivery time, and the dashboard looks green. But most orders come from the busy city centre, where food arrives quickly. A small number go to a distant suburb, where it arrives far later. The average hides those orders because there are so few of them. Those customers still get cold food.
+
+A **slice** is a group of test items that share a property, such as language, topic or input length. **Slice metrics** are the same score worked out separately for each slice. A small slice barely moves the overall average, so it can be badly broken while the headline number still looks fine. Small slices also give uncertain scores, so important ones need enough items. A change that improves the average can still hurt one slice, so compare versions slice by slice too. And if you cut the data into dozens of slices, a few will look bad by chance, so choose the important slices before you look.
+
+**Where you meet it.** A support assistant answers well in English but poorly in Hindi, which is a small share of traffic. The overall score looks healthy. Slicing by language reveals the problem, and a rule such as "no slice may drop by more than a few points" protects those users.
+
+```scene
+title: The delivery average that hid the suburbs
+step: 🛵 The app computes one average delivery time for all orders | overall pass rate
+step: 🏙️ Most orders are from the city centre and arrive fast | the big slice dominates the average
+step: 🏘️ A few suburb orders take far longer but barely move the average | a small broken slice stays hidden
+step: ✂️ The manager splits orders by area and checks each one | slice metrics
+step: 🚦 Each area must meet its own target before a release | per-slice release criterion
+takeaway: An average can look healthy while one group of users has a broken experience.
+```
+
 ## The maths: per-slice rates with honest intervals
 
 For slice $s$ with $n_s$ items and $x_s$ passes, compute $\hat p_s = x_s/n_s$ and its interval $\hat p_s \pm 1.96\sqrt{\hat p_s(1-\hat p_s)/n_s}$. The overall rate is the size-weighted average of the slice rates:

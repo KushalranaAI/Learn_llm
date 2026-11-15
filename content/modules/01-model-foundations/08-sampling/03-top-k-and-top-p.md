@@ -7,6 +7,26 @@ Temperature reshapes the whole distribution, but it cannot remove anything. With
 
 **Truncation samplers** fix this by deleting the tail before sampling. Keep only the plausible candidates, renormalise them so they sum to 1, then sample. The two standard ways to decide what counts as plausible are top-k and top-p.
 
+## In everyday life
+
+A wedding caterer plans the menu from what guests asked for at earlier weddings. At one wedding almost everyone asks for the same few dishes. At another, tastes are all over the place. Behind both sits a long tail of odd requests, a fish curry here, a pasta there, each wanted by almost nobody.
+
+If the caterer picks dishes at random in proportion to popularity, an odd dish will sometimes get chosen, and one strange dish can spoil the whole meal. So the caterer trims the list first. One way is to keep a fixed number, such as the top five dishes. Another is to keep adding dishes, most popular first, until together they cover most of what guests ask for. Everything past that line is dropped, and the dishes left share the whole menu between them.
+
+A model trims in the same way before it picks the next token (a piece of a word). The odd dishes are the **tail** of unlikely tokens. Keeping a fixed number is **top-k**. Keeping enough tokens to cover a chosen share of the chances is **top-p**, also called **nucleus sampling**. A fixed number is blunt: five dishes is too many when one dish is clearly right and too few when tastes are scattered. Covering a share adapts. Unlike a caterer, the model must trim again for every single token.
+
+**Where you meet it.** A travel-site chatbot answering a question with one obvious answer should keep only one or two tokens in play. For "suggest a weekend plan" it should keep many. Without trimming, one rare nonsense token drawn early can steer the rest of an answer off course.
+
+```scene
+title: The caterer trims the menu
+step: 📋 The caterer lists dishes from most to least requested | tokens sorted by probability
+step: ✂️ One rule keeps only a fixed number of top dishes | top-k
+step: 🧮 Another rule keeps adding dishes until most requests are covered | top-p, the nucleus
+step: ⚖️ Dropped dishes go and the rest share the whole menu | renormalise the kept tokens
+step: 🍽️ Guests are served by picking from the trimmed menu | sample from the kept set
+takeaway: Top-k keeps a fixed number of tokens, top-p keeps a fixed share of the chances, and top-p adapts to how sure the model is.
+```
+
 ## Top-k: keep a fixed number
 
 **Top-k** keeps the $k$ tokens with the highest probability. Let $S_k$ be that set. The new distribution is

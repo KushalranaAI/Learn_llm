@@ -7,6 +7,26 @@ SFT examples have wildly different lengths: a one-line translation, a 2,000-toke
 
 **Packing** is the alternative: concatenate several examples end to end into one fixed-length sequence, like packing a suitcase with items of different sizes instead of putting each item in its own box.
 
+## In everyday life
+
+Imagine a print shop making visiting cards for many customers. Some cards are small, some a little larger. The easy way is to give each card its own full A4 sheet. It works, but most of every sheet is blank paper you still paid for. A smarter shop lays out many cards on one sheet, fills it up, and cuts along lines so each card stays separate.
+
+Training faces the same waste. A GPU, the chip that does the maths, likes batches where every row has the same length. Training examples vary a lot, from one-line answers to long documents. **Padding** means adding meaningless filler tokens to shorter examples until they match the longest (a **token** is a small chunk of text). It is simple, but the GPU spends effort on filler. **Packing** means placing several short examples one after another in one long row, so almost nothing is wasted.
+
+There is a catch: the cut lines. If packed examples can look at each other, one conversation leaks into the next. So packing needs a rule that keeps each example from seeing the others. The chapter also covers the settings, such as how fast the model learns, that decide how carefully training goes.
+
+**Where you meet it.** A team fine-tunes on support chats, and many chats are very short. With padding, a big share of each batch is filler and the run is slow. Packing with a rule that keeps chats apart lets the same GPU time cover many more real examples.
+
+```scene
+title: Cards on a print sheet
+step: 💳 Cards of different sizes arrive at the print shop | examples of different lengths
+step: 📄 One card per A4 sheet leaves most of the paper blank | padding wastes compute
+step: 🧩 The shop lays several cards on one sheet | packing examples into one row
+step: 🧱 Cut lines keep each card separate from its neighbours | per-document attention mask
+step: 🚀 Each sheet now carries far more useful work | higher efficiency per step
+takeaway: Packing fills each row with real examples, and a mask keeps the examples from seeing each other.
+```
+
 ## Padding efficiency
 
 For a batch of $B$ sequences with real lengths $\ell_1, \dots, \ell_B$ padded to length $s$:

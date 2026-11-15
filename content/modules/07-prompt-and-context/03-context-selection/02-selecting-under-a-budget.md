@@ -7,6 +7,26 @@ Once you know the budget, you have more candidates than room. A retriever return
 
 The naive rule, "take the most relevant items until the budget is full", is a reasonable start and has two known flaws. It ignores **size**: one long, fairly relevant document can crowd out three short, highly relevant ones. And it ignores **redundancy**: the second-ranked passage is often a near-copy of the first, adding tokens but no information. Good selection accounts for value per token and for overlap.
 
+## In everyday life
+
+A small kirana shop has one shelf and a long list of things the owner could stock. Some items are bulky, like a big sack of rice. Some are tiny, like sachets of shampoo. Some products are near-copies of each other, such as two brands of the same biscuit. The owner cannot just stock the best sellers one by one until the shelf is full, because one bulky item can swallow the space of several small ones that sell nearly as well.
+
+Smart owners ask how much each item earns for the space it takes. They also avoid stocking two things that do the same job.
+
+Choosing context for a model is the same problem. The **token budget** is the shelf space. Each retrieved passage has a **relevance score** (how likely it helps) and a **size** in tokens. Good selection looks at value per token, and it drops **redundant** passages that repeat what a chosen one already says.
+
+**Where you meet it.** A company's document-search assistant finds fifty passages for one question. Pasting the top few in rank order fills the budget with two long, similar pages. Selecting by value per token and skipping repeats leaves room for short passages that add new facts.
+
+```scene
+title: Choosing what goes on one shelf
+step: 🛒 The owner lists every product that could be stocked | ranked candidate passages
+step: 📏 Each product is measured for the shelf space it takes | size in tokens
+step: 💰 The owner compares how much each earns for its space | value per token
+step: 🚫 A second copy of the same biscuit is left out | removing redundant passages
+step: 📦 Items go on until the shelf is full | greedy fill under the budget
+takeaway: Pick passages by value per token and avoid repeats, not just by raw relevance.
+```
+
 ## The maths: a knapsack with a twist
 
 Give each candidate $i$ an estimated value $v_i$ (for example a relevance score, or a probability that it contains the needed fact) and a size $s_i$ in tokens. Choosing a set $X$ to maximise total value within budget $B$ is the **0/1 knapsack problem**:

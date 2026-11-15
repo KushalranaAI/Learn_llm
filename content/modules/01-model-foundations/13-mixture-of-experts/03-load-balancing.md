@@ -9,6 +9,27 @@ Collapse also hurts the hardware. Experts are usually spread across GPUs. If one
 
 The fix is to add a small extra term to the loss that is smallest when tokens are spread evenly. This is the **auxiliary load-balancing loss**. The standard version comes from the Switch Transformer, and it is the one the repo implements.
 
+## In everyday life
+
+A class teacher has four capable students and plenty of tasks to hand out. At first one student does slightly better, so the teacher gives her more tasks. Practice makes her better, so she gets even more. The other three barely practise and fall behind. Soon one tired student does everything while three sit idle.
+
+In a mixture of experts this is **routing collapse**. The router sends most **tokens** (pieces of words) to one or two **experts**, which improve, so the router sends them even more. You pay memory for every expert but get the use of one or two. The fix is an **auxiliary loss**, a small extra penalty added to the training score that grows when tokens pile onto a few experts. A second guard is **expert capacity**: each expert accepts only so many tokens per batch, and extra tokens skip it.
+
+Unlike the teacher, the router must not be forced into perfect fairness. A penalty that is too strong stops experts from specialising.
+
+**Where you meet it.** While training a large model with its experts spread across several GPUs, one popular expert gets most of the tokens. Its GPU becomes the bottleneck while the others wait, and most of the model's capacity goes unused. A balancing penalty keeps the load spread, so every GPU and expert does useful work.
+
+```scene
+title: A teacher who overloads one student
+step: 🌱 One student does slightly better at the start | one expert scores slightly higher
+step: 📋 The teacher gives her more tasks | the router picks that expert more often
+step: 🏋 Practice makes her better, and the others fall behind | routing collapse
+step: 📒 The teacher keeps a tally of tasks per student | measuring the load on each expert
+step: 🛑 A small penalty applies when tasks pile on one student | auxiliary load-balancing loss
+step: 🗓 Each student takes only so many tasks a day, and extras are skipped | expert capacity and dropped tokens
+takeaway: Without a nudge toward balance, the busiest expert gets better and busier, so training adds a small balancing penalty.
+```
+
 ## The Switch auxiliary loss
 
 Over a batch of $T$ tokens, define two quantities per expert $i$:

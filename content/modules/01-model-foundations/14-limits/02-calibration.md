@@ -7,6 +7,24 @@ A weather forecaster who says "70% chance of rain" is useful only if, across all
 
 Hallucination is not a disaster if you can tell when it is likely. A model whose confidence is calibrated hands you that signal for free: answer when it is confident, check or abstain when it is not. A model that is confidently wrong as often as it is confidently right gives you nothing to work with.
 
+## In everyday life
+
+Before an exam, many students sit a practice test and write a confidence beside every answer: "sure", "probably" or "guess". Then they mark it against the answer key. Sometimes the "sure" answers turn out to be right only about half the time. That student is not unlucky. Their feeling of "sure" is simply off.
+
+A language model has the same problem. It can attach a confidence to an answer, and **calibration** means that confidence matches reality. Take every answer where the model said "about 80 percent sure". If roughly 80 percent of those are right, its confidence is trustworthy. If far fewer are right, it is **overconfident**. Calibrated confidence is valuable because you can act on it: let the model answer when it is sure, and send the rest to a person or a second check. Unlike a student, a model does not feel doubt. Its confidence is a number taken from its own probabilities, and that number can be wrong.
+
+**Where you meet it.** A bank uses an assistant to read loan forms and report how sure it is about each field. Staff want to accept the sure readings automatically and check the rest by hand. If its "very sure" readings are wrong as often as its "not sure" ones, that sorting is pointless. Measuring calibration on past forms shows whether the sorting can be trusted.
+
+```scene
+title: Marking your own confidence
+step: 📝 A student answers practice questions and writes sure, probably or guess beside each | Answer plus confidence
+step: 📚 After the test, the answers are sorted into piles by the confidence written | Bins of confidence
+step: ✅ Each pile is marked against the answer key to find its hit rate | Accuracy per bin
+step: 📉 The sure pile scores well below sure, so the student is overconfident | Reliability table shows the gap
+step: 🔧 The student learns to discount their own sure, or recheck those answers | Recalibration
+takeaway: Confidence is only useful if it matches how often the answers are actually right.
+```
+
 ## The definition
 
 Let $\hat{p}$ be the model's confidence in its answer (for example the probability of the chosen option in a multiple-choice question, or the product of probabilities of the answer tokens) and let $Y$ be 1 if the answer is correct and 0 if not. The model is **perfectly calibrated** if

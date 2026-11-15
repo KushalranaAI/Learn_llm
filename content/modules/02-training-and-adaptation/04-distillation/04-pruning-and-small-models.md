@@ -5,6 +5,26 @@ minutes: 6
 
 Distillation is one way to get a small model. There is another that combines naturally with it: start from a large model and **cut it down**, then use distillation to heal the damage. And there is a strategic question of when a small model is the right product choice at all.
 
+## In everyday life
+
+When you pack a suitcase for a train trip, you think about what you wore on earlier trips and leave behind what you rarely used. You take out whole items. You do not cut a hole in every shirt, because that would not make the bag any smaller. Then you carry the lighter bag on a short trip and adjust.
+
+**Pruning** works the same way on a model: remove the parts that matter least. **Unstructured** pruning blanks out single numbers (the model's **weights**) scattered all over, like holes in shirts. The model is mostly empty but still takes up the same space, and it usually runs no faster on an ordinary GPU. **Structured** pruning removes whole pieces, such as entire layers, so the model is truly smaller and faster. Afterwards the model trains briefly to recover, and **distillation** from the original big model helps it heal.
+
+The suitcase stops fitting here: you decide what to leave by judgement, while a model uses a score that measures each part's importance.
+
+**Where you meet it.** A product team needs quick replies on cheap hardware. They shrink a big model by pruning, repair it with a short distillation run, and compare it with the big one on cost per correct answer. If the small one is good enough on their real task, it saves money on every request.
+
+```scene
+title: Repacking a lighter suitcase
+step: 🧳 You start with a big, heavy suitcase | large model
+step: 🔍 You check which items you rarely used on past trips | importance score on a calibration set
+step: ✂️ You remove whole items, not holes in every item | structured pruning
+step: 🎒 The bag is truly smaller and easy to carry | smaller dense model runs faster
+step: 🚆 A short practice trip, guided by how the big bag worked, fixes small gaps | brief retraining with distillation
+takeaway: Remove whole parts, then retrain briefly with the original model as teacher.
+```
+
 ## Pruning in one page
 
 **Pruning** removes parameters. **Unstructured** pruning zeroes individual weights; it can remove 50% or more with little loss, but it gives no speed-up on GPUs unless the zeros follow a hardware-supported pattern. **Structured** pruning removes whole units: attention heads, MLP neurons, entire layers, or embedding channels. The result is a genuinely smaller dense model that runs faster everywhere.

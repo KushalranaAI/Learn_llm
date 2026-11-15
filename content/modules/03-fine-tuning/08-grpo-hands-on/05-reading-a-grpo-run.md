@@ -16,6 +16,24 @@ An SFT run has one curve that matters, the loss. A GRPO run has no such curve: t
 | `kl` | KL to the reference (only when `beta` > 0) | Grows slowly and stays small |
 | `entropy` | Mean per-token entropy of the policy | Falls gently, never to near 0 |
 
+## In everyday life
+
+On a hospital ward, a nurse does not judge a patient by one number. She reads temperature, pulse, blood pressure and oxygen together. A falling temperature alone could be good news, or the patient could be getting worse in some other way. Several signals read together tell her whether the patient is recovering, stuck or in trouble.
+
+A GRPO run is read the same way. There is no single curve like the loss in ordinary fine-tuning. Instead you watch a small dashboard of **metrics**, the numbers the trainer logs every few steps. The average **reward** should rise, but you also check each reward on its own, how spread out the rewards are, and how far the model has drifted from its starting point. One signal worth knowing is the **share of tied groups**: when every answer in a group scores the same, there is nothing to learn from that group. At the end you test on questions the model never trained on, like an independent doctor's check before discharge.
+
+**Where you meet it.** A team watches a training run overnight. The reward chart climbs nicely, but one reward is at its maximum while the maths score stays flat. That pattern suggests the model is gaming the checker. Reading the signals together catches it early and saves the rest of the run.
+
+```scene
+title: Reading the ward chart
+step: 🩺 The nurse reads several vitals, not just one | logged metrics instead of one loss
+step: 📈 A falling temperature alone proves little, so she checks the rest | each reward function separately
+step: 🧊 A perfectly flat line on every reading looks wrong, not healthy | tied groups, rewards with no spread
+step: 🚨 The chart looks good but the patient feels worse | reward hacking
+step: 🏥 An independent doctor examines before discharge | held-out test questions
+takeaway: Read many signals together, and trust the held-out test more than the training reward.
+```
+
 ## The maths of a dead group
 
 With a pass/fail reward and per-question success rate $p$, a group of $G$ independent samples ties (all right or all wrong) with probability

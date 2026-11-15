@@ -7,6 +7,26 @@ Real decoding uses a few more controls than temperature and top-p. Penalties dis
 
 This topic also answers a question every engineer meets in the first week: why does the same prompt give a different answer each time, and how different should you expect it to be?
 
+## In everyday life
+
+A live news anchor reads from a teleprompter, and the producer whispers rules into an earpiece. Do not keep repeating the same phrase. Stop when you reach the sign-off line. Whatever happens, the bulletin ends at the one-minute mark. And if we want to replay this exact bulletin later, we must fix the anchor's choices in advance.
+
+Each rule solves a real problem. Without the first, the anchor drifts into saying "breaking news" again and again, but a rule that is too strong stops them using a needed word like "the" at all. Without the second, they ramble past the end. The hard time limit can cut a bulletin mid-sentence, so the producer must check whether it ended naturally. And the replay works because the anchor's lucky dips come from a fixed list drawn beforehand.
+
+A model's output follows similar rules on top of temperature and top-p. **Repetition penalties** make already-used **tokens** (pieces of a word) less attractive. A **stop sequence** is a phrase that ends generation when it appears, and **max tokens** is a hard length limit. A **seed** fixes the random draws so a run can be repeated. Unlike an anchor, the model cannot feel being cut off, so your code must check why generation stopped.
+
+**Where you meet it.** A service that turns customer emails into JSON records can break if a repetition penalty suppresses keys that must repeat, or if a length limit leaves the JSON half written. Choosing settings per task and checking why generation stopped prevents broken records.
+
+```scene
+title: The producer's earpiece rules
+step: 🎙️ The anchor notes which words were already used and avoids repeating them | repetition penalties
+step: 🎛️ The anchor decides how adventurous the next phrase will be | temperature and top-p
+step: 🎲 The phrase is picked with dice whose rolls were fixed in advance | seeded random draw
+step: 🛑 The anchor stops at the sign-off line or the one-minute mark | stop sequence, max tokens
+step: 📝 The producer checks whether the bulletin ended naturally or was cut off | check the finish reason
+takeaway: Sampler settings are small edits to each step plus rules for stopping, and each one can break some tasks.
+```
+
 ## Why outputs differ: a calculation
 
 Two independent samples from a distribution $p$ pick the same token with probability

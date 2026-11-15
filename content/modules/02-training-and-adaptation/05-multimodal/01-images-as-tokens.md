@@ -14,6 +14,26 @@ A transformer only needs a sequence of vectors. It does not care whether each ve
 
 A language model reads a list of token embeddings. To let it read a picture, we need to turn the picture into a list of vectors of the same kind. The **Vision Transformer** (ViT) does it with an idea so simple it sounds like a joke: cut the image into square tiles, flatten each tile, and treat the tiles as words. The title of the paper says it: *an image is worth 16x16 words*.
 
+## In everyday life
+
+Suppose you must describe a printed photo over the phone to a friend who can only follow a list of short notes in a fixed format. You cut the print into a neat grid of equal squares. You write one note per square in the same format, and on each note you mark where that square sat in the grid. Now your friend can read the list.
+
+A **Vision Transformer** does this. The squares are **patches**, and each patch becomes a **token**, the unit a transformer reads, just like a word. The note for a patch is a **patch embedding**: a list of numbers that describes it. The grid position is added as a **position embedding**, so the model knows a square was top left and not bottom right. After this step a picture is just another sequence, and the transformer handles it much as it handles words.
+
+There is a price. Cut finer squares, or use a bigger photo, and you get many more notes. Comparing every note with every other grows much faster than the number of notes.
+
+**Where you meet it.** An app reads photographed receipts with a vision model. Each photo is turned into tokens, and the token count sets the cost and the delay. Sending a huge photo that the model shrinks anyway only wastes upload time.
+
+```scene
+title: Describing a photo as a list of notes
+step: 🖼️ You hold a printed photo and your friend can only read lists | image must become a sequence
+step: ✂️ You cut the print into a grid of equal squares | image patches become tokens
+step: 📝 You describe every square in the same fixed format | patch embedding
+step: 🔢 You write on each note where its square sat in the grid | position embedding
+step: 🔍 Finer squares mean more notes, and comparing them all gets costly | more tokens, more attention cost
+takeaway: A picture becomes a row of patch tokens, and more patches means more cost.
+```
+
 ## Cutting an image into patches
 
 Take an image of height $H$, width $W$ and $C$ colour channels (3 for RGB), and a patch size $P \times P$. The number of patches, which is the number of tokens, is

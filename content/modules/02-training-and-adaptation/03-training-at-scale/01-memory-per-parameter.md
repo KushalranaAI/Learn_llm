@@ -16,6 +16,24 @@ Running a 7B model for inference in 16-bit precision needs about 14 GB for the w
 
 The extra memory comes from the **optimizer**. Plain gradient descent needs only the weights and their gradients. **Adam** (and its variant **AdamW**, the standard for LLMs) keeps two running averages for every parameter, and in mixed-precision training an extra full-precision copy of the weights too. Each of those is as large as the model.
 
+## In everyday life
+
+A teacher who only reads out marks needs one report card per student. A teacher who coaches each student to improve needs far more paper. She keeps the card itself, a note of what each student should change after today's test, a precise master copy of the card, and two running summaries: one of how the student has been changing lately, and one of how big and jumpy those changes have been. The coaching is the training, and the paper piles up well beyond the cards.
+
+A model works the same way. Its **weights** (also called parameters) are the report cards, and answering a question needs only them. **Training** also keeps a **gradient** for each weight, the note saying which way to change it. The **optimizer**, the rule that applies the changes (here **Adam**), keeps its two running summaries for every weight, plus a precise copy of the weights. Each of these is as big as the model itself. So training needs several times the memory that using the model needs, before counting anything else. Unlike the teacher, the model cannot keep its paper in a cupboard: it all has to sit in fast GPU memory.
+
+**Where you meet it.** A team wants to fine-tune an open model on its own GPUs. The weights fit, so they start the job, and it crashes with an out-of-memory error at the first update because they counted only the weights. Adding up every extra copy per parameter tells them in advance whether the job fits.
+
+```scene
+title: Coaching students, not just grading
+step: 📝 Reading out marks needs only each student's report card | weights for inference
+step: 🧭 Coaching adds a note on what each student should change | gradient per weight
+step: 🔬 She keeps a precise master copy of every card | full-precision master weights
+step: 📒 She adds two running summaries of each student's changes | Adam moments
+step: 🗄️ Her desk now holds several times the paper of a plain grader | model states memory
+takeaway: Training stores much more per parameter than the weights alone, so budget for all of it.
+```
+
 ## What Adam stores
 
 For every parameter Adam maintains a **first moment** $m$ (a running average of the gradient) and a **second moment** $v$ (a running average of the squared gradient), and updates the weight with

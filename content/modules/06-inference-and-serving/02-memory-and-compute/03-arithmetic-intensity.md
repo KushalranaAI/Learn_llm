@@ -7,6 +7,26 @@ The last two topics produced two numbers for every operation: how many FLOPs it 
 
 Back to the chef: if each truckload of ingredients feeds one dish, the chef idles most of the time. If each truckload feeds 300 dishes, the chef becomes the bottleneck. Intensity is "dishes per truckload": work done per unit of data delivered.
 
+## In everyday life
+
+Picture a bank clerk whose desk is fast, but whose customer files sit in a record room down the corridor. Some jobs are tiny, like changing a phone number: the clerk walks to the room, brings the file, types for two seconds and walks back. Almost all the time is walking. Other jobs are heavy, like working out a loan schedule: the walk is short next to hours of calculation at the desk.
+
+What separates the two kinds of job is how much calculation is done for each file brought. That ratio is **arithmetic intensity**: how many **FLOPs** (single multiplies or adds) a task performs for each **byte** (a unit of stored data) it fetches from memory. Low intensity means the task is **memory-bound**: waiting for fetches is the limit. High intensity means **compute-bound**: the calculating is the limit.
+
+This matters because the cure differs. A better desk does nothing for the phone-number jobs. Fetching fewer files, or using each fetched file for many customers, does. A model's decode step starts out with low intensity, and the chapter shows what raises it.
+
+**Where you meet it.** An engineer finds a chatbot's replies are slow and must choose between faster arithmetic and faster memory. Measuring intensity answers it: if it is low, memory is the problem, and faster arithmetic would be wasted money. It stops the team tuning the wrong thing.
+
+```scene
+title: The clerk and the record room
+step: 🗄️ A clerk fetches a customer file from the record room | moving bytes from memory
+step: 📞 The job is tiny: update one phone number | very few FLOPs per byte
+step: 🚶 The walking took far longer than the typing | memory-bound
+step: 📊 A loan schedule needs hours of calculation on the same file | high arithmetic intensity
+step: 🧮 Now the desk work is the limit, not the walk | compute-bound
+takeaway: Arithmetic intensity, the calculation done per byte fetched, tells you whether memory or arithmetic is holding you back.
+```
+
 ## Definition
 
 $$

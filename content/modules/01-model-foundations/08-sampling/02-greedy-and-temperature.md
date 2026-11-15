@@ -7,6 +7,26 @@ Once you have probabilities, the simplest policy is to always take the most like
 
 The opposite policy is to **sample**: draw a token at random in proportion to its probability. Sampling gives variety, but it also occasionally draws a token from the long, low-probability tail, and one bad token early on can derail everything after it. **Temperature** is the dial between these two extremes.
 
+## In everyday life
+
+Think of a music app choosing your next song. One way is to always play the song it thinks you like most. At first that feels right. After an hour the same few songs loop and the playlist goes dull. The opposite way is pure shuffle, which is lively but sometimes drops a song that clashes with the mood.
+
+Now imagine a dial on the app, with "play it safe" at one end and "surprise me" at the other. Turn it towards safe and the favourite is picked almost every time. Turn it towards surprise and the lesser songs get a real chance. The dial changes how hard the app leans on its favourite. It never changes which song the app likes best.
+
+A language model faces this choice for every token (a piece of a word). Always taking the most likely token is **greedy decoding**: steady, but repetitive on long text. Picking at random in proportion to the chances is **sampling**. The dial is **temperature**: low leans on the favourite, high flattens the chances. Unlike skipping a bad song, a bad pick here cannot be skipped, because the model carries on from it. And the dial cannot fix a favourite that is simply wrong.
+
+**Where you meet it.** A bank's help chatbot that must quote the exact name of a form should sit near the safe end. A tool suggesting names for a new cafe should lean towards surprise. It is the same model with a different dial setting.
+
+```scene
+title: The song picker with a dial
+step: 🎵 The app has a favourite next song and some less likely ones | probabilities over next tokens
+step: 🔁 Always playing the favourite makes the same few songs loop | greedy decoding
+step: 🎲 Pure shuffle brings variety but sometimes a clashing song | sampling from the full tail
+step: 🔧 A dial sets how strongly the app leans on its favourite | temperature
+step: 🔒 With the dial at safe, the favourite wins almost every time | temperature near zero
+takeaway: Temperature reshapes the chances but never the ranking, so it cannot fix a favourite that is wrong.
+```
+
 ## Greedy, written precisely
 
 $$

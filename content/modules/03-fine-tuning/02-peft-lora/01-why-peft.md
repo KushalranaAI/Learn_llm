@@ -16,6 +16,28 @@ Suppose you want a 7B model to follow your company's ticket-triage format. Full 
 
 Yet the change you want is small. You are not teaching the model language; you are nudging its behaviour. It would be strange if that required rewriting every one of billions of numbers. **Parameter-efficient fine-tuning** (PEFT) is the family of methods that freeze almost everything and train a small number of new or selected parameters.
 
+## In everyday life
+
+Imagine a school that owns one thick textbook covering the whole subject. A new school wants it taught in their own style, with their own examples and exam format. Nobody would reprint and rebind every page for that.
+
+The sensible way is to leave the printed book alone. The teacher writes a few notes on a slip of paper that goes with it. Another school writes its own slip. Everyone shares the one book, and each school stores only a thin slip.
+
+This is the idea behind **parameter-efficient fine-tuning**, or PEFT. A **parameter** is one of the numbers inside the model, also called a weight, and a model has billions of them. **Fine-tuning** means training a model further so it behaves the way you want. Full fine-tuning rewrites every number, like reprinting the book. PEFT **freezes** the original numbers, meaning they are never changed, and trains only a small add-on, like the slip. The add-on can be small because you are changing behaviour, not teaching the subject again.
+
+One point does not fit. A slip of notes is always read beside the book, but the most popular kind of add-on, called LoRA, can be merged into the model afterwards, so it adds no delay.
+
+**Where you meet it.** A software company offers a writing assistant to several clients, each wanting its own tone and house format. Training a full copy of the model per client needs many GPUs and a huge file each time. With PEFT, the company keeps one shared base model and one small add-on file per client.
+
+```scene
+title: One textbook, many small slips
+step: 📚 The school owns one big textbook that already covers the whole subject | pretrained base model
+step: 🏫 A new school wants its own style and examples, not a new subject | task-specific behaviour change
+step: 💸 Reprinting the whole book for every school is slow and costly | full fine-tuning
+step: 📝 The teacher leaves the book alone and writes notes on a slip | frozen weights, small trained add-on
+step: 🎒 Each school keeps only its own slip; all share the one book | one base model, many adapters
+takeaway: PEFT freezes the big model and trains a small add-on, so each new task costs a little memory and storage.
+```
+
 ## The PEFT family
 
 | Method | What is trained | Typical trainable share |

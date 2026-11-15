@@ -11,6 +11,24 @@ A language model reads text and predicts the next token. An **embedding model** 
 
 You already met the pieces in module 1: [contextual hidden states and mean pooling](/learn/model-foundations/embeddings/static-and-contextual) and [cosine similarity](/learn/model-foundations/embeddings/dot-product-and-cosine). This lesson is about the training: how a model is taught to produce good sentence vectors, and how you adapt one to your own domain on a laptop.
 
+## In everyday life
+
+A music app has millions of songs and a listener who types "something calm for studying". The app cannot play every song to the listener and ask. Instead, each song is listened to once, ahead of time, and summarised as a short, fixed list of scores: how calm, how fast, how loud. When the listener types a request, it is turned into the same kind of list, and the app picks the songs whose lists are closest.
+
+An **embedding model** does this for text. It reads a piece of text and returns a **vector**, a fixed-length list of numbers, so that texts with similar meaning get similar lists. A **bi-encoder** is the setup where the query and each document are summarised separately by the same model, and only the finished lists are compared. That is what makes it fast: the document lists are made once and stored. **Pooling** is the step that squeezes the model's many per-word summaries into one list, like turning a whole song into one set of scores. The slower alternative, a **cross-encoder**, reads query and document together. It is more careful, but it must be redone for every pair. Unlike the music app, the model invents its own score columns, and none of them has a name.
+
+**Where you meet it.** A help centre has thousands of articles. A customer types "how do I stop my plan", and the right article says "cancel your subscription". Matching exact words fails, but comparing vectors finds it, because both texts are summarised to nearly the same list.
+
+```scene
+title: Score cards for songs
+step: 🎵 Each song is listened to once and summarised as a short score card | document embedding
+step: 📦 The cards are filed away in advance | stored document vectors
+step: 🗣️ The listener describes what they want | query text
+step: 🧾 The same listener turns that request into the same kind of card | shared encoder and pooling
+step: 📏 The nearest cards are picked | cosine similarity
+takeaway: An embedding model turns text into a fixed list of numbers so that similar meanings land close together.
+```
+
 ## The bi-encoder
 
 Most embedding models are **bi-encoders**: the query and the document are encoded *separately* by the same network, and only their vectors meet, through a dot product or cosine. That separation is the whole point. You can embed a million documents once, store the vectors, and at query time run the model on the query alone. The alternative, a **cross-encoder**, feeds query and document into the model together and outputs a relevance score. It is more accurate, because attention can compare the two texts token by token, but it must run once per (query, document) pair, so it is used to re-rank a short list, not to search a collection. Sentence-BERT (Reimers and Gurevych, 2019) made the bi-encoder practical by fine-tuning BERT in a siamese setup so that cosine similarity of pooled outputs became meaningful.

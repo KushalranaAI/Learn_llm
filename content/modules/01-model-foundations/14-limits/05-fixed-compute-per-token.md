@@ -7,6 +7,27 @@ Ask someone to multiply 4,837 by 2,916 in their head and give the answer instant
 
 Every token a model produces comes out of one **forward pass**: the input runs through the same $L$ layers, using the same parameters, doing the same amount of arithmetic, whether the next token is the word " the" or the final digit of a hard calculation. The model cannot pause to think harder about a difficult token. It has a fixed budget of computation per token, and some tasks need more than that budget in one go.
 
+## In everyday life
+
+Picture a tailoring workshop with a conveyor belt that has a fixed set of stations. Every garment, a simple handkerchief or an elaborate wedding sherwani, passes the same stations in the same order and spends the same time at each. The belt cannot slow down for a hard job.
+
+A language model produces each **token** (a small piece of text) in the same way. One trip through all its layers is a **forward pass**. Every token gets exactly one trip with the same amount of work, whether it is the easy word "the" or the last digit of a hard sum. That is the fixed budget of thought per token. A hard problem may not fit into one trip.
+
+But the model can write a partial result down and read it on the next trip. Writing out the steps, known as **chain-of-thought**, turns one cramped trip into many small ones. Unlike a person, the model cannot quietly think for longer. The only extra thinking it gets is the text it writes.
+
+**Where you meet it.** A homework helper is given a multiplication of two large numbers. Asked for only the answer, it often gives a believable but wrong number. Asked to show its steps, or given a calculator tool, it does much better. Many products add reasoning steps and tools for exactly this reason.
+
+```scene
+title: The conveyor belt with a fixed route
+step: 🧵 Every garment goes through the same fixed set of stations | Every token passes the same layers
+step: ⏰ Easy and hard garments get the same time at each station | Same compute for every token
+step: 🧥 A very complex garment cannot be finished in a single pass | Hard problem in one forward pass
+step: 📝 The tailor writes a note on a tag and sends the garment round again | Writing intermediate steps
+step: 🔁 Each new round reads the tag and adds one small step | Each token is a new forward pass
+step: 🧮 For exact sums, the tailor simply uses a calculator | Calculator or code tool
+takeaway: A model gets more thinking by writing more steps, or by handing exact work to a tool.
+```
+
 ## Counting the budget
 
 For a model with $N$ parameters, a forward pass costs about

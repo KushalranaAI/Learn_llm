@@ -7,6 +7,28 @@ Continuous batching keeps slots busy, but each slot needs KV-cache memory, and m
 
 Operating systems solved the same problem decades ago with **virtual memory**: give each program the illusion of a contiguous address space, but back it with small fixed-size pages placed anywhere in physical memory and allocated only when touched. **PagedAttention**, introduced with the vLLM engine, applies that idea to the KV cache.
 
+## In everyday life
+
+Imagine a guest house that takes group bookings. The old rule is to reserve a row of neighbouring rooms for each group, big enough for the most guests it could ever bring. Most groups arrive smaller. Rooms sit locked and empty, and a new group may be turned away even though plenty of rooms are free, because no long enough row is left.
+
+A smarter manager hands out single rooms as guests actually arrive, anywhere in the building, and writes the room numbers in a register. A group of three may get rooms on different floors. Little is wasted: only some spare space in each group's last room.
+
+That is **PagedAttention**. A model keeps a **KV cache** for every conversation: notes of what it has read so far, held in GPU memory. Old systems reserved one long unbroken chunk per conversation, sized for the longest possible answer. Paging cuts the cache into small fixed-size **blocks** and records where each one lives in a **block table**, the register. Memory is taken only as a conversation grows, so more conversations fit at once.
+
+Unlike the guest house, the chip pays a small extra cost for looking rooms up in the register.
+
+**Where you meet it.** A chatbot service sets aside most of its GPU memory for conversation notes. Most replies are short, so reserving room for long ones wastes memory and caps how many users fit. Paging lets the same memory serve far more users at once.
+
+```scene
+title: Booking rooms in a guest house
+step: 🏨 Old rule: reserve a row of rooms for the longest possible stay | one contiguous KV reservation
+step: 🔒 Most groups come smaller, so reserved rooms sit empty | reservation waste
+step: 📒 New rule: give single rooms as guests arrive, anywhere | blocks allocated on demand
+step: 🔢 A register notes which rooms belong to which group | the block table
+step: 👥 More groups fit in the same building | a larger batch from saved memory
+takeaway: Handing out cache memory in small blocks only when needed wastes little and lets many more users share one GPU.
+```
+
 ## Three kinds of waste
 
 With contiguous pre-allocation, a sequence's reserved region wastes memory in three ways:

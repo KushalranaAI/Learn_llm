@@ -7,6 +7,27 @@ Exact match is all or nothing. If the reference is "Paris, France" and the model
 
 It reuses the precision and recall idea from lesson 1, now at the level of words. The predicted words are the "claims"; the reference words are the "truth". **Token precision** is the share of predicted words that appear in the reference. **Token recall** is the share of reference words that appear in the prediction. Their harmonic mean is the token F1.
 
+## In everyday life
+
+You send your brother to the shop with a list: milk and bread. He returns with milk and five snacks, but no bread. Did he do the job? Not fully, and not zero either. Half your list is here, but most of what he carried was never on it.
+
+Token F1 marks answers the same way. A **token** is just a word, or a small piece of one. The reference answer is your list, the model's answer is the bag he brings back, and the score looks at the overlap between them. Two questions matter. What share of the bag was on the list? That is **precision**. What share of the list is in the bag? That is **recall**. The **F1** score blends the two into one number, so a short, on-target answer scores well and a rambling one is marked down.
+
+The order does not matter to him: milk then bread is the same as bread then milk. But unlike you, the score cannot tell which item mattered most. If the one word that carries the answer is wrong while every other word matches, the score still looks high.
+
+**Where you meet it.** A tool that answers questions by copying a phrase out of a policy document is often checked this way. If the right phrase is "thirty days" and the model returns "within thirty days of purchase", exact match gives zero while token F1 gives partial credit. It goes wrong when one word flips the meaning, such as adding "not", because nearly all the words still match.
+
+```scene
+title: The shopping list that earns partial credit
+step: 🛒 You write a short list of items for your brother | Reference answer tokens
+step: 🎒 He comes back with a bag, some items wanted and some not | Predicted tokens
+step: ✔️ You tick every item that is on both the list and the bag | Overlap
+step: 📦 You ask what share of the bag was on your list | Token precision
+step: 📝 You ask what share of your list made it into the bag | Token recall
+step: 🧮 You blend both answers into one fair mark | Token F1
+takeaway: Token F1 gives partial credit for overlapping words, but it cannot see which word really matters.
+```
+
 ## The maths
 
 Normalise both strings (lowercase, strip punctuation, drop articles), split into tokens, and treat each as a **multiset** (a bag where repeats count). Let $\hat T$ be the prediction's tokens and $T$ the reference's, and let the overlap be the multiset intersection, where each word counts the minimum number of times it appears in either:

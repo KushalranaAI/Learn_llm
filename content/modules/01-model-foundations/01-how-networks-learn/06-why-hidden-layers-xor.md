@@ -16,6 +16,26 @@ The reason is geometric. A single neuron computes $w_1 x_1 + w_2 x_2 + b$ and sa
 
 Plot the four points: the two "on" points sit on one diagonal and the two "off" points on the other. Any line that puts both "on" points on one side puts at least one "off" point there too.
 
+## In everyday life
+
+Picture a school with two teachers on duty for a class. The class runs smoothly when exactly one teacher is present. With none, it is chaos. With both, they argue over who leads. Now suppose the principal must call each of the four cases a good day or a bad day using one simple rule: give each teacher's presence some importance, add them up, and call it good if the total passes one cut-off. Try any importance and cut-off you like: no choice gets all four cases right.
+
+This is the **XOR** problem (exclusive or: true when exactly one of two things is true). A single **neuron** applies one cut-off, which draws one straight line between "on" and "off". A problem one line can solve is **linearly separable**. XOR is not. The fix is a **hidden layer**: helper neurons between the inputs and the output. One helper counts how many teachers are present, another raises a flag only when both are, and the principal combines the two reports. The helpers recode the situation into something a single cut-off can handle.
+
+Where the picture stops fitting: nobody hand-picks the helpers; training invents them.
+
+**Where you meet it.** Recognising handwriting or a face depends on combinations of simple clues, not on each clue alone. A network with no hidden layer can only add up clues, so it misses those combinations. Hidden layers let it build its own intermediate clues, which is why useful networks have them.
+
+```scene
+title: Two teachers and one cut-off
+step: 🏫 The class runs well with exactly one teacher; none or two means trouble | the XOR rule
+step: 📏 A principal who adds up presence and uses one cut-off cannot judge all four cases | a single neuron, one line
+step: 🧮 Two helpers report: one counts teachers present, one flags only when both are | hidden neurons
+step: ➖ The principal combines both reports into a verdict | the output neuron
+step: ✅ Now all four cases come out right | a hidden layer solves XOR
+takeaway: A hidden layer recodes the inputs so that a problem one straight line cannot solve becomes easy.
+```
+
 ## A short proof
 
 Suppose a single neuron did classify XOR, outputting "on" when $z = w_1 x_1 + w_2 x_2 + b > 0$. The four rows require:

@@ -5,6 +5,26 @@ minutes: 10
 
 The previous topics took GRPO apart. This one puts `llm_from_scratch/part_9/train_grpo.py` back together as a loop, works out where the time goes, and asks what you should print to know whether it is working. The repo prints three numbers, and none of them answers that question on its own.
 
+## In everyday life
+
+Learning to drive at a driving school follows a loop. You pick a few routes for the day. On each route you drive several times, trying small variations. The instructor scores each drive. You compare each drive with your average on that route, change your habits a little, and go again.
+
+Two things about this loop surprise beginners. First, the driving takes most of the day, and the thinking afterwards is quick. In GRPO the driving is **sampling**: the model writes each answer one token at a time. It is the slow part, and the number of answers per step is the number of prompts times the group size. Second, the dashboard can lie. Imagine a gauge that reads zero whether you are improving or not. The printed **loss** in this loop is like that: it sits near zero by construction. The numbers that tell you how you are doing are the average reward, how much the answers within a group differ, how many groups are all tied, and how far the model has moved from the **reference**, its starting copy.
+
+An instructor cannot be fooled, but a reward model can. So a rising score still needs you to read a few answers yourself.
+
+**Where you meet it.** An engineer runs a GRPO job for hours while the printed loss sits at zero, which says nothing. After logging the average reward and the share of tied groups, they see the groups have gone flat and raise the sampling temperature, not the learning rate.
+
+```scene
+title: A day at the driving school
+step: 🗺️ The instructor picks a few routes for today | take P prompts from the pool
+step: 🚗 You drive each route several times with small changes | sample G completions per prompt
+step: 📝 The instructor scores every drive | reward model scores each completion
+step: 🔧 You compare with your route average and adjust a little | advantage, one optimiser step
+step: 📊 You read the real gauges, not the one stuck at zero | reward, group spread, KL
+takeaway: Most of the time goes into sampling, and the printed loss tells you little, so watch reward, group spread and KL instead.
+```
+
 ## One step of the loop
 
 Each iteration of the `while step < args.steps` loop does the same eight things.

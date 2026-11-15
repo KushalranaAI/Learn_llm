@@ -9,6 +9,26 @@ $$\text{pretraining} \;\to\; \text{fine-tuning} \;\to\; \text{preference tuning}
 
 **Pretraining** teaches language and facts by predicting the next token across trillions of tokens. The result, a **base model**, only continues text. **Supervised fine-tuning (SFT)** shows it example conversations, so it learns to answer. **Preference tuning** (RLHF or DPO) shows pairs of answers and which one people preferred.
 
+## In everyday life
+
+Think of a young person preparing for a help-desk job. First they spend years listening to radio talk shows, soaking up how people speak and what they talk about. Asked a question, they would just keep talking like a show host. Then a coach shows them model answers to common interview questions. Later a panel hears two answers to the same question and says which one it liked better. Only then does the real job begin.
+
+An LLM is made in the same stages. **Pretraining** means predicting the next token across a vast amount of text; the result, a **base model**, only continues text. **Supervised fine-tuning (SFT)** means training on example conversations so it learns to answer. **Preference tuning** (RLHF and DPO are two ways to do it) means training on pairs of answers where people marked the better one. **Deployment** means putting the finished model to work for users.
+
+Where the picture stops fitting: the coaching is a tiny amount of extra training next to the years of listening, yet it changes behaviour the most.
+
+**Where you meet it.** A company building a help chatbot starts from a base model. Ask it a question and it may reply with more questions, because questions often follow questions in text. Fine-tuning and preference tuning fix this, so the same model learns to give clear, polite answers.
+
+```scene
+title: Training a help-desk candidate
+step: 📻 A candidate listens to years of talk shows and learns how people speak | pretraining
+step: 🎙 Asked a question, they just keep talking like a show host | base model continues text
+step: 📋 A coach shows model answers to common interview questions | supervised fine-tuning
+step: 🤝 A panel hears two answers and says which it preferred | preference tuning
+step: 💼 The candidate gets the job and answers real people | deployment
+takeaway: Pretraining teaches language; the later stages teach the model how to behave as an assistant.
+```
+
 ```sim
 training-stages
 {"stage": "pretrain", "prompt": "sky"}

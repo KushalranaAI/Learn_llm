@@ -22,6 +22,27 @@ Ratio: $65{,}536 / 16{,}777{,}216 = 0.39\%$, which equals $2r/d = 16/4096$.
 Doubling the rank doubles the adapter size exactly: $r = 16$ gives $131{,}072$ parameters per matrix. Cost is linear in $r$, while expressiveness has diminishing returns.
 ```
 
+## In everyday life
+
+Imagine a college canteen that wants to record how much each student would enjoy each dish. A table with one row per student and one column per dish would be enormous, and filling every cell is hopeless. But tastes follow a few traits: how spicy, how sweet, how crunchy. So you note each student's liking for each trait, and each dish's amount of each trait. Any cell can then be worked out by combining one short list with another. You store far fewer numbers.
+
+This is how LoRA stays small. Instead of a full grid of changes for a **weight matrix** (a big table of numbers inside the model), it stores two thin tables. The width of those tables is the **rank**, the number of traits. More traits allow richer changes but cost more, and the cost grows steadily with each added trait. **Parameters** are the numbers training is allowed to change, and counting them lets you predict memory before you start.
+
+Two other choices matter: which tables get this treatment, called the **target matrices**, and how many traits to give each. When quality is poor, covering more target matrices often helps more than simply adding traits.
+
+**Where you meet it.** An engineer must fit a fine-tune on a single GPU. Before launching, she adds up the adapter parameters across the chosen matrices and compares the total with what her tool reports. If they differ, the wrong set of layers is being adapted, and she catches it before wasting a run.
+
+```scene
+title: Taste traits instead of a giant table
+step: 🍛 A canteen wants a score for every student and dish pair | full update of a weight matrix
+step: 🍬 Tastes follow a few traits such as spicy, sweet and crunchy | low rank
+step: 📇 Keep one short list per student and one per dish | two thin matrices
+step: 🧮 Any score comes from combining a student list with a dish list | product of the two matrices
+step: 📈 Each extra trait adds the same extra storage every time | size grows linearly with rank
+step: 🔢 The team counts the numbers before ordering any hardware | counting trainable parameters
+takeaway: A LoRA adapter's size follows directly from its rank and the shapes it adapts, so you can work it out before training.
+```
+
 ## Which matrices to adapt
 
 A transformer block has seven big linear maps (SwiGLU MLP, as in Llama-style models): the attention projections $W_Q, W_K, W_V, W_O$ and the MLP's gate, up and down projections. The original LoRA paper adapted only $W_Q$ and $W_V$. Later practice, notably QLoRA, found that adapting **all linear layers** gives clearly better quality at a given rank.

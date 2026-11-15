@@ -7,6 +7,28 @@ Picture a lift that will not open its doors until everyone inside has reached th
 
 LLM answers vary wildly in length. One user asks for "yes or no", another for a 2,000-word report. If they share a static batch, the short answer's slot sits idle for most of the run, and the people waiting in the queue cannot use it.
 
+## In everyday life
+
+At a busy dhaba with a fixed number of seats, people eat at very different speeds. One person finishes a quick tea in five minutes. Another lingers over a full meal for an hour. Suppose the owner has a strict rule: a new group is seated only when every seat in the current group has emptied. Then the tea drinker's seat sits empty for most of the hour while customers wait outside.
+
+A better owner seats the next person the moment any seat frees up. The room stays full and the queue moves.
+
+LLM answers also vary: some replies are one word, others are pages. The server handles a group of requests together, called a **batch**, with one slot per request. **Static batching** is the strict rule: the batch is released only when its longest answer is done. **Continuous batching** is the better owner: after every **decode step** (the step that writes one new **token**, a small piece of a word), finished requests leave and waiting ones take their place.
+
+Unlike a diner, a newcomer must first have its prompt read before it can start producing words, which costs a short extra delay.
+
+**Where you meet it.** A shopping app's chatbot gets short questions like order status mixed with long ones like complaint letters. Under the strict rule, quick answers wait on slow ones and the queue builds. Continuous batching is why serving engines keep their hardware busy and customers waiting less.
+
+```scene
+title: Seats at a busy dhaba
+step: 🪑 The dhaba has a fixed number of seats, all filled | slots in a batch
+step: ☕ One diner finishes tea quickly, while another eats a full meal | short and long answers
+step: 🚫 Under the strict rule, the empty seat waits for everyone | static batching wastes slots
+step: 🙋 A better owner seats the next customer the moment a seat frees | continuous batching
+step: 🔁 The room stays full and the queue keeps moving | slots refilled every decode step
+takeaway: Refilling a freed slot after every step keeps the batch full and cuts the wait for new requests.
+```
+
 ## How much static batching wastes
 
 Suppose a batch holds $B$ requests with output lengths $n_1, \dots, n_B$. A static batch runs for $\max_i n_i$ decode steps, and in each step all $B$ slots are reserved. The fraction of slot-steps doing useful work is

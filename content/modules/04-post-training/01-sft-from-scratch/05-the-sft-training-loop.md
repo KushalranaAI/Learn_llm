@@ -7,6 +7,27 @@ Here is the reassuring part: the SFT loop is the pretraining loop. Same model, s
 
 What changes is how you read it. A pretraining loss of 0.5 on a byte model would be extraordinary; an SFT loss of 0.5 can mean the model has learned to answer, or that it has memorised 24 answers and learned nothing transferable. The numbers to watch are different, and most of them are not printed by default.
 
+## In everyday life
+
+A new call-centre trainee learns from a small set of scripted calls. She practises the same calls again and again. After each reply, the trainer compares it with the model reply and corrects her. After enough rounds she can recite every script word for word. Then a customer asks the same thing in different words, and she freezes or reads out the wrong script.
+
+The fine-tuning loop is that practice routine. The model reads an example, **predicts** the answer by writing its best guess, and measures its error with the **loss**, a number for how wrong it was, where lower is better. Then it nudges its internal numbers to do a little better and repeats. This is the very same loop as pretraining, the first big stage where a model learns to continue text. What changes is how you read the numbers. A tiny loss can mean real learning, or it can mean only memorising.
+
+So you keep some examples back, a **held-out** set that the model never trains on. They are the surprise calls. Only the held-out results tell you the truth.
+
+**Where you meet it.** A team fine-tunes a model on a small set of examples and sees the training loss fall almost to zero, so they ship it. Real users phrase things differently and get odd replies. A held-out check would have shown the problem before launch.
+
+```scene
+title: A trainee rehearses scripted calls
+step: 📞 The trainee practises a small set of scripted calls | small fine-tuning training set
+step: 🗣 She tries a reply to each script | model predicts the answer
+step: 📝 The trainer marks how far her reply was from the model reply | loss on the answer tokens
+step: 🔧 She adjusts her habits a little and tries again | optimiser step
+step: ♻ After many rounds she recites every script perfectly | training loss near zero
+step: ❓ A surprise call in new words exposes the memorising | held-out examples
+takeaway: A near-zero training loss can mean memorising, so always check on examples the model never trained on.
+```
+
 ## The loop in the repo
 
 From `llm_from_scratch/part_6/train_sft.py`, with argument parsing and printing trimmed:

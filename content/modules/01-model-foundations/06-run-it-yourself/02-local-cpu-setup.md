@@ -7,6 +7,26 @@ A laptop with no GPU runs all of parts 1 to 5. The setup has one trap worth unde
 
 Everything goes into a **virtual environment**: a private folder with its own Python and packages, so the repo's pinned versions cannot break anything else on your machine. The repo's README uses conda; Python's built-in `venv` works just as well and needs nothing extra.
 
+## In everyday life
+
+Imagine you walk into a cycle shop to buy a bike for your daily ride to college. The shop's default package is the mountain model, with heavy gears and shock absorbers built for steep tracks. You will never use them on city roads, and they make the bike heavy and costly. What you actually want is the light city version, asked for by name before the shopkeeper adds anything else.
+
+Installing the course code has the same trap. The main library, **PyTorch** (the toolkit that does the number crunching), comes in a big version built for NVIDIA graphics cards and a small version for ordinary processors. On many Linux machines the default download is the big one, even when your laptop has no such card. So you ask for the small **CPU-only** version first.
+
+You also keep everything in a **virtual environment**, which is a private folder with its own copy of Python and its own packages. Think of a labelled shelf at home: this project's tools stay on it and never get mixed up with anything else you own.
+
+**Where you meet it.** A student with an older laptop and no graphics card wants to run the course code. If she installs the packages in the wrong order, she downloads several gigabytes of files she cannot use and may fill her disk. Installing the light version first, inside its own environment, keeps the setup small and easy to repeat.
+
+```scene
+title: Buying the light city bike
+step: 🏠 You clear a labelled shelf at home just for this bike | Create a virtual environment
+step: 🚲 You ask the shop for the light city bike by name first | Install the CPU-only PyTorch wheel
+step: 🔧 The shop adds the remaining parts, and your bike already counts | Install requirements.txt
+step: 🔍 You check there is no mountain gear on it | Check that cuda is_available prints False
+step: 🚴 You take a short test ride before any long trip | Run each part from its own folder
+takeaway: Ask for the small CPU version first, and keep each project in its own environment.
+```
+
 ## Why the order of installs matters
 
 A pip requirement such as `torch==2.8.0` with no local label also matches `2.8.0+cpu`. So if the CPU wheel is installed first, pip sees the pin as satisfied and moves on. Installed the other way round, you download the large build and then replace it.

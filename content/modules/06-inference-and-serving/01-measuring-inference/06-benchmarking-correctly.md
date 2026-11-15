@@ -7,6 +7,26 @@ Two engineers benchmark the same model on the same GPU and report numbers that d
 
 A trustworthy benchmark answers one question: *at the request rate I expect, with prompts and answers like mine, what are the TTFT and TPOT percentiles and the goodput?* Everything below is about making that question precise.
 
+## In everyday life
+
+Imagine you are testing how well a petrol pump copes with traffic. In one test, you send eight friends who each come back for another fill only after the last one is completely done. The pump looks quick and the queue is always empty. On a real Sunday evening, cars arrive at random, sometimes five at once, and the queue spills onto the road.
+
+Both tests used the same pump. Only the way the cars arrived was different. The first test is a **closed loop**: each user waits for the previous answer before sending the next, so when the system slows down, the test quietly sends fewer requests. The second is an **open loop**: requests arrive on their own schedule, whatever the system is doing, as real users do. Only the open loop shows the queue building up.
+
+A fair test also needs a realistic mix of cars, that is, prompts and answers of realistic lengths, a warm-up before you start counting, and enough time to gather plenty of samples.
+
+**Where you meet it.** Two teams report very different speeds for the same model on the same GPU. One tested with a few polite clients and short prompts, the other replayed a real day of traffic. Only the second number predicts what customers will experience.
+
+```scene
+title: Testing a petrol pump honestly
+step: 🚗 Eight friends refill only after the previous one finishes | closed-loop load generator
+step: 😎 The pump looks fast because no queue ever forms | hidden queueing, coordinated omission
+step: 🌆 On Sunday evening cars arrive at random, in bursts | open-loop Poisson arrivals
+step: 🧾 The test uses real car types and fill sizes, not one fixed car | real prompt and output lengths
+step: 📈 You raise the arrival rate until waiting becomes too long | sweep the request rate
+takeaway: Benchmark with random arrivals and realistic workloads, or the numbers will flatter your system.
+```
+
 ## Closed loop versus open loop
 
 A **closed-loop** load generator runs $C$ virtual users. Each sends a request, waits for the full answer, optionally "thinks" for $Z$ seconds, then sends the next. The request rate is not something you choose; it is whatever the system allows. By the **response-time law**,

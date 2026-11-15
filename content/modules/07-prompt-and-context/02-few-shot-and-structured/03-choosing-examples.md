@@ -16,6 +16,26 @@ flowchart LR
   P --> M["Model"]
 ```
 
+## In everyday life
+
+A cricket coach is preparing a batter to face a left-arm spinner tomorrow. He has hours of video. If he plays only clips of fast bowlers, the batter learns the wrong lesson. If he plays ten near-identical clips of the same ball, time is wasted. If every clip shows a batter hitting a six, the batter will think every ball should be hit.
+
+So a good coach picks clips that look like tomorrow's challenge, covers different kinds of deliveries, shows some good shots and some dismissals, and does not put a six in the last clip just because it was the most exciting. The batter remembers the last clip most vividly.
+
+Choosing few-shot **examples** works the same way. The model treats your examples as **evidence** about the task, so skewed evidence leads to skewed answers. **Static** examples are one fixed set in every prompt. **Dynamic** examples are fetched per request from a larger pool, picking the ones most similar to the new input. Good sets are representative, varied and balanced across labels. Unlike a human batter, the model also tends to favour the **label** (the category name) it saw most often, and the one it saw last.
+
+**Where you meet it.** A ticket-tagging tool has examples for billing, bugs and accounts. For each new ticket, it pulls the three closest past tickets from the pool, drops near-duplicates, and mixes their labels before building the prompt.
+
+```scene
+title: The coach and the video clips
+step: 🏏 Tomorrow's opponent is a left-arm spinner | the new input
+step: 🎞️ The coach searches his library for similar deliveries | dynamic example retrieval by similarity
+step: 🧹 He drops near-identical clips so no time is wasted | removing near-duplicates for diversity
+step: ⚖️ He mixes good shots and dismissals, not only sixes | balanced labels
+step: 🔀 He avoids ending on one memorable clip | order and recency bias
+takeaway: Examples are evidence, so pick ones that are relevant, varied and balanced.
+```
+
 ## The maths: similarity, balance and order
 
 **Similarity.** With embedding vectors $\mathbf{u}$ for the input and $\mathbf{v}_j$ for pool example $j$, cosine similarity is

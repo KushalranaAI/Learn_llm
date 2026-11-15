@@ -16,6 +16,26 @@ A token ID is a name tag, not a quantity. Token 464 is not "bigger" than token 1
 
 So the first layer of every language model replaces each ID with a list of $d$ real numbers, called an **embedding** (or embedding vector). The list is looked up in a big table, the **embedding matrix**, with one row per token in the vocabulary. The rows are parameters: they start random and are adjusted by gradient descent like every other weight. After training, the row for "cat" holds whatever $d$ numbers turned out to be most useful for predicting text that contains "cat".
 
+## In everyday life
+
+Picture a cricket scorer's sheet before a match. Each player appears only as a jersey number. Number 7 is not a better player than number 3, and a player halfway between jersey 10 and jersey 20 does not exist. The number is just a name tag.
+
+Now picture a scout who keeps a card for every jersey number. The card lists several scores: batting, bowling, fielding, running between wickets. When the scout hears a number, they pull out that card, which says far more than the number could. Players with similar styles end up with similar cards.
+
+A language model does the same. It first turns text into **token IDs**, numbers that act as name tags for pieces of text. Then it swaps each ID for a list of numbers called an **embedding** (a **vector**, which here just means a list of numbers describing one token). All the lists sit in one big table, the **embedding matrix**, with one row per token. The model learns the rows by training: they start random and get nudged until they help predict text. Unlike the scout's card, no column has a human label such as "bats well". The model invents its own columns.
+
+**Where you meet it.** A shopping app's search box should treat "kurta" and "kurti" as close cousins, not as two unrelated ID numbers. Without a list of numbers per word, the system has nothing to compare. With embeddings, words with related meanings get similar lists, so the app can tell they are near each other.
+
+```scene
+title: The scout and the jersey cards
+step: 🏏 The team sheet names each player only by jersey number | token IDs
+step: 🔢 Jersey 7 is not better than jersey 3; the number carries no meaning | an ID is a name tag
+step: 📇 The scout keeps one card of scores per jersey number | embedding matrix, one row per token
+step: 🔍 Hearing a number, the scout pulls out that player's card | embedding lookup
+step: 📈 After each match, the scout adjusts the scores to predict play better | rows learned by training
+takeaway: An ID only names a token; its embedding is the list of numbers the model actually works with.
+```
+
 ## The lookup, written as maths
 
 Call the embedding matrix $E$, of shape $V \times d$: $V$ rows (one per token) and $d$ columns (the **embedding dimension**, the same $d$ as the model width). Embedding token $t$ means taking row $t$:

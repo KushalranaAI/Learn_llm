@@ -23,6 +23,26 @@ $$P(\text{next token} \mid \text{text so far})$$
 
 Then it picks one, adds it to the text, and does it again. That loop is all the "writing" an LLM does.
 
+## In everyday life
+
+Think of a tea-stall owner who has served the same regulars for years. A customer starts, "One cutting chai and...", and the owner already knows the likely ending: a samosa, or maybe a biscuit. He has not looked anything up. Years of listening taught him what usually follows what.
+
+A **large language model (LLM)** works the same way. It is a program that has read a huge amount of text and learned which pieces tend to follow which. Those pieces are called **tokens**: a token is a whole word or part of a word. For the text so far, the model gives every possible next token a **probability**, a score for how likely it is, and then picks one. That token joins the text, and the loop runs again. This loop is all the "writing" the model does.
+
+Unlike the owner, the model cannot step out and check a fact. It only has learned habits, so it can say something wrong in a smooth, confident voice.
+
+**Where you meet it.** A help chatbot on a shopping site writes each reply one token at a time, always choosing from what usually comes next. People who think it looks answers up in a database trust it blindly. Knowing it works from habits tells you when to double-check, such as order numbers, dates and prices.
+
+```scene
+title: The tea stall that guesses your order
+step: ☕ A regular starts an order and the owner listens | the text so far
+step: 🤔 From years of habit he feels samosa is likely, biscuit less, others rare | a probability for every next token
+step: 🎲 He picks one, usually the likeliest, sometimes another | picking a token
+step: 🗣 That word is added to the order and he listens for more | append and repeat
+step: 🚩 Sometimes a smooth guess is wrong, and he cannot check it | fluent but not looked up
+takeaway: An LLM does not look answers up; it keeps picking what usually comes next.
+```
+
 ```sim
 llm-autocomplete
 {"prompt": "capital", "temperature": 1}

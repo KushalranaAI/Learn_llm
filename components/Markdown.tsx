@@ -1,6 +1,6 @@
 "use client";
 // Course markdown: GitHub tables, $math$ / $$math$$ (KaTeX), highlighted code, ```mermaid diagrams, and the lesson
-// directives ```quiz, ```steps, ```sim, ```lab, ```predict, ```parsons, ```bughunt and ```callout-<kind> (see CONTENT_GUIDE.md).
+// directives ```quiz, ```steps, ```sim, ```lab, ```scene, ```predict, ```parsons, ```bughunt and ```callout-<kind> (see CONTENT_GUIDE.md).
 import Link from "next/link";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
@@ -10,6 +10,7 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import { Callout, type CalloutKind, LabCard, SimEmbed, Steps } from "./lesson/Blocks";
 import Quiz from "./lesson/Quiz";
+import Scene from "./lesson/Scene";
 import Predict from "./lesson/Predict";
 import { BugHunt, Parsons } from "./lesson/Drills";
 import Mermaid from "./Mermaid";
@@ -51,6 +52,7 @@ function directive(lang: string, text: string) {
   if (lang === "parsons") return <Parsons raw={text} />;
   if (lang === "bughunt") return <BugHunt raw={text} />;
   if (lang === "steps") return <Steps raw={text.trim()} render={render} />;
+  if (lang === "scene") return <Scene raw={text.trim()} />;
   if (lang === "sim") return <SimEmbed raw={text.trim()} />;
   if (lang === "lab") return <LabCard raw={text} />;
   if (lang.startsWith("callout-")) return <Callout kind={lang.slice(8) as CalloutKind} raw={text.trim()} render={render} />;

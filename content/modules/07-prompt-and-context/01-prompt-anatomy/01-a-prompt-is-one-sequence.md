@@ -23,6 +23,26 @@ The model then does the only thing it can do: predict the next token, then the n
 
 This framing explains a lot of behaviour that otherwise looks mysterious. A model "forgets" an instruction because the instruction is 30,000 tokens back and competes with everything after it. A model "obeys" text inside a pasted email because, to the model, that email is made of the same kind of tokens as your instructions. A prompt costs money in proportion to its length because every token in the prefix is processed on every call.
 
+## In everyday life
+
+Think about exporting a WhatsApp group chat to a text file. On your phone the chat looks like separate bubbles from separate people. In the exported file it is one long scroll. Every line starts with a name, and the lines simply run on, one after another.
+
+A chat model works from that scroll, not from the bubbles. When you send a system message, a question and some earlier turns, the server glues them into **one flat sequence of tokens**. A **token** is a small piece of text, often part of a word. The server also adds **marker tokens**, which are labels saying who is speaking. Then the model does its only job: guess the next token, then the next, until it writes a stop marker. Everything you call "the prompt" is just the start of that scroll.
+
+So **prompt engineering**, the craft of choosing that start, means arranging the scroll so the reply you want becomes the likely continuation. Unlike a person reading a chat, the model has only the labels to go on. A pasted email can read like an instruction because it sits in the same scroll.
+
+**Where you meet it.** A bank's help chatbot behaves oddly after a customer pastes a long email into the chat. Engineers print the full scroll the model actually saw and spot a duplicated rule and a huge pasted block. Reading the real sequence, not the tidy message list, fixes the bug.
+
+```scene
+title: The exported chat scroll
+step: 💬 You see separate chat bubbles from different people | a list of messages
+step: 📄 Exporting glues every bubble into one long text file | one flat token sequence
+step: 🏷️ Each line gets a name label saying who spoke | marker tokens and roles
+step: ✍️ The file ends with an empty line waiting for the next speaker | the generation prompt
+step: 🤖 A reader continues the scroll one word at a time | next-token prediction
+takeaway: The model never sees bubbles, only one long sequence it keeps extending.
+```
+
 ## The maths: what the model actually computes
 
 Call the rendered prefix $x = (x_1, \dots, x_n)$, a sequence of $n$ token ids. The model defines a probability for any continuation $y = (y_1, \dots, y_m)$ as a product of next-token probabilities:

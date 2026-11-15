@@ -7,6 +7,26 @@ Imagine a chef who can chop a vegetable in one second but whose ingredients are 
 
 A GPU is that chef. Its arithmetic units are extremely fast, but the model's weights live in **high-bandwidth memory (HBM)**, gigabytes of DRAM next to the chip. The on-chip caches are tiny by comparison (tens of megabytes), so a multi-gigabyte model cannot stay close to the arithmetic units. Every decode step must stream the weights from HBM again.
 
+## In everyday life
+
+Imagine a quiz contestant who thinks very fast but follows a strange rule: before answering each question, they must read the whole rulebook from the first page. The rulebook sits on a far table, too big to keep in their head. Thinking up each answer takes a moment, yet the reading takes most of the time. A sharper brain would not help. Only a quicker way of getting the book to them would.
+
+A GPU running an LLM is in the same spot. Its calculating units are extremely fast. But the model's **weights** (the billions of learned numbers that make up the model) sit in a large memory beside the chip, called **HBM** (high-bandwidth memory). To write each new **token** (a small piece of a word), every weight must travel from that memory to the calculating units. How fast that delivery runs is the **memory bandwidth**: how many bytes can move per second.
+
+So for one user, the pace of replies is set by the size of the model and the speed of delivery, not by how quick the arithmetic is. Unlike the contestant, the chip is not being silly: the weights are simply too big to keep on the chip itself.
+
+**Where you meet it.** A company wants its chatbot to reply faster and is offered a new chip with far more arithmetic power but the same memory speed. Replies for one user barely improve, because arithmetic was never the wait. Storing the model's numbers in fewer bytes helps more, since less has to be read each time.
+
+```scene
+title: The quiz contestant and the rulebook
+step: ❓ A question arrives and the contestant must answer it | a new token is requested
+step: 📖 They fetch the whole rulebook from the far table | weights stream from HBM
+step: 🧠 Thinking up the answer takes only a moment | the arithmetic is fast
+step: ⏳ Almost all the time went into reading the book | memory bandwidth is the limit
+step: ✂️ A shorter rulebook would speed up every answer | fewer bytes per weight
+takeaway: For one user, speed is set by how fast memory can deliver the weights, not by how fast the chip calculates.
+```
+
 ## The decode step reads every weight
 
 Generating one token means running the full forward pass, which multiplies the token's activations by every weight matrix in the model. Each weight must travel from HBM to the compute units. For one sequence, the step therefore moves at least

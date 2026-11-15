@@ -5,6 +5,26 @@ minutes: 7
 
 Prefix caching rewards structure. You do not get hits by turning a flag on; you get them by building prompts whose beginnings are stable and by sending traffic often enough that cached entries are still alive when the next request arrives. Both are design decisions you control.
 
+## In everyday life
+
+A busy restaurant cooks one big pot of base gravy before the evening rush. Every order starts from that pot, and each customer's special request, such as extra spice or no onion, is added at the very end. That saves a lot of cooking. If the cook added each special request first, nobody could share the pot.
+
+Two more things matter. The pot stays useful only while orders keep coming, because a pot left unused for hours is thrown out. And if there are several kitchens, the waiter should send similar orders to the kitchen that already has the pot ready.
+
+The same ideas decide whether an AI service can reuse its stored work. The **prefix** is the opening part of a prompt, and only a shared prefix can be reused. So put the stable text first (instructions, documents) and the changing text last (the date, the user's message). The stored work has a limited lifetime, so steady traffic keeps it alive. With several servers (**replicas**), **prefix-aware routing** sends requests with the same opening to the same one.
+
+**Where you meet it.** A legal assistant starts every prompt with the current date and time. That line changes every second, so no two requests share a prefix and the bill stays high. Moving the timestamp to the end fixes it.
+
+```scene
+title: The pot of base gravy
+step: 🍲 A restaurant cooks one big pot of base gravy before the rush | stable prefix, cached
+step: 🧂 Each customer's special request is added at the very end | changing text placed last
+step: 🔥 While orders keep arriving, the pot stays warm and ready | steady traffic keeps the cache alive
+step: 🧊 If no orders come for hours, the pot goes cold and is thrown out | cache entry expires
+step: 🧭 With several kitchens, the waiter sends similar orders to the one with the pot | prefix-aware routing
+takeaway: Order the prompt from stable to changing, and send similar requests to where the cache already is.
+```
+
 ## Order the prompt from stable to volatile
 
 Because only a shared *prefix* is reusable, arrange content by how often it changes, most stable first:

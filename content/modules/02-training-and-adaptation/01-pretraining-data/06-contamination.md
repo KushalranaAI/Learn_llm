@@ -7,6 +7,25 @@ Benchmarks are published on the web. The web is the training set. So, unless som
 
 It is rarely deliberate. A test set gets copied into a GitHub repository, quoted in a blog post explaining the answers, or included in a scraped forum thread. Deduplication against the rest of the web does not catch it, because from the corpus's point of view those pages are perfectly unique.
 
+## In everyday life
+
+Imagine the driving test route is published online. Soon driving schools post videos of that exact route, and some learners practise nothing else. They drive it perfectly on test day, pass, and then struggle on any other road. Their certificate says they can drive. What it really shows is that they know one route.
+
+**Benchmark contamination** is the same problem for models. A benchmark is a fixed set of test questions used to compare models. If those questions and their answers sit on the web, they end up in the training text, and the model may simply remember them. Its score then measures memory, not skill. The leak is rarely deliberate: a test set gets copied into a code repository or quoted in a blog post. The usual check is to look for long runs of identical words between each test item and the training data, called **n-gram overlap**, and to report the scores on clean items separately.
+
+**Where you meet it.** A company builds a test set from past support tickets and also fine-tunes its model on those same tickets. The model looks excellent in testing and then does worse with real customers. Splitting the data by date, or checking for overlap before training, would have shown the problem early.
+
+```scene
+title: The leaked driving test route
+step: 🚦 The driving test route is published online | Benchmark released on the web
+step: 🎥 Driving schools and blogs copy and discuss that exact route | Test items leak into training data
+step: 🚗 A learner drills only this route until it is memorised | The model memorises answers
+step: ✅ They pass the test easily | A high benchmark score
+step: 🌆 On roads they never practised, they struggle | Weak on unseen questions
+step: 🔎 Examiners compare practised routes with the test and keep new routes secret | N-gram checks and private tests
+takeaway: A score only means something if the test questions were never seen in training.
+```
+
 ## Measuring overlap with n-grams
 
 The standard check is to break each benchmark item into token **n-grams** (runs of $n$ consecutive tokens) and look them up in an index of the training corpus. For an item with $m$ tokens there are $m - n + 1$ n-grams. Its **overlap** is

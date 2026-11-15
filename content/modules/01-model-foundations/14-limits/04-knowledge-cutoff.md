@@ -7,6 +7,24 @@ A printed encyclopedia is a snapshot. It is accurate about the day it went to pr
 
 The date after which the training data stops is the model's **knowledge cutoff**. Two separate gaps follow from it. Things that happened after the cutoff are simply absent. Things that were never in the training data at all, such as your company's internal documents, a customer's order history or yesterday's support ticket, are absent too, however old they are. Neither gap is a reasoning failure. The information is not in the weights, and the model, asked anyway, will produce its most plausible guess.
 
+## In everyday life
+
+Think of a relative who spends six months at a remote research base with no phone signal. They left knowing everything up to the day of departure. When they come home, they tell you the petrol price, the newest phone and the latest match result, all as of the day they left, in the same confident voice as ever. They are not lying. They just do not know that time has passed. And they never knew what happened inside your house while they were away, such as what is in your bank account today.
+
+A trained model is that relative. Its knowledge stops at the **knowledge cutoff**, the date where its training data ends. Two gaps follow: events after the cutoff, and **private facts** that were never in the training data, like your company's files or a customer's order. Neither is a failure to think. The information is simply not inside the model, and asked anyway, it will give its best guess. The fix is not to cram the facts into the model, but to hand it the newspaper along with the question.
+
+**Where you meet it.** A shop's support assistant is asked "where is my order?". The model never saw that order, so left alone it makes up a believable delivery date. Connected to the order system, it looks up the real status first and only then words the reply politely.
+
+```scene
+title: The relative back from the research base
+step: ⛺ A relative leaves for a remote base, knowing everything up to that day | Training data ends: the cutoff
+step: ⏳ Months pass at home and prices, news and plans change quietly | Facts drift after the cutoff
+step: 🏠 They return and answer with old facts in the same confident voice | Stale but fluent answers
+step: 🔒 They also never knew private things, like your bank balance | Private data never in training
+step: 📰 You hand over today's paper or open the app before asking | Search, retrieval or a tool call
+takeaway: Anything recent or private must come in through the prompt, not from the model's memory.
+```
+
 ## Why the model does not say "I don't know"
 
 The model has no list of what it knows. It has only next-token probabilities. A question about a post-cutoff event looks, to the model, like any other question whose answer it is unsure of, and the most likely continuation of "The latest version of the library is" is a version number, usually the latest one it saw. That answer was true at training time, which makes it especially convincing.

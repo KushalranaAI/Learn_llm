@@ -7,6 +7,26 @@ Free Colab is the default for this module, but it is not the only option, and it
 
 The rule that ties them together is simple. For every option, the cost is hours multiplied by a price per hour, and the hours you pay for include setup and idle time, not just training. Beginners rarely overspend on training. They overspend on a machine they forgot to turn off.
 
+## In everyday life
+
+Suppose you need transport for a day of errands, and you have three choices. A free bus pass gets you around, but with limits and no promise of a seat. A monthly pass gives you more rides and priority boarding. Or you hire a cab by the hour. It is fast and always there, but the meter runs the whole time you hold it: while you load your bags, and while the driver waits outside because you forgot about him.
+
+Getting a GPU for training follows the same menu. **Kaggle notebooks** and free Colab are the bus pass: free, with a weekly or per-session limit. **Colab Pro** is the monthly pass: you pay for credits, called compute units, and each unit is a share of some GPU time. A **GPU pod** is the cab. You rent a whole machine from a marketplace and pay for every hour it is switched on, whether it is training or not.
+
+For every option the cost is hours multiplied by a price per hour. The hours include setup and waiting, not only the training itself.
+
+**Where you meet it.** A hobbyist rents a pod for an evening, starts a job and falls asleep, leaving the machine on all night. The job needed two hours, but the bill covers the whole night. A short habit fixes it: test first on a free machine, then stop and delete the pod when the work is done.
+
+```scene
+title: Hiring a cab by the hour
+step: 🚌 You try the free bus pass first for ordinary trips | Free Colab or Kaggle first
+step: 📝 You plan the route at home, before any meter starts | Test the command on a free machine
+step: 🚕 You book the cab only for the trip that needs it | Rent a GPU pod
+step: 💸 The meter runs while you load bags and while the driver waits | Setup and idle time are billed
+step: 🧾 You end the ride and check the bill shows the meter stopped | Stop and delete the pod, check billing
+takeaway: You pay for every hour a rented machine is on, so switch it off and check the bill.
+```
+
 ## Kaggle notebooks
 
 Kaggle offers free GPU notebooks with a weekly quota, commonly around 30 GPU hours, shown in your account settings. The exact figure varies and is not in the documentation, so read yours there. GPU options are a single P100 (16 GB) or two T4s, and a session is reported to last up to 12 hours. You must verify a phone number before GPU and internet access are enabled. All figures are as of late 2026.

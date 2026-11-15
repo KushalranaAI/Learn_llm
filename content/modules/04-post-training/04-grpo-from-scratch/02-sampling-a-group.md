@@ -14,6 +14,27 @@ sampling
 
 These are the repo's GRPO settings. Read "Distinct in 20 draws", then drag the temperature down to 0.2, PPO's setting: the draws collapse onto the top token. A group sampled like that would tie on almost every prompt. Then set top-k to 0 at temperature 2 and watch rare tokens appear: that is what the top-$k$ guard is for.
 
+## In everyday life
+
+A chai-stall owner wants to improve her tea. From one order she makes four cups, each with slightly different ginger, sugar or boiling time, and asks regulars to score them. If she brews four identical cups, the scores come out the same and she learns nothing. The cups have to differ.
+
+Scores also mislead. A strict regular gives every cup a 3, and a cheerful one gives every cup an 8. What matters is how each cup did against the rest of its own batch. So she compares each cup with the batch average, then divides by how widely the scores spread. Now a strict taster and a generous one push her equally hard.
+
+GRPO does this with a model. For one prompt it draws a **group** of answers. The **sampling temperature** is the knob that makes them differ: higher means more adventurous word choices. The **reward model** scores each answer. The **advantage** of an answer is its score minus the group average, divided by the spread of the group. If every answer ties, every advantage is zero and that prompt teaches nothing.
+
+**Where you meet it.** A team trains a model to answer customer questions. If it sampled almost greedily, many questions would give several near-copies and no signal. Normalising inside each group also stops the reward model's own scale from deciding how hard each question pushes the model.
+
+```scene
+title: Four cups, one fair comparison
+step: 🍵 She brews four cups from one order, each with a small change | sample G completions at a temperature
+step: 🗣️ Regulars score every cup | reward model scores each completion
+step: 🧮 She averages the four scores for this batch | group mean
+step: ➖ Each cup is judged against the batch average | subtract the mean
+step: 📏 She rescales by how spread out the scores were | divide by the group spread
+step: 🟰 If all four cups tie, nothing is learned that day | zero-variance group
+takeaway: A group only teaches something when its answers differ, and normalising inside it makes every prompt count fairly.
+```
+
 ## Normalising inside the group
 
 Write the rewards of the $G$ completions for prompt $q$ as $r_1, \dots, r_G$. The **group-relative advantage** of completion $i$ is its reward measured against its siblings, in units of their spread:

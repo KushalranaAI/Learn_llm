@@ -7,6 +7,27 @@ Computers store text as **bytes**, numbers from 0 to 255. There are far more tha
 
 Modern tokenizers work on these bytes, not on characters. **Byte-level BPE** starts its vocabulary with all 256 byte values and learns merges on top. This guarantees that any string, in any language, including emoji and binary junk, can be encoded: in the worst case, one token per byte. It also means the cost of a language depends on two things: how many bytes its characters take, and how many merges the tokenizer learned for that language, which depends on how much of it was in the tokenizer's training text.
 
+## In everyday life
+
+A courier company ships everything in identical small boxes, because those are what its trucks and shelves are built for. A pen goes in one box. A ceiling fan needs three. Whatever the item, it can always be shipped, since any item can be split across enough small boxes.
+
+Computers store text this way. A **byte** is one small standard box, a number from 0 to 255. Every letter, character and emoji in the world's writing systems has a catalogue number called **Unicode**, and a rule called **UTF-8** says how many boxes each one needs, from one to four. A plain English letter takes one box. Many Indian scripts take three. Modern tokenizers start from the boxes, so no message can ever be unshippable. On top of that, the tokenizer adds ready-made crates, its merges, for items it saw often while it was being built.
+
+Here is where the cost comes from. The courier bills per crate. Common English words fit in one crate, while scripts it saw rarely travel box by box and need more crates. Unlike a heavy parcel, a Hindi word is not harder to say or think about. It simply needs more crates, so the same message costs more.
+
+**Where you meet it.** A company offers a help assistant in English and Hindi and finds the Hindi chats cost more and fill the context window sooner, though the content is the same. Counting tokens per language lets the team set budgets honestly instead of copying English figures.
+
+```scene
+title: A courier and its small boxes
+step: 🌐 Every written symbol in the world has a catalogue number | Unicode code point
+step: 📦 The courier packs each symbol into one to four identical small boxes | UTF-8 bytes
+step: 🚚 Items it ships often get ready-made multi-item crates | learned BPE merges
+step: 🔤 A common English word travels in a single crate | one token for hello
+step: 🪔 A script the courier rarely saw travels box by box | more tokens per Hindi word
+step: 💰 The bill counts crates, so the same message costs more | cost differs by language
+takeaway: Any text can be encoded as bytes, but languages the tokenizer saw less of need more tokens.
+```
+
 ## UTF-8 in one table
 
 | Code point range | Bytes | Examples |

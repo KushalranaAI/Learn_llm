@@ -9,6 +9,24 @@ Earlier we saw that 500 examples per arm could not confirm a 4-point improvement
 2. **How often you accept a false alarm**: the significance level $\alpha$ (usually 0.05), the chance of declaring a difference when none exists.
 3. **How often you accept missing a real effect**: $\beta$, so that the **power** $1 - \beta$ (usually 0.8) is the chance of detecting a true effect of size $\delta$.
 
+## In everyday life
+
+A jeweller suspects her old scale reads one gram light. The scale also jitters: weigh the same coin twice and you get slightly different numbers. To tell a real one-gram shift from jitter she must weigh many times and average the readings. If the shift were ten grams, a couple of weighings would settle it. The smaller the difference you care about, and the more the readings jitter, the more weighings you need.
+
+Deciding that before you start is called a **power analysis**. You pick the **minimum detectable effect**, the smallest improvement you would actually care about. You decide how often you will tolerate a false alarm, and how often you will tolerate missing a real improvement. **Power** is the chance of catching a real effect of that size. Together these choices tell you how many examples to run. Too few and the test cannot tell you anything. Far too many and you waste time and money.
+
+**Where you meet it.** A team plans to compare two versions of a summarising assistant. They decide up front that a gain below a few points is not worth shipping, then work out how large a test set they need. Without this step they might run a test too small to see the gain, hear "no difference", and drop a good idea.
+
+```scene
+title: The jeweller and the jittery scale
+step: ⚖️ The jeweller wonders if her scale is off by a small amount | a possible small improvement
+step: 🎯 She decides how small an error is worth caring about | minimum detectable effect
+step: 🙅 She decides how often she will accept a false alarm or a miss | significance level and power
+step: 🔢 She works out how many weighings that demands | sample size per arm
+step: 🔁 A smaller error or a shakier scale means more weighings | required sample size grows
+takeaway: Decide how small a difference matters first, then size the test to see it.
+```
+
 ## The maths
 
 Under the alternative that B is truly $\delta$ better than A, the observed gap is roughly normal, centred on $\delta$ with standard error $\mathrm{SE} = \sqrt{2p(1-p)/n}$ (taking both arms near the same rate $p$ with $n$ items each). We reject the null when the gap exceeds $z_{\alpha/2}\,\mathrm{SE}$, and we want that to happen with probability $1 - \beta$, which requires $\delta$ to sit $z_\beta$ standard errors above the rejection boundary:

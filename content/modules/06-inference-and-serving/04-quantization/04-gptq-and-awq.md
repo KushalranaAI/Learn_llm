@@ -5,6 +5,24 @@ minutes: 8
 
 Round-to-nearest treats every weight as equally important. It is not: a weight that multiplies a large, frequently active input matters far more than one that multiplies inputs near zero. The methods in this topic are **post-training quantization (PTQ)**: take a trained model, run a few hundred sample texts through it (the **calibration set**), and use what you learn about the inputs to quantize more cleverly. No retraining is needed, and they typically work on one layer at a time.
 
+## In everyday life
+
+A kirana shop owner wants simpler price tags, so every price must become a multiple of five rupees. The easy way is to round each item on its own. But the week's sales show a better way. Bestsellers sell all day, so a small rounding slip on them costs more than the same slip on a rarely bought item. A careful owner rounds the bestsellers most carefully. And if one price had to go up, the owner nudges the next price down to cancel it, so a customer's total stays close to the true one.
+
+Compressing a model's **weights** (its learned numbers) can work the same way. The smarter methods are **post-training quantization**: take a model that is already trained and compress it, with no retraining. First they run a few hundred sample texts through it, the **calibration set**, to see which weights meet large inputs and so matter most. **GPTQ** rounds weights one at a time and adjusts the remaining ones to cancel the error. **AWQ** gives the important weights extra protection before rounding.
+
+**Where you meet it.** A team downloads a four-bit version of an open model labelled GPTQ or AWQ. Plain rounding at that size would have hurt answer quality noticeably. These methods keep it close to the original.
+
+```scene
+title: The kirana owner rounds prices
+step: 🏪 The owner wants simple price tags in multiples of five rupees | a low-bit grid of levels
+step: 📒 A week of sales shows which items sell the most | calibration set
+step: ⚖️ A rounding slip on a bestseller costs far more than on a rare item | error amplified by large inputs
+step: 🧾 After rounding one price up, the next is nudged down to cancel it | GPTQ error compensation
+step: 🔍 Bestsellers get extra care before any rounding happens | AWQ protects salient channels
+takeaway: Rounding smartly, using what the model actually sees, loses far less than rounding every weight blindly.
+```
+
 ## What we are minimising
 
 For one linear layer with weights $W$ and calibration inputs $X$ (columns are token activations), the output is $WX$. After quantization the output is $\hat{W}X$. What matters is the error in the **output**, not in the weights:

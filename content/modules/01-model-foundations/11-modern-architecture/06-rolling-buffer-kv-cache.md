@@ -7,6 +7,26 @@ The sliding window from the previous topic decides which keys a token *attends t
 
 A **rolling-buffer cache** stores only what the window can ever need: the $s$ sink tokens plus the latest $W$ tokens. When token $W + s$ arrives, the oldest window entry is overwritten. Think of a security camera that records onto a fixed loop of tape: it always holds the last 24 hours, and nobody has to rewind or copy anything to keep it that way. Mistral 7B's reference implementation uses this, so its cache never exceeds $W = 4096$ positions per layer.
 
+## In everyday life
+
+A hostel has a rack of pigeonholes for letters, with a fixed number of slots. The first slot is always kept for the warden's notice. Every new letter goes into the slot of the oldest letter, and the old one is thrown away, so the rack never grows. Nobody sorts the letters into time order. That is fine, because each letter has its own postmark, and anyone reading the rack goes through all the letters whatever order they sit in.
+
+A **rolling-buffer cache** works the same way for a model's **KV cache** (the saved keys and values of earlier tokens). A fixed number of slots is reserved once: a few for the first tokens, the **sinks**, and the rest for the latest tokens, the **window**. A new **token** (a word or word piece) overwrites the oldest window slot. Order inside the buffer does not matter, because each saved key already carries its position, and **attention** reads all the entries it can see together.
+
+The big gain is predictable memory: every chat uses the same amount, however long it runs.
+
+**Where you meet it.** A chat server holding many long-running conversations can reserve exactly the same memory for each one up front. Without a rolling buffer, one very long chat can use up the GPU and break everyone else's session.
+
+```scene
+title: Pigeonholes with a warden slot
+step: 📬 A hostel rack has a fixed number of pigeonholes | fixed-size buffer
+step: 📌 The first slot always holds the warden's notice | sink slots never overwritten
+step: ✉️ A new letter goes into the slot of the oldest letter | overwrite the oldest window entry
+step: 🔄 After the last slot, the clerk wraps around to the oldest again | circular write pointer
+step: 🕐 Each letter has its own postmark, so slot order does not matter | position stored in each key
+takeaway: A rolling buffer reuses a fixed set of slots, so memory stays constant however long the stream runs.
+```
+
 ## The maths
 
 Allocate $s + W$ slots once. A token at absolute position $p$ goes to slot

@@ -9,6 +9,27 @@ A useful test for a **success criterion** is whether a stranger could apply it t
 
 Criteria come in two kinds. **Gates** (hard constraints) are pass/fail requirements that no amount of quality elsewhere can make up for: the output must be valid JSON, must not reveal another customer's data, must answer in the user's language. **Graded criteria** are qualities that can be partly present: correctness, completeness, tone. A **rubric** lists the graded criteria, says what each score level means, and assigns weights.
 
+## In everyday life
+
+Picture a school science exhibition. If the judges are told to "pick the best project", each will pick a different one, and the same judge may change her mind after lunch. So the organisers hand out a scoring sheet. It lists a few things to check, such as an original idea, a model that works and a clear explanation, and says how many marks each is worth. It also has a few hard rules. The project must be the student's own work, and it must be safe. Break one and the project is out, however clever it is.
+
+That sheet is what this chapter builds for an AI system. A **success criterion** is one specific thing a stranger could check and get the same answer as you. A **gate** is a hard rule that must pass, like valid JSON or no leaked private data. A **graded criterion** is a quality that can be partly present, like correctness or tone. A **rubric** lists the graded criteria, what each score level means, and the weight of each. The final score is the weighted marks, and a failed gate turns it into zero.
+
+Unlike a school sheet, an AI rubric also names who checks each line: a script, a person or another model.
+
+**Where you meet it.** A company's refund assistant must state the refund window correctly, cite the policy and sound polite. Without a rubric, reviewers argue about what "good" means. With one, correctness counts most, tone counts less, and a reply that leaks another customer's phone number scores zero however well it reads.
+
+```scene
+title: A scoring sheet for the science fair
+step: 🏫 Judges disagree about which project is the best | vague goal like good answers
+step: 📋 The organisers write a sheet of specific things to check | success criteria
+step: 🚫 Rules like own work and safety can disqualify a project | gates
+step: ⚖️ Originality and clarity earn marks, some worth more than others | graded criteria with weights
+step: 🧮 The marks are added up using those weights | weighted rubric score
+step: 🔴 A disqualified project scores zero, however good it looks | a failed gate zeroes the score
+takeaway: Break a vague goal into specific checks, weight the graded ones, and let hard rules veto everything.
+```
+
 ## The maths: weighted rubric scores with gates
 
 Score each graded criterion $k$ on a scale and normalise it to $s_k \in [0, 1]$ (a 4 on a 1-to-5 scale becomes $s_k = 4/5 = 0.8$ if you divide by the maximum). Give each criterion a weight $w_k \ge 0$ with $\sum_k w_k = 1$. Each gate $j$ gives $g_j \in \{0, 1\}$. The example's score is

@@ -7,6 +7,26 @@ A language model is trained on one task: given the tokens so far, predict the ne
 
 That makes data preparation almost trivial. Load the whole file as one long tensor of byte IDs, cut out a random window of $n$ consecutive tokens as the input $x$, and cut out the same window moved one position to the right as the target $y$. Position $t$ of $y$ is the token that follows position $t$ of $x$. One window of length $n$ is therefore not one example but $n$ of them: predict token 2 from token 1, token 3 from tokens 1 and 2, and so on up to predicting token $n+1$ from all $n$. The [causal mask](/learn/model-foundations/attention) is what makes this legal: position $t$ cannot see positions after $t$, so it cannot peek at its own answer.
 
+## In everyday life
+
+When a child learns to read, a teacher may cover the next letter with a finger and ask, "What comes next?" Then the finger lifts and the child sees the answer. Every line of every book becomes a pile of tiny quizzes, and the book itself holds all the answers.
+
+Now picture a teacher preparing practice sheets from one long book. She opens the book at a random spot and copies a short stretch onto a question sheet. On an answer sheet she copies the same stretch moved along by one letter. Put side by side, each letter on the question sheet has, as its answer, the letter that follows it. She prepares a pile of such pairs from different places and hands the whole pile to the student at once.
+
+This is how training data for next-token prediction is made. A **token** is a piece of text, here a single byte. The short stretch copied out is a **window**. The **inputs** are the window, and the **targets** are the same window shifted by one. A pile of windows is a **batch**. Random starting spots stop the student from just learning the order of the pages. One difference from the classroom: the student here is quizzed at every position of the window in one go, and at each position sees only what comes before it.
+
+**Where you meet it.** Someone building a small model on their own documents has plain text but no labelled examples. The shifting trick turns that text into endless question-and-answer pairs. If the shift is forgotten, the model is handed the answer along with the question, learns only to copy, and learns nothing about what comes next.
+
+```scene
+title: Practice sheets from one book
+step: 📖 The teacher opens a long book at a random page | random start index
+step: ✂️ She copies a short stretch onto the question sheet | input window
+step: 📄 The answer sheet holds the same stretch moved along by one letter | targets shifted by one
+step: 🗂️ She makes a pile of such sheet pairs from different places | batch of windows
+step: 🧠 The student guesses every next letter, then checks the answers | next-token prediction
+takeaway: Shift the text by one position and plain text becomes endless practice questions with built-in answers.
+```
+
 ## The shift, precisely
 
 Let the training data be a sequence of token IDs $u_0, u_1, \dots, u_{N-1}$. Pick a start index $i$ uniformly from $\{0, \dots, N - n - 2\}$. Then

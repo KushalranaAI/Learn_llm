@@ -11,100 +11,97 @@ Every lesson's `lesson.json` lists the sims and labs it uses. Ids below are the 
 
 ---
 
-## 01 · model-foundations: How LLMs Work
-From a single neuron to a transformer that predicts the next token.
+## 01 · model-foundations: How LLMs Work, Built from Scratch
+Each idea, then its code: from a single neuron to tokens, embeddings and attention, then the same pieces in PyTorch, a tiny GPT trained end to end, sampling and the KV cache, the modern architecture (RMSNorm, RoPE, SwiGLU) and mixture of experts. Code lessons are optional for concept-only learners.
 
-| # | lesson slug | title | sims to embed | lab |
-|---|---|---|---|---|
-| 00 | what-is-an-llm | What Is an LLM? (animated opener, start here) | llm-autocomplete, llm-timeline, transformer-flow, training-stages, llm-can-cant | — |
-| 01 | how-networks-learn | How a Network Learns: Loss and Gradient Descent | neuron, gradient-descent, xor-training | lab: train-a-tiny-network |
-| 02 | tokenization | Tokenization: From Text to Token IDs | bpe-tokenizer, token-cost | lab: token-budget |
-| 03 | embeddings | Embeddings: Meaning as Geometry | embedding-space | — |
-| 04 | attention | Attention: How Tokens Read Their Context | attention-heatmap | lab: attention-by-hand |
-| 05 | transformer-block | The Transformer Block, Layer by Layer | transformer-params | — |
-| 06 | sampling | Next-Token Prediction and Sampling | sampling | lab: tune-the-sampler |
-| 07 | context-and-kv-cache | Context Windows, Prefill and the KV Cache | kv-cache-memory, context-position | lab: fit-the-kv-cache |
-| 08 | limits | Hallucination and the Limits of Next-Token Prediction | sampling | — |
+| # | lesson slug | title | topics | sims | labs |
+|---|---|---|---|---|---|
+| 00 | what-is-an-llm | What Is an LLM? | 5 | llm-autocomplete, llm-timeline, transformer-flow, training-stages, llm-can-cant | — |
+| 01 | how-networks-learn | How a Network Learns: Loss and Gradient Descent | 8 | neuron, gradient-descent, backprop-flow, xor-training | train-a-tiny-network |
+| 02 | tokenization | Tokenization: From Text to Token IDs | 7 | bpe-tokenizer, token-cost | token-budget |
+| 03 | embeddings | Embeddings: Meaning as Geometry | 6 | embedding-space | — |
+| 04 | attention | Attention: How Tokens Read Their Context | 6 | attention-heatmap | attention-by-hand |
+| 05 | transformer-block | The Transformer Block, Layer by Layer | 6 | transformer-params | — |
+| 06 | run-it-yourself | Run It Yourself: Laptop CPU, Free Colab or a Short GPU Rental (code) | 5 | transformer-params, training-memory | — |
+| 07 | attention-in-code | From Equations to PyTorch: Attention and the Transformer Block (code) | 6 | attention-heatmap, transformer-params, transformer-flow | — |
+| 08 | sampling | Next-Token Prediction and Sampling | 6 | sampling | tune-the-sampler |
+| 09 | train-a-tiny-gpt | Train a Tiny GPT End to End (code) | 7 | transformer-params, sampling, gradient-descent | — |
+| 10 | context-and-kv-cache | Context Windows, Prefill and the KV Cache | 6 | kv-cache-memory, context-position | fit-the-kv-cache |
+| 11 | modern-architecture | Modernising the Architecture: RMSNorm, RoPE, SwiGLU and the KV Cache (code) | 6 | attention-heatmap, transformer-params, latency-breakdown, kv-cache-memory | fit-the-kv-cache |
+| 12 | scaling-the-training-loop | Scaling Up the Training Loop (code) | 6 | bpe-tokenizer, training-memory, lr-schedule | plan-a-training-run |
+| 13 | mixture-of-experts | Mixture of Experts: More Parameters, Same Compute (code) | 6 | roofline | — |
+| 14 | limits | Hallucination and the Limits of Next-Token Prediction | 6 | sampling | — |
 
-## 02 · build-from-scratch: Build an LLM from Scratch
-Working PyTorch for everything module 01 explains, following the companion repo `llm_from_scratch` (parts 1–5).
+## 02 · training-and-adaptation: Pretraining and Scale
+How base models are made and what it costs: pretraining data, scaling laws and compute budgets, memory, precision and parallelism, distillation into small models, and multimodal inputs.
 
-| # | lesson slug | title | llm_from_scratch | sims |
-|---|---|---|---|---|
-| 01 | attention-in-code | From Equations to PyTorch: Attention and the Transformer Block | part_1 | attention-heatmap, transformer-params, transformer-flow |
-| 02 | train-a-tiny-gpt | Train a Tiny GPT End to End | part_2 | transformer-params, sampling, gradient-descent |
-| 03 | modern-architecture | Modernising the Architecture: RMSNorm, RoPE, SwiGLU and the KV Cache | part_3 | attention-heatmap, transformer-params, latency-breakdown, kv-cache-memory · lab: fit-the-kv-cache |
-| 04 | scaling-the-training-loop | Scaling Up the Training Loop | part_4 | bpe-tokenizer, training-memory, lr-schedule · lab: plan-a-training-run |
-| 05 | mixture-of-experts | Mixture of Experts: More Parameters, Same Compute | part_5 | roofline |
+| # | lesson slug | title | topics | sims | labs |
+|---|---|---|---|---|---|
+| 01 | pretraining-data | Pretraining Data: What Models Learn From | 6 | — | — |
+| 02 | scaling-laws | Scaling Laws and Compute Budgets | 6 | scaling-laws | plan-a-training-run |
+| 03 | training-at-scale | Training at Scale: Memory, Precision and Parallelism | 6 | training-memory, lr-schedule | — |
+| 04 | distillation | Distillation and Small Models | 5 | — | — |
+| 05 | multimodal | Multimodal Models: Images, Audio and Text | 5 | — | — |
 
-## 03 · training-and-adaptation: Training and Adapting Models
-How models are pretrained, aligned and specialised, and what each step costs.
+## 03 · fine-tuning: Fine-Tuning and Alignment
+Turning a base model into a useful one, concept first, then hands-on on a laptop CPU, free Colab or a rented GPU: instruction tuning, LoRA and QLoRA, preference tuning (RLHF, DPO, KTO, ORPO, SimPO), GRPO with verifiable rewards, and fine-tuning embedding models.
 
-| # | lesson slug | title | sims | lab |
-|---|---|---|---|---|
-| 01 | pretraining-data | Pretraining Data: What Models Learn From | — | — |
-| 02 | scaling-laws | Scaling Laws and Compute Budgets | scaling-laws | lab: plan-a-training-run |
-| 03 | training-at-scale | Training at Scale: Memory, Precision and Parallelism | training-memory, lr-schedule | — |
-| 04 | instruction-tuning | Instruction Tuning (SFT) | — | — |
-| 05 | preference-tuning | Preference Tuning: RLHF and DPO | preference-loss | — |
-| 06 | peft-lora | Parameter-Efficient Fine-Tuning: LoRA and QLoRA | lora-params | lab: lora-budget |
-| 07 | distillation | Distillation and Small Models | — | — |
-| 08 | multimodal | Multimodal Models: Images, Audio and Text | — | — |
+| # | lesson slug | title | topics | sims | labs |
+|---|---|---|---|---|---|
+| 01 | instruction-tuning | Instruction Tuning (SFT) | 6 | — | — |
+| 02 | peft-lora | Parameter-Efficient Fine-Tuning: LoRA and QLoRA | 5 | lora-params | lora-budget |
+| 03 | preference-tuning | Preference Tuning: RLHF and DPO | 6 | preference-loss | — |
+| 04 | start-here | When to Fine-Tune and How Big a Run You Need | 2 | lora-params, token-cost | lora-budget |
+| 05 | run-fine-tuning-yourself | Set Up Your Fine-Tuning Environment: CPU, Free Colab or a Rented GPU (code) | 5 | quantization, lora-params | lora-budget |
+| 06 | sft-with-lora-step-by-step | Supervised Fine-Tuning with LoRA, Step by Step (code) | 6 | lora-params, lr-schedule | lora-budget |
+| 07 | preference-optimization-methods | Preference Optimization in Practice: RLHF, DPO, IPO, KTO, ORPO and SimPO (code) | 7 | preference-loss, training-memory, judge-agreement | — |
+| 08 | grpo-hands-on | GRPO Hands-On: Teaching a Small Model to Reason with Verifiable Rewards (code) | 5 | kv-cache-memory, pass-at-k | — |
+| 09 | fine-tuning-embedding-models | Fine-Tuning Embedding Models (code) | 6 | embedding-space | — |
 
-## 04 · fine-tuning: Fine-Tuning in Practice
-Adapting a pretrained model to a task: when it beats prompting, how to size and run it, and how to tell whether it worked.
-Every lesson runs on a laptop CPU, free Colab/Kaggle or a short GPU rental. Grows as the author adds lessons from real runs (template: `content/modules/04-fine-tuning/_TEMPLATE.md`).
+## 04 · post-training: Post-Training from Scratch
+The alignment pipeline in plain PyTorch, on the tiny model you built: supervised fine-tuning with masked labels, a reward model trained on preference pairs, RLHF with PPO, and GRPO. Every step is code you can read and run on a laptop.
 
-| # | lesson slug | title | sims | lab |
-|---|---|---|---|---|
-| 01 | start-here | Start Here: When to Fine-Tune and How Big a Run You Need | lora-params, token-cost | lab: lora-budget |
-| 02 | run-fine-tuning-yourself | Set Up Your Fine-Tuning Environment: CPU, Free Colab or a Rented GPU | quantization, lora-params | lab: lora-budget |
-| 03 | sft-with-lora-step-by-step | Supervised Fine-Tuning with LoRA, Step by Step | lora-params, lr-schedule | lab: lora-budget |
-| 04 | preference-optimization-methods | Preference Optimization in Practice: RLHF, DPO, IPO, KTO, ORPO and SimPO | preference-loss, training-memory, judge-agreement | — |
-| 05 | grpo-hands-on | GRPO Hands-On: Teaching a Small Model to Reason with Verifiable Rewards | kv-cache-memory, pass-at-k | — |
-| 06 | fine-tuning-embedding-models | Fine-Tuning Embedding Models | embedding-space | — |
+| # | lesson slug | title | topics | sims | labs |
+|---|---|---|---|---|---|
+| 01 | sft-from-scratch | SFT from Scratch (code) | 6 | sampling | — |
+| 02 | reward-models | Reward Models from Scratch (code) | 2 | — | — |
+| 03 | rlhf-with-ppo | RLHF with PPO from Scratch (code) | 6 | training-memory, sampling | — |
+| 04 | grpo-from-scratch | GRPO from Scratch (code) | 5 | training-memory, sampling | — |
 
 ## 05 · evaluation: Evaluation and Experimentation
-Deciding what "good" means, measuring it, and trusting the comparison.
+Deciding what good means, measuring it with metrics and judges you can trust, comparing systems with honest statistics, and watching quality once real users arrive.
 
-| # | lesson slug | title | sims | lab |
-|---|---|---|---|---|
-| 01 | success-criteria | Success Criteria: Deciding What Good Means | — | — |
-| 02 | reference-scoring | Scoring Against References: Exact, Lexical and Semantic | metric-compare | — |
-| 03 | llm-as-judge | Using a Model as a Judge | judge-agreement | — |
-| 04 | comparing-systems | Comparing Systems You Can Trust: Samples, Variance and Significance | ab-significance | lab: is-it-really-better |
-| 05 | error-analysis | Error Analysis: Finding What Goes Wrong | — | — |
-| 06 | benchmarks-and-leaderboards | Benchmarks and Leaderboards: Reading Public Numbers Critically | benchmark-contamination, arena-elo, ab-significance | lab: build-an-eval-suite |
+| # | lesson slug | title | topics | sims | labs |
+|---|---|---|---|---|---|
+| 01 | success-criteria | Success Criteria: Deciding What Good Means | 6 | — | — |
+| 02 | reference-scoring | Scoring Against References: Exact, Lexical and Semantic | 6 | metric-compare | — |
+| 03 | llm-as-judge | Using a Model as a Judge | 5 | judge-agreement | — |
+| 04 | comparing-systems | Comparing Systems You Can Trust: Samples, Variance and Significance | 6 | ab-significance | is-it-really-better |
+| 05 | error-analysis | Error Analysis: Finding What Goes Wrong | 5 | eval-gate | — |
+| 06 | benchmarks-and-leaderboards | Benchmarks and Leaderboards: Reading Public Numbers Critically | 6 | benchmark-contamination, arena-elo, ab-significance | build-an-eval-suite |
 
-## 06 · inference-and-serving: (branch after module 02) Inference and Serving
-Where the time and money go when a model answers, and how to spend less of both.
+## 06 · inference-and-serving: Inference and Serving (branch after model-foundations)
+Where the time and money go when a model answers, and how to spend less of both: latency metrics, the roofline, batching, quantization, caching, speculative decoding and capacity planning.
 
-| # | lesson slug | title | sims | lab |
-|---|---|---|---|---|
-| 01 | measuring-inference | Measuring Inference: TTFT, TPOT, Throughput and Goodput | latency-breakdown | — |
-| 02 | memory-and-compute | Where the Time Goes: Memory Bandwidth, Compute and the Roofline | roofline | — |
-| 03 | batching | Batching and Scheduling | llm-batching | lab: serve-a-chat-model |
-| 04 | quantization | Precision and Quantization | quantization | lab: shrink-the-model |
-| 05 | caching | Caching Repeated Work: Prefix and Prompt Caches | prompt-cache | — |
-| 06 | speculative-and-parallel | Speculative Decoding and Model Parallelism | speculative-decoding | — |
+| # | lesson slug | title | topics | sims | labs |
+|---|---|---|---|---|---|
+| 01 | measuring-inference | Measuring Inference: TTFT, TPOT, Throughput and Goodput | 6 | latency-breakdown | — |
+| 02 | memory-and-compute | Where the Time Goes: Memory Bandwidth, Compute and the Roofline | 6 | roofline | — |
+| 03 | batching | Batching and Scheduling | 6 | llm-batching | serve-a-chat-model |
+| 04 | quantization | Precision and Quantization | 6 | quantization, roofline | shrink-the-model |
+| 05 | caching | Caching Repeated Work: Prefix and Prompt Caches | 3 | prompt-cache | — |
+| 06 | speculative-and-parallel | Speculative Decoding and Model Parallelism | 6 | speculative-decoding, roofline, llm-batching | — |
 
-## 07 · prompt-and-context: (branch after module 01) Prompt and Context Engineering
-Getting reliable behaviour from a model through what you put in its context.
+## 07 · prompt-and-context: Prompt and Context Engineering (branch after model-foundations)
+Getting reliable behaviour from a model through what you put in its context: templates and roles, few-shot examples, structured outputs, context budgets, tool schemas, regression tests and defences against prompt injection.
 
-| # | lesson slug | title | sims | lab |
-|---|---|---|---|---|
-| 01 | prompt-anatomy | Anatomy of a Prompt: Roles, Templates and Instruction Hierarchy | token-cost | — |
-| 02 | few-shot-and-structured | Few-Shot Examples and Structured Outputs | constrained-decoding | — |
-| 03 | context-selection | Choosing Context: Selection, Ordering and Compression | context-position | — |
+| # | lesson slug | title | topics | sims | labs |
+|---|---|---|---|---|---|
+| 01 | prompt-anatomy | Anatomy of a Prompt: Roles, Templates and Instruction Hierarchy | 6 | token-cost | — |
+| 02 | few-shot-and-structured | Few-Shot Examples and Structured Outputs | 6 | constrained-decoding | — |
+| 03 | context-selection | Choosing Context: Selection, Ordering and Compression | 6 | context-position | — |
 
-## Planned module
-
-Next steps, mapped to the hands-on PyTorch repo `llm_from_scratch` (parts 1–9). Slugs are not fixed until the
-module is written.
-
-| module | covers | llm_from_scratch |
-|---|---|---|
-| Post-training and alignment | SFT with masked labels, reward models (Bradley–Terry), RLHF with PPO, GRPO, DPO | parts 6–9 |
+Applications built on top of LLMs (RAG, agents, production systems, system design) are covered by the sibling paths: **RAG in 30 Days** and the **AI Engineer Path** (see the Roadmap page, "Which path should I take?").
 
 ---
 

@@ -7,6 +7,26 @@ With advantages in hand, the simplest update is the policy gradient from topic 1
 
 **Proximal Policy Optimization** (Schulman et al., 2017) fixes this with a cheap trick. It compares the new policy with the one that generated the samples, token by token, and stops rewarding any token whose probability has already moved more than a fraction $\epsilon$ in the helpful direction. The [theory lesson](/learn/fine-tuning/preference-tuning/rlhf-ppo) shows the objective; here it is in code, with the value and entropy terms that come with it.
 
+## In everyday life
+
+On a cold morning you adjust a shower tap. You turn it a little, feel the water, and turn again. You never spin it all the way, because a big turn on one guess can scald you, and the next guess then starts from a bad place. Imagine a tap with a stopper: it lets you turn up to a point and then stops, but you can always turn it back.
+
+PPO does this to a model's update. After a batch of answers, the model wants to make the good tokens more likely. One batch is only a small sample, so a big jump could ruin what took hours to build. For each token, PPO looks at the **ratio**, how likely the token is now compared with how likely it was when the answer was written. If the ratio has already moved more than a set fraction in the helpful direction, that token earns no extra push. This is **clipping**: capping how much one token's change can be rewarded. A bad token that became more likely is still pulled back, because clipping never blocks a correction.
+
+Two companions sit in the same loss. The **value loss** trains the value guess to be accurate. An optional bonus for variety, switched off in the repo, can discourage the model from becoming too certain.
+
+**Where you meet it.** When a chat model is tuned from human feedback, one lucky batch could push it into strange phrasing, and that phrasing would fill the next batch. Clipping keeps each step small.
+
+```scene
+title: Turning the shower tap carefully
+step: 🚿 The water is cold, so you turn the tap toward warm | positive advantage raises probability
+step: 🤏 You turn it only a little, then feel the water again | small policy update
+step: 🛑 The stopper gives no extra credit for turning further | clipped probability ratio
+step: ↩ Turning back from too hot is always allowed | bad tokens still pulled back
+step: 🔄 Tomorrow you start from where you ended | next batch from the updated policy
+takeaway: Clipping stops one batch from earning a huge change, while mistakes can always be corrected.
+```
+
 ## The three terms
 
 The **probability ratio** for action token $t$ is

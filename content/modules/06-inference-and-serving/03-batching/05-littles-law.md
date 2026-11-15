@@ -7,6 +7,28 @@ A coffee shop serves 2 customers per minute, and each customer spends 10 minutes
 
 For LLM serving it answers the question every capacity discussion eventually reaches: *how many sequences will be in flight at once?* That number is the batch the engine actually runs, and it decides both per-user speed and whether the KV cache fits.
 
+## In everyday life
+
+A hospital manager wants to know how many beds are occupied on an average day. She does not need to know anything about the doctors, the wards or who is sick. She needs two numbers: how many patients are admitted per day, and how many days each stays on average. Multiply them. If ten people arrive each day and each stays three days, about thirty beds are in use.
+
+This is **Little's law**: the average number of things inside a system equals the rate at which they arrive times the average time each one stays. It holds for almost any queue, as long as the system is steady, meaning as many leave as arrive over the long run.
+
+For an LLM server, the patients are **requests** (the messages users send) and the beds are the places in a **batch**, the group of conversations handled together at each step. Arrival rate times the time a reply takes tells you how many conversations are in progress at once. That number decides how fast each user's **tokens** (small pieces of a word) arrive and whether GPU memory is enough.
+
+Like a hospital, a server near its last free bed gets into trouble fast: more patients make stays longer, which fills the beds further.
+
+**Where you meet it.** A team sets up a gateway that sends requests to a model server. They know how many requests arrive per second and how long each takes, so they work out how many will run together. If that would not fit in GPU memory, they add servers before launch day.
+
+```scene
+title: Counting hospital beds in use
+step: 🚑 Patients arrive at a steady rate each day | the request arrival rate
+step: 🛏️ Each patient stays in a bed for some days | time a request spends in the system
+step: 🧮 Arrivals per day times days stayed gives beds in use | Little's law
+step: 🔄 Fuller wards slow everyone down, so stays grow longer | the feedback loop under load
+step: 🚫 When the beds run out, new patients wait outside | queueing and rising TTFT
+takeaway: The number of requests in progress equals the arrival rate times the time each one spends in the system.
+```
+
 ## The law
 
 For any stable system (one where, over the long run, as many items leave as arrive):

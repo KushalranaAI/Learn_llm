@@ -21,6 +21,26 @@ So every **benchmark** has three parts:
 
 The protocol is where most confusion comes from. A score reported with chain of thought and 8 attempts averaged is a different measurement from a single greedy answer, even on the same questions.
 
+## In everyday life
+
+Your cousin says a cricketer "averages 45". Is he a great batter? It depends. Was it on flat pitches or on green, seaming ones? Against weak teams or strong ones? In T20 or in Test matches? The same player can average 45 in one setting and 30 in another. The number belongs to the whole situation, not only to the player.
+
+An AI **benchmark** works the same way. It is a fixed set of questions given to a model, with a rule for marking the answers. The score you read on a model card is not a permanent trait of the model. It comes from three choices: which questions were set, how the model was asked, and how the answers were graded. Change one choice and the number moves.
+
+There is a second catch. The questions are only a sample of everything the model might be asked, so the score is an estimate with some wobble, like judging a batter after only a few innings.
+
+**Where you meet it.** A company picks a model for its customer-support bot because it topped a reading test. After launch, customers write in mixed languages and give messy details, and the bot struggles. The test measured a neat, narrow window, not the company's real conversations.
+
+```scene
+title: The batter with an average of 45
+step: 🏏 A batter's average is quoted without saying where or against whom | a benchmark score on its own
+step: 🌱 On a different pitch and opponent the same player scores much less | changing task set or protocol
+step: 📏 Two commentators count runs by different rules | different grading metric
+step: 🔢 A few innings give only a rough picture of his true ability | score is a noisy estimate
+step: ✅ Compare players only on the same pitches, rules and number of innings | same task set, protocol, metric
+takeaway: A benchmark score describes one experiment, so compare numbers only when the questions, prompting and grading match.
+```
+
 ## The maths: a score is an estimate
 
 Treat the benchmark's questions as a sample drawn from a much larger universe of questions of that kind. What you care about is the model's accuracy $p$ on that universe; what you observe is $\hat p$ on $n$ questions. The **standard error** is

@@ -7,6 +7,27 @@ Once you can turn any passage into a vector, a whole family of features becomes 
 
 The engineering questions are therefore about numbers: how many bytes the vectors take, how many operations a search costs, and what you lose when you shrink them. This topic gives you the formulas; the retrieval module builds the indexes that make search fast.
 
+## In everyday life
+
+A matchmaking bureau keeps one card for every profile, listing the person's traits as a row of numbers. When a family sends a new request, a clerk compares it with the cards to find the closest matches. Things get practical fast. More traits per card, and finer detail on each trait, need a bigger cabinet. Checking every card for every request takes longer as the cabinet grows.
+
+An **embedding** index is that cabinet. Each passage becomes a **vector**, a card of numbers, and a **vector index** stores many of them. Two sizes matter: how many numbers per card, and how precisely each is written. Memory is those two multiplied by the number of cards. Checking every card, called **brute-force search**, is simple and exact but slows as the collection grows. An **approximate index** sorts cards into folders so the clerk checks only a few, accepting a small chance of missing the best match.
+
+One rule is easy to forget. All cards must be filled in on the same form. Cards written with a different form, meaning a different embedding model, cannot be compared sensibly, even if they look alike.
+
+**Where you meet it.** A company turns its help articles into cards so a chatbot can fetch the right ones. When the collection grows from thousands to millions, the team must decide how many numbers per card to keep and whether to use folders. Skipping that planning ends in a big memory bill and slow replies.
+
+```scene
+title: A matchmaking bureau's card cabinet
+step: 🗂️ A bureau keeps one card of traits for every profile | stored embedding vectors
+step: 📏 More traits and finer detail per card need a bigger cabinet | memory grows with size and precision
+step: 🔎 A new request is compared with every card, one by one | brute-force search
+step: 🐢 With a huge cabinet this takes too long | cost grows with the number of vectors
+step: 📁 Sorting cards into folders lets staff check only a few | approximate index
+step: 📝 All cards must use the same form or comparisons mean nothing | same embedding model throughout
+takeaway: Plan memory and search cost from vector count, size and precision, and never mix embedding models.
+```
+
 ## Storage
 
 An index of $N$ vectors, each of dimension $d$, stored at $b$ bytes per number, needs

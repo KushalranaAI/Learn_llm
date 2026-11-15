@@ -5,6 +5,27 @@ minutes: 9
 
 Every piece is now on the table: a policy with a value head, a frozen reference, a reward model, a shaped reward, advantages and a clipped loss. The training loop arranges them into two alternating phases. In the **rollout** phase the policy acts: it writes answers, which are scored and frozen into a batch. In the **update** phase it learns from that batch. Then the updated policy writes the next batch. Because the data always comes from the current policy, PPO is **on-policy**, and that is both its strength (it learns from its own mistakes) and its cost (old batches cannot be reused).
 
+## In everyday life
+
+A chess club player improves in rounds. First she plays several games. Then she reviews them with a coach, who marks the key moments. Then she studies the notes and changes her habits a little. Next week she plays again with the new style. She does not use games from months ago to judge her current play, because an older version of her played those.
+
+PPO's training loop has the same two phases. In the **rollout** phase the policy writes answers, which are scored and saved as a fixed batch. In the **update** phase it learns from that batch. Each batch must come from the current policy, so the method is called **on-policy**. Its strength is that the model learns from its own mistakes. Its cost is that old batches cannot be reused for long.
+
+You watch two things: how far this update moved the player from last week, and how far she now plays from her original style. If the second keeps climbing while scores stall, something is wrong.
+
+**Where you meet it.** Teams that tune assistants this way repeat the cycle thousands of times. They also use stability tricks, such as small learning steps and capped gradients, so that no single bad batch can undo the earlier progress.
+
+```scene
+title: A chess club's weekly cycle
+step: 🧩 The player plays a handful of games | rollout: policy generates answers
+step: 🔍 The coach marks how well each game went | reward model scores the answers
+step: 🗂 The notes are filed and not changed afterwards | frozen batch of log-probs
+step: 📚 She studies the notes and adjusts her habits a little | PPO update step
+step: 📏 She checks her drift from last week and from her original style | KL_move and KL_ref
+step: 🔁 Next round, new games with the new style | next on-policy batch
+takeaway: PPO alternates between writing and scoring a fresh batch and learning from it, while watching how far the policy drifts.
+```
+
 ## One iteration of `train_ppo.py`
 
 ```steps

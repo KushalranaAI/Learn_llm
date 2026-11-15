@@ -11,6 +11,26 @@ The [previous lesson](/learn/post-training/rlhf-with-ppo) built PPO on the tiny 
 
 PPO learns it. The value head is a regression model trained alongside the policy to predict the reward from each position. GRPO samples it. Ask the policy the same prompt $G$ times, score all $G$ answers, and call their average the expected reward. Each answer is then judged against its own siblings. That average is the **group-relative baseline**, and it is the whole idea of Group Relative Policy Optimization (Shao et al., 2024). The theory lesson covers why it works with [verifiable rewards](/learn/fine-tuning/preference-tuning/verifiable-rewards-grpo); here we follow the code in `llm_from_scratch/part_9`, which still uses the learned reward model from [Reward models](/learn/post-training/reward-models).
 
+## In everyday life
+
+Think about how a teacher marks a class test. A raw mark of 14 out of 20 means little on its own. Was the paper hard or easy? What the teacher really wants to know is whether this student did better or worse than usual on this paper.
+
+One way is to hire an assistant who studies old papers and predicts, before marking, what a typical student will score. That assistant is an extra person to train and pay. The simpler way is to mark every paper in the class, take the class average, and judge each student against it.
+
+Reinforcement learning has the same problem. The model being trained is called the **policy**. It writes an answer, and a **reward model** gives that answer a score. A score alone does not say whether the answer was better than usual. The older method, PPO, trains a second network, the **value head**, to predict the usual score. **GRPO** skips it. The policy writes several answers to the same prompt, and their average score becomes the **baseline**, the "usual" to compare against. One difference from a class: all these answers come from one model, and there are only a few of them, so their average is a rough estimate.
+
+**Where you meet it.** A team trains a model to write short summaries, and a reward model scores each one. Without a baseline, almost every positive score pushes its summary up, and the useful signal drowns in noise. With a group average, the better summaries for each prompt go up, the weaker ones go down, and no second large network is needed.
+
+```scene
+title: Marking against the class average
+step: 📝 The teacher sets one paper and several students answer it | sample G completions per prompt
+step: 🧮 Every paper gets a mark from the same marking scheme | reward model scores each completion
+step: 📊 The teacher averages the class marks instead of predicting them | group mean as the baseline
+step: ⚖️ Each paper is compared with that average | reward minus baseline
+step: 👍 Papers above the average are encouraged, those below are discouraged | policy update, no value head
+takeaway: GRPO replaces a trained predictor of the usual reward with the plain average of a group of answers.
+```
+
 ## Why any baseline is allowed
 
 The policy gradient for one sampled completion $o$ with reward $r$ is $\nabla_\theta \log \pi_\theta(o)\, r$: raise the log-probability of what you sampled, in proportion to how good it was. Subtracting a **baseline** $b$ that does not depend on $o$ gives $\nabla_\theta \log \pi_\theta(o)\,(r - b)$, and the expected gradient is unchanged, because the extra term averages to zero:

@@ -9,6 +9,26 @@ This effect was measured systematically in a 2023 study (Liu et al., "Lost in th
 
 Why would a model do this? Part of the explanation is training data: in most documents, the important framing comes first and the most relevant recent text comes last, so models learn to weight those regions. Part is how attention behaves over long sequences: the earliest tokens tend to attract attention regardless of content, and nearby tokens are easier to attend to than distant ones. Whatever the mix, the engineering consequence is the same: **position is a variable you control**, and it changes accuracy.
 
+## In everyday life
+
+Your mother phones with twenty things to buy on the way home. You have nothing to write on. By the time you reach the shop, you remember the first few items and the last few. Somewhere in the middle, two things vanished, and one of them was the thing she said mattered most.
+
+Language models show a similar habit. When you give a model a long stretch of text, it tends to use facts near the **start** and near the **end** better than facts in the **middle**. The start effect is called **primacy** and the end effect is called **recency**. Together they draw a U-shaped pattern when you plot how well a fact is used against where it sits.
+
+This is not about the model forgetting over time. The whole text is in view at once, yet where a fact sits still changes how likely the model is to use it. So **position** is something you can choose, and choosing well costs nothing. Unlike you on the phone, the model can be helped by simply moving the key text.
+
+**Where you meet it.** A legal assistant is given fifty pages of contract and asked about one clause. If that clause lands in the middle, the answer is less reliable than if it sits near the end, so the pipeline controls placement.
+
+```scene
+title: Twenty items read out over the phone
+step: 📞 Your mother reads a long shopping list over the phone | long context given to the model
+step: 🧠 The first items stay clear in your memory | primacy at the start
+step: 🌫️ Items in the middle blur together | the dip in the middle
+step: 🛍️ The last items are fresh when you reach the shop | recency at the end
+step: ✍️ Next time you ask her to say the vital item last | placing the key passage at the end
+takeaway: Models use the start and end of a long context best, so place key facts there.
+```
+
 ## The maths: recall as a function of position
 
 Let $r(q)$ be the probability that the model uses a fact placed at relative position $q \in [0,1]$ in the context ($q = 0$ at the start, $q = 1$ at the end). The sim below uses an illustrative U-shaped curve. For a 16k context and an older model, it gives roughly:

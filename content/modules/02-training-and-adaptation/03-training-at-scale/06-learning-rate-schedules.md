@@ -7,6 +7,24 @@ The learning rate is the size of each step downhill. Early in training the model
 
 So nobody trains a large model with a constant learning rate. They use a **schedule**: start tiny and **warm up** to a peak over the first few thousand steps, then **decay** slowly to a small final value. The most common decay shape is a half cosine.
 
+## In everyday life
+
+Think of driving to a tight parking spot in a crowded lane. You do not floor the accelerator the moment the engine starts; you pull away gently. Once the road is clear, you cruise at full speed. As you near the spot you ease off, slowly at first and then more, until your last moves are tiny adjustments. If you kept highway speed to the end, you would never settle into the space.
+
+Training a model uses a **learning rate**, the size of each adjustment to the model's numbers. A **schedule** changes it over time. **Warmup** starts with tiny steps, because early on the model is random and big steps can wreck it. The rate then climbs to a peak, and **decay** lowers it smoothly (a **cosine** decay follows a smooth curve like half a wave) so the model can settle. Unlike a driver, the schedule usually has to know the total length of the journey in advance, because the slowing down is planned around the finish.
+
+**Where you meet it.** A team starting a large training run sets warmup and decay before the first step. Without warmup, the loss can spike or turn into invalid numbers early on. Without decay, the final model stays a little rough. A schedule fixes both.
+
+```scene
+title: Driving gently to a tight parking spot
+step: 🚗 You pull away from the kerb gently, not flooring it | warmup from a tiny learning rate
+step: 🛣️ On the open road you cruise at full speed | peak learning rate
+step: 🚦 Near the spot you start easing off smoothly | cosine decay
+step: 🅿️ Your last moves are tiny adjustments into the space | small final learning rate
+step: 🗺️ You planned the slowing down knowing how far the trip was | total steps fixed in advance
+takeaway: Start gently, run at full pace, then slow smoothly so the model settles.
+```
+
 ## The formula
 
 Let $t$ be the step, $T$ the total number of steps, $T_w$ the warmup steps, $\eta_{\max}$ the peak learning rate and $\eta_{\min}$ the final one. Warmup is linear:

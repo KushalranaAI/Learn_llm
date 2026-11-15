@@ -7,6 +7,26 @@ Arithmetic intensity tells you which limit you are near. The **roofline model** 
 
 The idea fits in one sentence: a workload can run no faster than the slower of two limits, the arithmetic the chip can do and the arithmetic that memory can feed it.
 
+## In everyday life
+
+On a road trip, your speed is never decided by the car alone. The car may be able to go very fast, but on a winding ghat section the speed limit is low. On an open expressway, the car's own top speed is what counts. At every moment, your speed is the lower of the two limits.
+
+A computer chip works the same way. One limit is **compute**: how many calculations (**FLOPs**, single multiplies or adds) the chip can do each second at best. The other is **memory bandwidth**: how fast data can be delivered to those calculations. How much work a job gets done per second is set by the lower of the two. The **roofline model** draws this as a chart shaped like a roof: a sloping part where memory is the limit and a flat part where compute is the limit. Each job is a dot placed under that roof. Jobs that do more calculation for each piece of data delivered sit further to the right.
+
+The picture is handy because it shows in seconds which limit you are hitting, and which upgrades can help. Remember that the roof is a ceiling, not a promise: real software usually runs below it.
+
+**Where you meet it.** A team reads a benchmark claiming a surprising speed for a model on a certain chip. They place the claim on that chip's roofline. If it sits above the roof, something is off, such as a bigger batch than stated. One short estimate saves a day of trying to reproduce it.
+
+```scene
+title: Two speed limits on one road
+step: 🚗 The car can go very fast on an open road | the chip's peak compute
+step: ⛰️ A winding ghat section has a low speed limit | the memory bandwidth limit
+step: ⏱️ On the ghat, your speed follows the road, not the car | memory-bound slope
+step: 🛣️ On the expressway, the car's own top speed decides | compute-bound flat roof
+step: 📈 Plot each stretch as a dot under the lower limit | the roofline chart
+takeaway: A job runs no faster than the lower of two limits: what the chip can calculate and what memory can feed it.
+```
+
 ## The formula
 
 With peak compute $P$ (FLOP/s), memory bandwidth $\beta$ (byte/s) and a workload of intensity $I$ (FLOP/byte), the **attainable performance** is

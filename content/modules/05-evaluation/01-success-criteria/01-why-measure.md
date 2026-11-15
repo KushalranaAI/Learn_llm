@@ -23,6 +23,25 @@ Changing a prompt, a model or a retrieval setting and then trying three question
 
 **Evaluation** replaces the spoonful with a procedure: a fixed set of inputs (the **eval set**), a rule that scores each output (the **metric**), and a summary across the set (usually an average). Once those three pieces exist, "is version B better?" becomes a question with a number for an answer, and the number comes with an error bar.
 
+## In everyday life
+
+A cricket selector watches a new batter score a brilliant fifty and wants to pick him straight away. A wise colleague stops him. One innings is one pitch, one set of bowlers, one lucky afternoon. Selectors look at the batting average over many matches, because a single score swings wildly and an average settles down.
+
+Testing an AI system has the same trap. You change a prompt, try three questions in the chat window, and the replies look good. That is a **vibe check**: quick, and handy for spotting obvious breakage, but far too small to trust. **Evaluation** replaces it with three fixed pieces. The questions are a fixed list called the **eval set**. A rule that scores each answer is the **metric**. The system's score is the average over the whole set. Because that average comes from a sample, it wobbles, and the size of the wobble is its **error bar**. Before declaring one version better, a careful person asks how big the error bar is.
+
+**Where you meet it.** A team tweaks the prompt of a support assistant and tries a few chat messages. It looks better, so they ship it, and complaints rise the next week. Had they scored a fixed set of real questions before and after the change, they would have seen whether it helped and how sure they could be.
+
+```scene
+title: One innings is not a batting average
+step: 🏏 A new batter scores a fine fifty in his first innings | one lucky sample, the vibe check
+step: 🤔 The selector wonders if it was skill or just a friendly pitch | noise in a small sample
+step: 📒 He collects scores from many matches | eval set of many examples
+step: 🧮 He takes the average across all of them | metric averaged into one score
+step: 📐 He asks how much that average could still swing | error bar
+step: ✅ Only then does he compare two batters | comparing versions with numbers
+takeaway: A few good-looking tries prove little; a fixed set, a scoring rule and an error bar turn a feeling into a measurement.
+```
+
 ## The maths: a score is an average, and averages have noise
 
 Write the eval set as $n$ examples $(x_i, y_i)$, where $x_i$ is the input and $y_i$ is whatever reference or rubric defines a good answer. The system produces an output $\hat{y}_i = f(x_i)$. A metric $m$ scores one output, and the system score is the mean:

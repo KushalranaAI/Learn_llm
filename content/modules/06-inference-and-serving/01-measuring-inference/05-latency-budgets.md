@@ -7,6 +7,26 @@ minutes: 7
 
 The trick is to ask what the user is *doing* while they wait. Someone reading streamed text cares about the first word and then about keeping ahead of their eyes. Someone listening to a voice cares about the silence before the reply. A program waiting for JSON cares only about the last token, because half a JSON object is useless.
 
+## In everyday life
+
+Your train leaves at six in the evening and you must be on the platform five minutes early. You do not just think "leave early". You work backwards. Ten minutes to walk through the station, fifteen for the cab, a few minutes to buy a ticket. Each step gets a slice of the time, and when the cab slice grows because of traffic, something else must shrink.
+
+That is a **latency budget**: a total waiting time that the product can afford, divided among the steps. The first job of a serving engineer is to turn a vague wish like "make it fast" into such numbers, and the right numbers depend on what the user is doing while they wait.
+
+Someone reading a streamed answer needs the first words quickly, then a pace a little faster than their eyes. A person on a voice call needs the silence before the reply to be short. A program waiting for a structured reply needs the whole answer in time, since half of it is useless.
+
+**Where you meet it.** A voice assistant for booking tickets must answer within a fraction of a second after the caller stops speaking. The team splits that gap among listening, thinking and speaking, and finds out how much time the language model itself may take.
+
+```scene
+title: Planning backwards for a six o'clock train
+step: 🚆 The train leaves at six and you must arrive early | overall latency target
+step: 🧭 You list what you do before boarding: walk, cab, ticket | stages of the request
+step: ⏳ Each stage gets a slice of the total time | split the latency budget
+step: 🚕 Traffic eats the cab's slice, so the other slices must shrink | one stage overruns the budget
+step: ✔️ The plan says exactly how fast each stage must be | concrete TTFT and TPOT targets
+takeaway: Turn what the user does while waiting into time targets, and split them across every stage.
+```
+
 ## Streaming text: keep ahead of the reader
 
 Adults typically read on-screen prose at a few words per second, and English averages somewhat more than one token per word (roughly 1.3 is a common rule of thumb). Call the reader's speed $r$ tokens per second. Streaming feels smooth when generation stays ahead of reading:

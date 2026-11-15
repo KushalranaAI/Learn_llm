@@ -7,6 +7,27 @@ You can guess a lot about a stranger from the company they keep. Linguists turne
 
 Embeddings are learned by turning that principle into a loss function. Nobody labels "coffee" and "tea" as related. The model is simply asked to predict context, and the gradient pushes the vectors of interchangeable words toward each other because that makes the predictions better. There are two routes to the same effect: a dedicated objective (word2vec, the classic method), or end-to-end training of a whole language model, where the embedding table is just the first layer.
 
+## In everyday life
+
+Remember fill-in-the-blank practice sheets from school? Nobody explains what each word means. You read many sentences, guess the missing word and check the answer. Slowly your feel for words sharpens, and words that fit the same blanks start to feel interchangeable. Multiple-choice sheets help too, because the wrong options show you what does not belong.
+
+A model learns **embeddings**, the lists of numbers that describe each word, in much the same way. Each word starts with random numbers. The model is asked to predict which words appear near a given word. When a guess is right, the numbers of the two words are nudged closer. In the classic method, a few random wrong words, called **negative samples**, are shown too, and their numbers are nudged away. The size of each nudge comes from **gradient descent**, the standard way a model improves by taking many small steps that reduce its mistakes.
+
+Words used in the same places end up with similar numbers. A word that never shows up on any sheet never gets nudged, so rare words stay near their random start. Large language models learn their embeddings as a side effect of next-word practice rather than a separate exercise.
+
+**Where you meet it.** A search box that understands related words gets its word lists from this kind of practice on huge amounts of text. Without it, someone would have to label by hand which words are related, which is impossible at that scale.
+
+```scene
+title: Fill-in-the-blank practice for words
+step: 📝 A student practises fill-in-the-blank sheets on piles of text | predicting context words
+step: ✅ When a word really fits a blank, she nudges her notes on the two closer | pulling real neighbours together
+step: ❌ A random wrong option is also on the sheet, and her notes move apart | negative samples pushed away
+step: 🔄 She repeats over thousands of sheets, nudging a little each time | many small gradient steps
+step: 📚 Words used in the same blanks end up with similar notes | similar embedding vectors
+step: 🧑‍🏫 Nobody tells her meanings; the sheets and answers are enough | learned without labels
+takeaway: Embeddings are learned by nudging words that share contexts closer and unrelated words apart.
+```
+
 ## A dedicated objective: skip-gram with negative sampling
 
 The **skip-gram** model gives each word two vectors: $\mathbf{v}_w$ when it is the centre word and $\mathbf{u}_c$ when it is a context word. It scores how likely context word $c$ is to appear near $w$ with a dot product squashed by the sigmoid $\sigma(z) = 1/(1 + e^{-z})$:

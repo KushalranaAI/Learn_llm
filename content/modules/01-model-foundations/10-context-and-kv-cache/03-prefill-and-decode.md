@@ -9,6 +9,27 @@ Watch a chat model answer and you see two phases. First a pause, then words stre
 
 **Decode** then generates one token per forward pass, each pass processing only the newest token and reading the cache. The steady streaming rate is set by the **time per output token (TPOT)**. You cannot parallelise decode across positions, because token $t+1$ depends on the choice of token $t$.
 
+## In everyday life
+
+Picture a busy restaurant kitchen when a big order slip arrives. First the whole team reads the slip and prepares everything at once: one person chops onions, another grinds masala, a third measures rice. Then cooking begins, and dishes leave one at a time, because each step depends on the one before. The cooks are not slow. They spend most of their time walking to the storeroom to fetch heavy sacks.
+
+A chat model has the same two phases. **Prefill** reads your whole prompt in one parallel pass, so the machine's calculators are fully busy. **Decode** then writes the answer one **token** (a word or word piece) at a time, and each token needs the one before it. Decode is limited by how fast the GPU can fetch the model's numbers from memory, not by how fast it can calculate, so it is called **memory-bound**. The wait before the first word is the **time to first token**.
+
+Unlike a kitchen, the model makes the full storeroom trip for every single token, unless it serves several users in one trip. That is why servers **batch** requests together.
+
+**Where you meet it.** A customer-care chat window shows a pause, then words streaming out. A long pasted document makes the pause longer; a long answer makes the streaming last longer. Knowing which phase is slow tells an engineer whether to fix the start or the stream.
+
+```scene
+title: The kitchen with one big order
+step: 🧾 A big order slip arrives and the whole team reads it | the prompt arrives
+step: 🔪 Everyone preps at once: chopping, grinding, measuring | prefill, one parallel pass
+step: ⏱️ Customers wait until the first dish is ready | time to first token
+step: 🍛 Dishes then leave one at a time, each after the last | decode, one token per pass
+step: 🚶 For each dish a cook walks to the storeroom for heavy sacks | reading all weights from memory
+step: 🛒 One storeroom trip can supply dishes for many tables | batching many users
+takeaway: Prefill is parallel and compute-heavy; decode goes one token at a time and waits on memory.
+```
+
 ## Counting the work
 
 A useful rule: a forward pass costs about $2N$ floating-point operations (FLOPs) per token, where $N$ is the number of parameters. Each parameter takes part in one multiply and one add per token. This counts the weight matrix multiplications and ignores attention over the context, which we add back below.

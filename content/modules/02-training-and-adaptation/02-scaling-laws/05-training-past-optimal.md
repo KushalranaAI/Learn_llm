@@ -7,6 +7,24 @@ Compute-optimal training minimises the loss you get for a training budget. But a
 
 So the economic question is different: **for a target quality, what is the cheapest model to own over its lifetime?** The answer is usually a smaller model trained on far more tokens than 20 per parameter. This is called **over-training** (a slightly misleading name: the model is not overfitting, it is being trained beyond the compute-optimal point).
 
+## In everyday life
+
+Suppose a company must staff a help desk that will take calls for years. It can hire an expensive senior expert who needs only a short induction, or a junior who is paid less per call but needs longer training to reach the same quality. For a few calls the senior is cheaper overall. For thousands of calls every day, the junior's lower cost per call wins, even after the extra training.
+
+A model faces the same trade. **Training** is the one-time cost of teaching it. **Inference** is the repeated cost of using it to answer requests, and it grows with the number of **parameters**, the adjustable numbers inside it. A smaller model is cheaper every time it answers. The previous lesson found the cheapest way to reach a given quality at training time. This lesson shows that when a model will answer a huge number of requests, it pays to give a smaller model much more training text than that rule suggests. People call this **over-training**. Unlike a junior employee, though, a small model eventually stops improving, because its size sets a ceiling.
+
+**Where you meet it.** A company serving a chatbot to millions of users picks a model small enough to run cheaply, then trains it on far more text than the cheapest-to-train rule would say. Without this idea it would choose the model that is cheapest to train and then pay a large bill every day for answering. The fix is to count the lifetime cost: training plus answering.
+
+```scene
+title: Hiring for a busy help desk
+step: 👔 A senior expert answers well but costs a lot per call | large model, costly inference
+step: 🎒 A junior needs much longer training to reach the same quality | smaller model, more tokens
+step: 📞 Thousands of calls a day make the lower cost per call matter | serving many requests
+step: 🧾 The company adds training cost and all future calls together | lifetime compute
+step: 🚧 Even a well-trained junior eventually hits a skill ceiling | capacity limit of a small model
+takeaway: When a model serves heavy traffic, count lifetime cost and train a smaller model for longer.
+```
+
 ## Lifetime compute
 
 Training costs $6ND$. Serving costs about $2N$ FLOPs per token processed (forward pass only). If the model will process $D_{\text{inf}}$ tokens over its life:

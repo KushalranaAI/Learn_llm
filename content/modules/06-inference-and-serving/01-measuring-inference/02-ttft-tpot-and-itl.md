@@ -7,6 +7,26 @@ Streaming changes what "fast" means. A non-streamed answer that takes 8 seconds 
 
 The previous topic defined TPOT as an average. That average hides something users notice immediately: **stutter**. If tokens arrive every 25 ms and then pause for half a second, the average barely moves but the text visibly freezes. To see stutter you need the individual gaps.
 
+## In everyday life
+
+You press play on a video. For a couple of seconds the screen stays black, then the video starts and runs smoothly. Later it freezes for a moment with the spinning circle, then carries on. You judge two different things: how long you waited to begin, and whether it flowed or stuttered.
+
+A streamed AI answer is judged the same way. **Time to first token (TTFT)** is the wait before the first piece of the answer appears. **Time per output token (TPOT)** is the average gap between the pieces after that. **Inter-token latency (ITL)** is the gap between each pair of neighbouring pieces, one by one.
+
+Why keep ITL when you already have the average? Because an average can hide a freeze. A video that plays perfectly for a minute and then buffers for ten seconds can still have a decent average speed. You only see the freeze by looking at the individual gaps.
+
+**Where you meet it.** A team runs a chat product. Users say the text "stops for a moment" now and then, yet the dashboard shows a healthy average gap between tokens. Looking at the individual gaps shows rare long pauses, which points to a different problem from a model that is simply slow.
+
+```scene
+title: Watching a streamed video
+step: ▶️ You press play and the screen stays black for a moment | time to first token
+step: 🎞️ The video then runs smoothly, frame after frame | steady stream of tokens
+step: ⏱️ You note the average pace over the whole clip | time per output token, the average
+step: ⏸️ One frame freezes for a long moment mid-clip | one huge inter-token gap
+step: 🔍 Only the gap-by-gap view reveals the freeze the average hid | inter-token latency distribution
+takeaway: Measure the wait to start and the individual gaps, because an average can hide a visible freeze.
+```
+
 ## Inter-token latency
 
 Let the client record a timestamp $t_0$ when it sends the request and $t_1, t_2, \dots, t_{n}$ when each output token arrives, with $n = n_{out}$. Then

@@ -5,6 +5,26 @@ minutes: 8
 
 Squeezing real numbers into a few integers means choosing a ruler. Imagine measuring heights with a ruler marked only in whole centimetres: you pick the ruler's length to cover the tallest person, and everyone is rounded to the nearest mark. A longer ruler covers more people but each mark is further apart, so everyone is measured less precisely. Quantization has exactly that tension.
 
+## In everyday life
+
+Look at a ceiling fan regulator. It does not give you every possible speed; it has a handful of clicks. You pick the click closest to the breeze you want. Whoever designed it had to decide what the top click means. If the top click is the fastest speed you will ever need, every click below it is a fixed step down from there.
+
+That is the trick of storing numbers in a few levels. A model's **weights** are real values with many decimals. To store them cheaply we keep only a whole-number click for each one. The **scale** is what one click is worth, and it is set by the largest value (ignoring plus or minus) so that nothing goes past the top. To use a weight again, multiply its click number by the scale. You get a close value, not an exact one: each weight is off by at most half a click.
+
+Now suppose the fan is only ever used between medium and fast. The slow clicks would be wasted. Starting the dial higher fixes that, and the shift is called the **zero-point**.
+
+**Where you meet it.** A team compresses a model's weights to small whole numbers. If the scale were chosen carelessly, many weights would snap to the same click and the model would get worse. A well-chosen scale keeps each weight close to its true value.
+
+```scene
+title: The fan regulator with few clicks
+step: 🌀 A fan regulator offers only a few clicks, not every speed | a few integer levels
+step: 📏 The top click is set to the strongest speed you will ever need | scale from the largest absolute value
+step: 🔢 Each speed you want snaps to the nearest click | round to the nearest integer
+step: 💾 You remember only the click numbers and what one click is worth | stored integers and scale
+step: 🪜 If you never use slow speeds, the dial starts higher instead | zero-point
+takeaway: Quantization stores a small whole number per weight plus a scale that says what one step is worth.
+```
+
 ## Symmetric (absmax) quantization
 
 To store weights $w$ as signed $b$-bit integers in $[-q_{max}, q_{max}]$, where $q_{max} = 2^{b-1} - 1$ ($127$ for 8 bits, $7$ for a symmetric 4-bit range), take the largest absolute value as the ruler's end:

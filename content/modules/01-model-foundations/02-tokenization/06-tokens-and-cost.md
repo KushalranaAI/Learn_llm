@@ -7,6 +7,27 @@ Every hosted model bills per token, every context window is measured in tokens, 
 
 Two details catch people out. Input and output tokens are priced differently, and output is usually several times more expensive per token because each output token needs its own sequential forward pass (the KV-cache lesson explains why). And in a chat, the whole conversation history is sent again with every new message, so input tokens grow turn after turn.
 
+## In everyday life
+
+Imagine hiring a consultant who bills by the page, not by the hour. Pages you hand over to be read cost one rate. Pages she writes back cost a higher rate, since writing takes effort. And she keeps no memory between visits. Each time you return with a follow-up question, you must hand over the whole file again, old pages included.
+
+A hosted language model works this way. The page is the **token**, a small piece of text. What you send in is **input tokens**; what the model writes back is **output tokens**, usually priced higher. The **context window** is the most tokens the model can hold at once, input and output together. Planning these numbers before you build is called a **token budget**.
+
+Two surprises follow. Output tokens are a small part of the traffic but a large part of the bill. And in a long chat the file keeps growing, so each new reply costs more than the one before. Unlike a person, the model remembers earlier turns only because they are sent again with every message.
+
+**Where you meet it.** A company adds a support chatbot to its app and expects a small bill. After launch, long conversations and a long set of instructions sent every time push costs up. With a token budget made beforehand, the team would have capped answer length and trimmed old history.
+
+```scene
+title: A consultant who bills by the page
+step: 📄 The consultant charges by the page, not by the hour | tokens as the unit of cost
+step: 👀 Pages you hand over to be read are charged at one rate | input tokens
+step: ✍️ Pages she writes back cost more each | output tokens, priced higher
+step: 🧾 One visit's bill adds both, then multiplies by the number of visits | cost per request, times volume
+step: 🗂️ She keeps no memory, so you bring the whole file each visit | history resent every turn
+step: 📈 The file grows, so later visits cost more than early ones | input tokens grow turn by turn
+takeaway: You pay per token, output costs more, and a growing chat history is paid for again every turn.
+```
+
 ## The cost formula
 
 For one request with $T_{\text{in}}$ input tokens and $T_{\text{out}}$ output tokens, priced at $p_{\text{in}}$ and $p_{\text{out}}$ dollars per million tokens:

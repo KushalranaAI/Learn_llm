@@ -13,6 +13,26 @@ The simplest tokenizer that can represent any text at all is the **byte-level to
 
 The price is length. A BPE tokenizer packs about four English characters into one token; a byte tokenizer packs exactly one byte. The model has to learn spelling, words and grammar from raw bytes, and every sequence is several times longer. For a tiny model trained for a few minutes, that trade is worth it: we remove a whole component and its failure modes, and keep the vocabulary small enough that the embedding table costs almost nothing.
 
+## In everyday life
+
+Think of an old telegraph office. The operator does not keep a dictionary of every word in every language. There is a short, fixed table of codes, and every message is spelled out using only those codes. That has two good consequences. No message is ever unknown to the office, because anything can be spelled. And the table is tiny, with nothing to learn or look up.
+
+The price is length. Spelling everything out makes messages long, and a script whose letters need several codes each makes them longer still. The clerk at the other end has to work out words and grammar from a long stream of small pieces.
+
+A **byte-level tokenizer** works like this. A computer already stores text as **bytes**, small numbers from 0 to 255, so the tokenizer simply uses those numbers as the **token** IDs (a token is one piece of text the model reads). There is nothing to train, and nothing can fall outside the **vocabulary**, the model's fixed list of tokens. English letters take one byte each, while letters of some other scripts take more, so the same sentence costs more tokens in them.
+
+**Where you meet it.** A team training a small experimental model on English and Hindi text wants a tokenizer that cannot fail on any character or emoji. A byte-level one works on day one, with no vocabulary to build. The cost is that Hindi text uses more tokens, so less of it fits in the model's view at a time.
+
+```scene
+title: The telegraph office's code table
+step: 📜 The clerk has a short fixed code table and no giant dictionary | byte vocabulary of 256
+step: ✍️ Any message is spelled out in those codes, even emoji or Hindi | encode text into bytes
+step: 🔢 The message travels as a plain list of numbers | token IDs
+step: 📏 Letters from some scripts need several codes, so those messages run longer | more bytes per character
+step: 📖 The receiving clerk turns the numbers back into text | decode bytes into text
+takeaway: A byte tokenizer can spell any text with only 256 symbols, at the cost of longer sequences.
+```
+
 ## Bytes per character
 
 Text files are almost always stored as **UTF-8**, which uses a variable number of bytes per character (a Unicode code point):

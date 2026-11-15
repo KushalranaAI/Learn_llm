@@ -7,6 +7,28 @@ A CPU-only setup is the cheapest place to make mistakes. Wrong chat template, a 
 
 Everything here is the Hugging Face stack: **PyTorch** for tensors, **transformers** for models and tokenizers, **datasets** for data, **PEFT** for LoRA, **TRL** for the trainers (SFT, DPO, GRPO) and **accelerate**, which the trainers use to place work on a device. The same five libraries run on a GPU later, so nothing learned here is wasted.
 
+## In everyday life
+
+Every school has an annual-day rehearsal. Days before the big evening, the teachers run through the whole show quickly with a small cast. Within minutes they find the missing prop, the wrong music cue and the microphone that does not work. They also time one scene and multiply, so they know roughly how long the real show will run. Nobody in the audience ever sees these mistakes.
+
+A **smoke test** is the same thing for training. It is a short script that runs every stage of a real fine-tune, from loading the model to saving the result, on a tiny model and a few steps. If something is broken, you find out in seconds on your own laptop, with nothing spent. The script also measures how long one step takes, so you can estimate the full run.
+
+Setting up a clean, isolated Python environment comes first, much like fixing the stage before the rehearsal. You write down the exact versions of everything that worked so you can rebuild it later.
+
+The rehearsal tells you the show will work, but it cannot make a bad script good.
+
+**Where you meet it.** A learner with a laptop and no graphics card runs the smoke test before anything else. It shows that the chat format is wrong and that a step takes a few seconds. She fixes the format in a minute and decides that one hour on this laptop is the limit. Without it she might have found both problems after hours of waiting.
+
+```scene
+title: The annual-day rehearsal
+step: 🎭 Before annual day, the school rehearses the whole show quickly | Smoke test on a tiny model
+step: 🔧 Missing props and wrong cues show up within minutes | Setup errors caught early
+step: 🕒 Teachers time one scene and multiply to guess the full length | Seconds per step, extrapolated
+step: 📋 They write down the exact prop list so the show can be rebuilt | Pinned requirements file
+step: 🎬 Only when the rehearsal runs cleanly do they plan the big night | Move on to a real run
+takeaway: Run a tiny, complete rehearsal first, so mistakes and time estimates cost you minutes rather than hours.
+```
+
 ## 1. An isolated environment
 
 Use a **virtual environment** so the versions you test with are the versions you keep. Python 3.10 to 3.12 is the safe range for this stack; brand-new Python releases sometimes lack wheels for a few weeks.

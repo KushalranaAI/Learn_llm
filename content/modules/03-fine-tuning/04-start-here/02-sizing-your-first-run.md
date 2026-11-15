@@ -5,6 +5,26 @@ minutes: 8
 
 Before you write a training script, answer one question: will it fit on the GPU you have? Most failed first runs fail here, with an out-of-memory error ten seconds in. The answer depends on which parameters you train and how many bytes each one costs. There are three common setups: **full fine-tuning** (train every weight), **LoRA** (freeze the model and train small low-rank adapters), and **QLoRA** (LoRA on top of a base model stored in 4 bits).
 
+## In everyday life
+
+Before a trip you check whether everything fits in your bag. If you wait until you are at the station, the zip will not close and the trip is already late. Training a model has the same moment, and the bag is the memory on your graphics card, the **GPU**. Most first runs fail within seconds because the memory runs out.
+
+What you carry depends on how you train. **Full fine-tuning** changes every number in the model, so it is like rewriting every page of a textbook: you also need the old pages, the drafts and the notes about each change. **LoRA** leaves the textbook untouched and adds a few sticky notes, which are small extra pieces that learn the new behaviour. **QLoRA** does the same but also stores the textbook in a smaller, compressed edition, so even less space is needed.
+
+The picture is not exact, since the sticky notes actually adjust how the original pages are read, but the packing lesson holds.
+
+**Where you meet it.** A developer with a single mid-range GPU wants to adapt an open model to answer in a company's tone. Trying full fine-tuning crashes immediately, so they switch to LoRA, and when that is still tight, to QLoRA. A few minutes of counting beforehand saves an afternoon of failed runs.
+
+```scene
+title: Will it fit in the bag?
+step: 🎒 Before leaving, you check whether everything fits in your bag | Check GPU memory first
+step: 📖 Rewriting every page of a textbook needs drafts and copies too | Full fine-tuning needs weights, gradients and optimizer states
+step: 📝 Leaving the book alone and adding sticky notes needs far less | LoRA trains small adapters
+step: 🔍 Using a smaller, compressed edition of the book saves even more | QLoRA stores the base in 4 bits
+step: ✅ You choose the lightest option that still does the job | Start with LoRA
+takeaway: Count the memory before you train, and pick the lightest method that still reaches your goal.
+```
+
 ## Full fine-tuning: 16 bytes per parameter
 
 With mixed-precision Adam, each trainable parameter needs:

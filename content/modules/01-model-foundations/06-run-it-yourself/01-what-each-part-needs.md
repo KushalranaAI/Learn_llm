@@ -11,6 +11,26 @@ Before you install anything, it helps to know how big the job is. The models in 
 
 Two questions decide where a script can run. **Does it fit in memory?** And **does it finish in a time you are willing to wait?** Both can be estimated in a minute with arithmetic you already know from earlier lessons, and it is worth doing before every run, because a laptop that runs out of RAM does not fail politely: it starts swapping to disk and becomes unusable.
 
+## In everyday life
+
+Picture a caterer who has just taken an order for a wedding. Before she lights a single stove, she asks two questions. Will all this food fit in my kitchen? And will it be ready on time? She does not guess. She counts guests, pots and hours on the back of an envelope, because finding out halfway through that the kitchen is too small ruins the whole evening.
+
+Running code needs the same two questions. Your laptop has a limited amount of working space, its **RAM** (the fast memory a program uses while it runs), and it works at a limited speed. A training run needs room for the model itself plus the scratch work it keeps during each pass. It also needs a fixed number of **FLOPs**, which are individual arithmetic steps, and your processor must get through all of them. A quick estimate of both tells you early whether a script is comfortable on your laptop, painfully slow, or better sent to a bigger machine.
+
+If her kitchen is too small, the caterer cooks in smaller batches and combines them later. Training has a similar trick. Unlike a kitchen, though, a laptop that runs out of RAM does not stop politely: it starts using the disk and crawls.
+
+**Where you meet it.** A student wants to train a small model on her laptop for a college project. Without an estimate, the run freezes the machine after twenty minutes of disk swapping. With a one-minute estimate of memory and time, she lowers the batch size, or books a free cloud GPU for the one run that really needs it.
+
+```scene
+title: Planning a wedding kitchen
+step: 📋 The caterer reads the order and counts how big the job is | Counting model parameters
+step: 🍲 She checks that every pot and tray fits in her kitchen | Estimating memory in RAM
+step: ⏰ She divides the total cooking work by how fast her team cooks | FLOPs divided by throughput
+step: 🥘 The kitchen is too small, so she cooks in smaller batches and combines them | Smaller batch, gradient accumulation
+step: 🏢 One huge dish still takes all night, so she rents a bigger kitchen | Move that run to a free GPU
+takeaway: Estimate memory and time first, then choose the machine.
+```
+
 ## Memory: model states plus activations
 
 Training memory has two parts. **Model states** are the fp32 weights, their gradients and AdamW's two moment estimates, 4 bytes each, so 16 bytes per parameter (derived in [memory per parameter](/learn/training-and-adaptation/training-at-scale/memory-per-parameter)):

@@ -9,6 +9,26 @@ Both fixes do the same thing mechanically: build a vector for each position $0, 
 
 A **learned positional encoding** is a second embedding table, indexed by position instead of token ID. Its rows are trained like any other weights. GPT-2 uses this, with 1,024 rows. A **sinusoidal positional encoding** is a fixed table computed from sines and cosines of different frequencies. It has no parameters, as in the original transformer paper.
 
+## In everyday life
+
+Imagine a notebook falls apart and its loose pages scatter across the floor. You gather them up. Every page still has the right words, but you no longer know the order, so the story makes no sense. The fix is simple: write a page number in the corner of each page. Now you can sort them, and anyone reading knows where each page belongs.
+
+A transformer faces this same problem. Its attention step looks at all the tokens together, like someone holding the pile of pages without the order. Nothing inside attention says which word came first. So before the first block, the model adds a **positional encoding**: a short list of numbers for each place (0, 1, 2 and so on), added onto that token's own numbers. The token's numbers say what the word is. The position's numbers say where it sits.
+
+There are two ways to make them. One is a fixed formula, the **sinusoidal** method. The other is a table that the model **learns** during training, like a numbering stamp it designs for itself. Unlike a printed page number, a position vector is blended into the token's numbers, and a table only covers as many places as it has rows.
+
+**Where you meet it.** A translation tool must tell "dog bites man" from "man bites dog". Without position information, both look like the same bag of words. Adding a position vector to every token is the small fix that lets attention tell the two orders apart.
+
+```scene
+title: Numbering the scattered pages
+step: 📖 A notebook falls apart and the pages scatter | Tokens with no built-in order
+step: 🤷 Every page has its words, but you cannot tell which comes first | Attention alone ignores order
+step: 🔢 You write a page number in each corner, one per place | A position vector for each place
+step: ➕ The number becomes part of the page you read, not a separate sheet | Added to the token embedding
+step: 📚 Now you read the pages in the right order | The first block sees what and where
+takeaway: Attention cannot see order by itself, so we add a position signal to every token.
+```
+
 ## The maths
 
 For position $p$ and feature pair $i = 0, 1, \dots, d/2 - 1$:

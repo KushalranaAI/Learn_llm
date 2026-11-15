@@ -7,6 +7,26 @@ Exact match and n-gram metrics fail on paraphrases because they compare words. *
 
 To score an answer, embed the prediction and the reference and measure how closely the two vectors point in the same direction. That measure is **cosine similarity**. It is cheap (one embedding call per text, often cached for references), handles paraphrase well, and gives a smooth score instead of a hard 0 or 1.
 
+## In everyday life
+
+Two friends tell you where they want to eat. One says "somewhere cheap for biryani". The other says "a budget place for dum rice". The words barely overlap, yet you know they want the same thing, because you understand the gist.
+
+Embedding similarity gives a computer a rough version of that gist. An **embedding** is a list of numbers that places a piece of text at a point, like a pin on a map. The model that makes the numbers is trained so that texts with similar meaning get pins close together. To score an answer, you drop one pin for the model's answer and one for the reference, then measure how close they are. The usual measure is **cosine similarity**, which asks whether the two pins lie in the same direction from the centre of the map. A high score means similar meaning.
+
+But this is a coarse map. It shows the neighbourhood, not the house number. "The medicine is safe for children" and "The medicine is not safe for children" land on the same street, because one small word barely moves the pin.
+
+**Where you meet it.** A help centre wants to know whether a chatbot's answer matches the approved answer, even when worded differently. Embedding similarity catches answers that drifted to another topic and lets paraphrases pass. It is not enough when the answer hinges on a number or a yes or no, so teams check those details separately.
+
+```scene
+title: Two friends, one pin on the map
+step: 💬 One friend asks for cheap biryani, the other for a budget dum rice place | Prediction and reference
+step: 🧭 Each sentence becomes a point on a map of meanings | Embedding vectors
+step: 📏 You check how close the two points are | Cosine similarity
+step: 🚦 You choose how close counts as a match | Threshold
+step: ⚠️ A sentence with one word flipped still lands nearby | Negation and numbers fool it
+takeaway: Embeddings catch similar meaning in different words, but they miss small details such as not and numbers.
+```
+
 ## The maths: cosine similarity
 
 For vectors $\mathbf{a}, \mathbf{b} \in \mathbb{R}^{d}$:

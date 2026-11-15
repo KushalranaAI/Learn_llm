@@ -7,6 +7,26 @@ If you stand in ten queues at a supermarket and nine move quickly but one takes 
 
 Averages hide exactly the experiences people remember. Latency distributions for LLM endpoints are **right-skewed**: most requests land in a narrow band, and a thin tail stretches far to the right (a long prompt, a cold cache, a request stuck behind a burst). So we describe latency with **percentiles**.
 
+## In everyday life
+
+You travel to work by auto every day. Most days it takes about thirty minutes. One day in ten, a procession or a flooded road makes it two hours. If someone asks "how long is your commute?", the plain average is a poor answer. It is neither your usual day nor your worst day, and it is the worst days you remember.
+
+That is why engineers describe speed with **percentiles**. They sort all the measured times from fastest to slowest and read off a position on the line. The **median** is the middle one, your ordinary day. The **p95** is the time that only one trip in twenty is worse than. The **tail** is that slow end of the line.
+
+Tails matter more than they seem, because many tasks chain steps together. Imagine your trip needs three connecting rides. Each ride is usually fine, but the chance that at least one of them is slow is much higher than the chance for any single ride.
+
+**Where you meet it.** An agent product makes many model calls to finish one user request. Each call is usually quick, yet users often wait a long time, because with so many calls one of them is bound to hit its slow tail.
+
+```scene
+title: The unpredictable commute
+step: 🛺 Most days your auto ride takes about the same time | most requests in a narrow band
+step: 🌊 Once in a while a flood or procession delays you hugely | long right tail of slow requests
+step: 📏 Sorting all your trips lets you point to the middle and the slow end | median and p95 or p99
+step: 🔗 A trip with several connecting rides has more chances to hit a delay | many calls per user action
+step: 😟 You remember the bad trips, not the average | tail latency shapes the experience
+takeaway: Report percentiles instead of averages, and remember that chained steps make slow tails common.
+```
+
 ## Definition
 
 The **$p$-th percentile** of a set of measurements is the value below which $p$ percent of them fall. The **p50** (median) is the typical experience, the **p95** is what one request in twenty is worse than, and the **p99** is what one request in a hundred is worse than. The slow end of the distribution is called the **tail**, and p99 is often called **tail latency**.

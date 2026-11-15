@@ -16,6 +16,26 @@ Read this sentence: "The trophy did not fit in the suitcase because **it** was t
 
 After the embedding lookup, each position holds a vector that knows only its own token. To predict the next word well, the vector at "it" must collect information from "trophy" or "suitcase". **Attention** is the mechanism that does this: each position computes how relevant every other position is, turns those relevance scores into weights that add up to 1, and takes a weighted average of information from the positions it finds relevant.
 
+## In everyday life
+
+Imagine you are revising for an exam and a tough question arrives. You do not answer from memory of that one line alone. You flip through your notes, decide which chapters look useful, and spend most of your study time on the best one and a little on the others. All your time is used up, split in shares.
+
+A language model has the same problem. After the first step, each word holds only a **vector** (a list of numbers) that knows about that word and nothing else. **Attention** is how a word consults the others. It gives every other word a **relevance score** (how useful that word looks right now). It then turns the scores into **weights**, shares that add up to one whole, using a function called **softmax**. Finally it blends the words' information using those shares, so the best matches count most.
+
+The weights are not fixed by position. They depend on the actual words, which is why the same trick works whether the helpful word is just before or far back. Unlike your notes, the model does all of this at once for every word, and it learns what counts as useful by training.
+
+**Where you meet it.** A phone assistant reading "Book it for the same day" must find what "it" means among earlier messages. Without attention, each word is read alone and "it" stays empty. With attention, the word pulls meaning from the right earlier words.
+
+```scene
+title: Revising from notes before a question
+step: 📝 A tough exam question arrives, and the question alone is not enough | a token vector knows only itself
+step: 📚 You skim every chapter and rate how useful each one looks | relevance scores
+step: 🥧 You turn ratings into shares of your time that add up to all of it | softmax weights sum to 1
+step: ⏳ You spend most time on the best chapter and a little on the rest | weighted average
+step: 💡 Your answer now blends the notes that mattered most | context-aware output vector
+takeaway: Attention lets each token collect information from the other tokens, giving more weight to the ones that matter.
+```
+
 ## The idea as one equation
 
 Suppose position $i$ has relevance scores $s_{i1}, \dots, s_{in}$ for the $n$ positions in the context. Attention turns scores into weights with the **softmax** function and averages some vectors $\mathbf{v}_j$ with those weights:

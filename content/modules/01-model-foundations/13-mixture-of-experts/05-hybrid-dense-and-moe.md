@@ -13,6 +13,27 @@ There are three common ways to mix dense and sparse computation:
 
 Patterns 1 and 2 are what production models use. Pattern 3 is a clean way to study the trade-off in a small model.
 
+## In everyday life
+
+Think of a school with a class teacher and visiting specialists. Every student spends time with the class teacher, who covers the basics everyone needs. Only some students also go to a specialist: a music teacher, a lab instructor, a coding mentor. The class teacher's time goes to every student, every day. The specialists' time goes only where needed. Many schools also alternate, with ordinary days and workshop days.
+
+Real models mix **dense** and **MoE** layers in the same way. A dense feed-forward layer sends every **token** (piece of a word) through the same block, so it trains smoothly and costs the same each time. An MoE layer routes tokens to chosen **experts**. Designs differ in the mix: layers can alternate between dense and MoE, a **shared expert** can run on every token inside an MoE layer, or a dial can blend the two outputs. A shared expert holds the common basics once, so the routed experts are free to specialise.
+
+The cost shows up too. The class teacher's time is always spent, so a shared expert adds work for every token.
+
+**Where you meet it.** A team designing a large model keeps its first layers dense and makes the later ones MoE. Early layers handle general features that every token needs, and routing there tends to be less steady. The price is that the dense parts always run in full.
+
+```scene
+title: Class teacher plus visiting specialists
+step: 👩 Every student sits with the class teacher for the basics | a dense feed-forward layer on every token
+step: 🎻 Only some students go to a specialist workshop | routed experts
+step: 📚 The basics are taught once, so specialists need not repeat them | the shared expert
+step: 🔧 The head decides how much weight each kind of teaching gets | blending dense and MoE with a dial
+step: 📅 The timetable alternates plain days and workshop days | interleaved dense and MoE layers
+step: 💰 The class teacher's time is spent on every student | active compute for every token
+takeaway: Mixing dense and expert layers trades the smoothness of always-on blocks against the extra capacity of routed ones.
+```
+
 ## The blend in the repo
 
 `HybridFFN` computes

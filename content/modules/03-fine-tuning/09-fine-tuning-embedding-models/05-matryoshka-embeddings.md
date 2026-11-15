@@ -7,6 +7,24 @@ A 768-dimensional vector per document is fine for ten thousand documents and exp
 
 **Matryoshka Representation Learning** (Kusupati et al., 2022) changes the training so that the slice is not arbitrary. Like the nested Russian dolls, the first 64 dimensions form a usable embedding, the first 128 a better one, and so on up to the full vector. You train once and choose the size at deployment time, or even use two sizes in one system: a short vector to shortlist candidates quickly and the full vector to re-score the shortlist.
 
+## In everyday life
+
+A newspaper story is written with the most important facts first: the headline, then a short opening paragraph, then the details. A reader with ten seconds gets the main point, and a reader with ten minutes gets everything. Now imagine a story whose key facts are scattered at random. Cutting it after two lines would lose half the point.
+
+An embedding is a list of numbers, and every number costs storage. To save space you might keep only the first part of each list. In an ordinary model that is like cutting the scattered story, because the important information is spread everywhere. **Matryoshka embeddings** are trained so that the first numbers carry the main meaning and the later ones add detail, like a story with its headline first. The name comes from Russian nesting dolls, where smaller dolls sit inside larger ones. **Truncating** means cutting the list short, and a short list is cheaper to store and faster to compare. You train once and choose how much to keep later. Unlike a newspaper, the model's list has no readable headline. The ordering appears because training also checks the short versions.
+
+**Where you meet it.** A search system with a very large number of documents cannot afford full-length vectors for every one. It can search with short vectors to pick a shortlist, then re-check only that shortlist with full-length ones.
+
+```scene
+title: Headline first, details later
+step: 📰 A normal report hides its key facts anywhere | ordinary embedding
+step: ✂️ Cutting it short drops facts at random | plain truncation hurts quality
+step: 📝 The editor trains the reporter: headline first, then summary, then detail | Matryoshka training
+step: 🔎 The editor checks the headline alone, the opening paragraph and the full story | loss at several sizes
+step: 📦 Readers keep what they need: headline to shortlist, full story to confirm | truncate_dim and re-scoring
+takeaway: Matryoshka training puts the most useful information first, so you can cut vectors short with little loss.
+```
+
 ## Why plain truncation fails
 
 Truncating a vector and renormalising it gives a different cosine from the full vector. Take two unit-length 4-dimensional embeddings, $\mathbf{a} = (0.8, 0.4, 0.4, 0.2)$ and $\mathbf{b} \approx (0.7, 0.5, -0.3, 0.4)$.

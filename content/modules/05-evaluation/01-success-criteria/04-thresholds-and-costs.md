@@ -7,6 +7,25 @@ Most classifiers and judges in an LLM system do not output "yes" or "no". They o
 
 Move the threshold down and you say "yes" more often: recall rises, precision falls. Move it up and the reverse happens. There is no setting that is best in the abstract. The right threshold is the one that makes the cheapest mix of mistakes for *your* product, which means you have to put a price, even a rough one, on each kind of mistake.
 
+## In everyday life
+
+Think of the smoke alarm in a home kitchen. It senses how much smoke is in the air and sounds when the reading passes a set level. Set the level low and it screams whenever you fry onions, so soon you ignore it or take out the battery. Set it high and it stays quiet for onions, but it may also stay quiet for too long when something really burns. No level is best on its own. The right level depends on what each mistake costs you: an annoying false alarm, or a missed fire.
+
+AI systems face this constantly. A classifier or a judge model gives a **score**, such as how likely a message is an attack. Someone picks a **threshold**, the score above which the system says yes. Lower it and you flag more, so you catch more real cases (higher **recall**) but more flagged cases are wrong (lower **precision**). To choose, put a rough price on a **false positive**, which is a false alarm, and on a **false negative**, which is a miss. Then pick the threshold with the smallest total cost. Only the ratio of the two prices matters. A business with different prices should pick a different threshold for the same model.
+
+**Where you meet it.** A bank's fraud alert system scores every card payment. A false alarm blocks a real customer and costs agent time. A miss costs money and trust. Setting the threshold from those costs, using labelled past payments, gives a choice you can defend instead of a guess.
+
+```scene
+title: Setting the smoke alarm level
+step: 🍳 Smoke from frying onions drifts toward the alarm | the model produces a score
+step: 🎚️ The family sets the level at which the alarm sounds | threshold
+step: 🔔 A low level rings at every bit of cooking smoke | more false positives, higher recall
+step: 😴 A high level stays silent until the smoke is heavy | more false negatives, lower recall
+step: 💰 They weigh an annoying false alarm against a missed fire | cost of each kind of error
+step: ✅ They pick the level with the cheapest mix of mistakes | threshold with the lowest total cost
+takeaway: There is no best threshold in general; the best one is set by what each kind of mistake costs your product.
+```
+
 ## The maths: expected cost of an operating point
 
 Let $c_{FP}$ be the cost of one false positive and $c_{FN}$ the cost of one false negative. At threshold $\tau$ the classifier produces counts $FP(\tau)$ and $FN(\tau)$ on a representative sample. The total cost is

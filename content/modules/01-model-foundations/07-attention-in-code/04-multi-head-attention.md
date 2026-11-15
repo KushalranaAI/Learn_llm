@@ -9,6 +9,27 @@ One `nn.Linear(d, 3d)` produces queries, keys and values for every head at once.
 
 Shape bugs get subtle here: the wrong reshape usually produces the **right shape** with scrambled contents. Nothing crashes; the model just learns worse.
 
+## In everyday life
+
+After a cricket match, the team does not ask one person to watch all the footage and say everything. A bowling analyst studies how the bowlers used the pitch. A fielding analyst studies the catches and saved runs. A batting analyst studies shot selection. They watch the same match at the same time, each looking for a different pattern, and then the coach combines their notes into one plan.
+
+Multi-head attention works like that panel. Each **head** is one small attention unit that reads the same sentence in its own way. Each head works in a smaller space than the full vector, so the heads together cost about the same as one big unit. They all run at once, as one big batch of calculation, not one after another. Their outputs are joined side by side, called **concatenation**, and a final layer mixes them into one result of the original size.
+
+In trained models heads often end up with different habits, such as watching the previous word. Unlike a coach, nobody assigns those jobs. They emerge from training.
+
+**Where you meet it.** A translation system must work out which noun a pronoun refers to and also respect the order of nearby words. Several heads let one layer track both kinds of link at once. Running all heads as one batched step, instead of looping over them, is what keeps this fast.
+
+```scene
+title: A cricket analysis panel
+step: 🏏 After the match, every analyst gets the same footage | The same input goes to every head
+step: ✂️ Each analyst works from a smaller part of the notes | Each head uses a smaller space
+step: 🔍 Each watches for a different pattern, all at the same time | Attention in every head at once
+step: 📋 Each writes a short report | One output per head
+step: 📎 The reports are stapled side by side | Concatenate the heads
+step: 🧠 The coach reads them all and writes one plan | The output projection mixes the heads
+takeaway: Several small heads look at the same words in different ways, then their results are merged into one.
+```
+
 ## The maths
 
 With $X$ of shape $(B, n, d)$ and $d = h \cdot d_h$:

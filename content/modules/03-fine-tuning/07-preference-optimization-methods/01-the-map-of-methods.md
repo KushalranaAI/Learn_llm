@@ -23,6 +23,25 @@ The four questions are:
 
 The 2026 survey by Raheja and Pochhi ("From RLHF to Direct Alignment") makes the same point formally: DPO, IPO, KTO, SimPO, ORPO and the RL methods differ along three axes, which are the preference model behind the loss, the regulariser that keeps the policy near a reference, and the data distribution (online or offline). Most of their failure modes, such as length hacking or the chosen answer's probability falling during training, trace back to particular choices on those axes.
 
+## In everyday life
+
+A singing teacher has a student who already sings in tune after basic lessons. Now the teacher wants to polish the style. There are several ways to give feedback. Play two takes and say which is better. Give a thumbs up or down to one take. Or let a tuner app score any take. The teacher also decides whether the student sings fresh takes each round or learns from old recordings, and whether to keep a recording of the starting voice to check it has not drifted too far.
+
+Methods for preference tuning are these same choices. The model after basic training is the **SFT model**. **Preference pairs** are two answers to one prompt, with one marked as better. **Binary labels** are a single answer marked thumbs up or down. A **reward function** is a program that scores any answer, such as a checker for maths. **Online** methods make fresh answers as they train, while **offline** methods learn from a saved dataset. A **reference model** is a frozen copy of the starting model used as a yardstick. Each acronym, such as DPO or KTO, is one mix of these choices. Memory matters too, because every extra model held in memory takes GPU space.
+
+**Where you meet it.** A team with logged thumbs up and thumbs down from users picks a method built for single labelled answers. A team building a maths tutor, where answers can be checked automatically, picks a method that learns from fresh answers scored by a checker.
+
+```scene
+title: Ways a singing teacher gives feedback
+step: 🎤 The student already sings well after basic lessons | SFT model
+step: 🎧 The teacher plays two takes and picks the better one | preference pairs
+step: 👍 Or the teacher just rates one take up or down | binary labels
+step: 📏 Or a tuner app scores any take on demand | reward function
+step: 📼 Feedback uses old recordings, or fresh takes each round | offline versus online
+step: 🎞 A recording of the starting voice stays as a yardstick | reference model
+takeaway: Each method is a choice of feedback type, fresh or saved answers, and whether to keep a frozen yardstick.
+```
+
 ## The family on one page
 
 | Method | Data | Online? | Reference model | Models in memory (full fine-tuning) | Stability in practice |

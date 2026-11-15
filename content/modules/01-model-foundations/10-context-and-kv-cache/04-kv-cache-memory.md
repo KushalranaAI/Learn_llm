@@ -5,6 +5,27 @@ minutes: 8
 
 When an inference server runs out of GPU memory, the culprit is rarely the model weights. Weights are a fixed cost you pay once. The KV cache is a per-token, per-user cost that grows with every token of every active conversation. Being able to size it on the back of an envelope is one of the most useful skills in LLM serving: it tells you how many users fit on a GPU, how long a context you can afford, and why some models are much cheaper to serve than others of the same size.
 
+## In everyday life
+
+Think of the cloakroom at a railway station. The room and its shelves are fixed. Every traveller who walks in leaves a bag, and the space it takes depends on its size. A few travellers with small bags fit easily. The same number with huge trunks do not. The more people, and the more each one keeps adding the longer they stay, the faster the shelves fill.
+
+A model server has the same problem. The model's own numbers, its **weights**, are like the room's fixed furniture: you pay for them once. For every conversation the server also keeps a **KV cache** (the saved keys and values of each token so far, so they need not be recomputed). That is the traveller's bag. It grows with every **token** (a word or word piece) of every active user.
+
+Engineers work out the size of one token's bag, then multiply by the number of tokens alive on the GPU. When the cloakroom is full, newcomers wait or someone's bag is moved out for a while. The maths below shows how to make this estimate on the back of an envelope.
+
+**Where you meet it.** A team deciding how many chats one GPU can carry does this sum before launch. Without it, the server runs out of memory under load and replies stall. With it, they know the safe number of users and the longest conversation to allow.
+
+```scene
+title: The railway station cloakroom
+step: 🚉 The cloakroom has a fixed amount of shelf space | GPU memory
+step: 🪑 Some space is already taken by the room's own fixtures | model weights
+step: 🧳 Each traveller leaves a bag; a bigger bag takes more space | KV cache bytes per token
+step: 👥 Bags keep growing the longer each traveller stays | cache grows with every new token
+step: 📏 Staff multiply bag size by bags to check that all fit | bytes per token times live tokens
+step: 🚪 When shelves are full, newcomers wait or a bag moves out | preempt or swap sequences
+takeaway: Cache memory is bytes per token times live tokens, so it grows with both users and length.
+```
+
 ## The formula
 
 For every token in every sequence, each layer stores one key vector and one value vector for each KV head. Multiply it out:

@@ -7,6 +7,26 @@ In pretraining every position is graded: the model predicts each next token of t
 
 PyTorch gives a cheap way to switch grading off per position. `F.cross_entropy` has an argument `ignore_index`, whose default value is **-100**. Any position whose label is -100 contributes nothing to the loss and is left out of the average. So masking needs no special loss function at all: build a label tensor, write -100 wherever you do not want a gradient, and pass it to the same `cross_entropy` call the pretraining loop used. The theory, including per-token versus per-sequence averaging, is in [Loss masking](/learn/fine-tuning/instruction-tuning/loss-masking). This topic is about getting the indices right by hand, which is where real bugs live.
 
+## In everyday life
+
+In a TV quiz show the host reads a question and the contestant answers. Only the answer earns or loses points. Nobody scores the host for reading the question. Yet the contestant must hear the whole question, because the answer depends on it.
+
+Fine-tuning works the same way. The model reads the whole example, because the answer depends on everything before it. But you only want to **grade** the answer part. Grading means measuring, at each position, how wrong the model's guess for the next piece of text was. If the question were graded too, the model would spend its effort learning to copy questions, which nobody wants. So each position gets a **label**, the correct next piece of text, or a special **mask** value that means "skip this one, give no score". Masked positions are read but never graded.
+
+The tricky part is the boundary. The last bit of the question, just before the answer starts, has the first answer piece as its target. That position must still be graded. Miss it by one place and the model never practises starting an answer. The end signal of the answer is graded too.
+
+**Where you meet it.** A team trains a model to write replies to customer emails. If the customer's long email is graded as well as the reply, a lot of the learning goes into imitating customers. Masking sends all of it to the reply.
+
+```scene
+title: Only the contestant's answer scores
+step: 🎤 The host reads the full question aloud | whole example fed to the model
+step: 👂 The contestant needs every word of it to answer well | answer depends on the prompt
+step: 🚫 No points are ever given for the host's words | prompt labels are masked
+step: 🎯 Scoring starts at the very first word of the answer | boundary label stays unmasked
+step: 🏁 Finishing cleanly with final answer also earns points | end marker is trained on
+takeaway: Show the model everything, but grade only the answer, starting at the exact boundary.
+```
+
 ## Shift first, then mask
 
 `GPTModern.forward` does not shift anything. It compares `logits[:, t]` with `targets[:, t]` directly:

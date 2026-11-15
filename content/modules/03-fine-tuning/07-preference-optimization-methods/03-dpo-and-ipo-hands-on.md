@@ -11,6 +11,27 @@ $$
 
 This topic is about running it: what $\beta$ does to the numbers, why **IPO** exists, what the data looks like, and how to read the training logs.
 
+## In everyday life
+
+A chai-stall owner already makes decent tea and wants it better. He pours two cups for a regular, one from the usual recipe and one with a tweak, and asks which tastes better. The answer is one pair: a winner and a loser. He nudges his recipe toward the winner and away from the loser, but carefully. He does not want his tea to turn into something his old customers no longer recognise.
+
+**DPO**, short for direct preference optimisation, does this for a model. Each training example is a **preference pair**: a prompt, a **chosen** answer and a **rejected** answer. The model is trained to make the chosen answer more likely and the rejected one less likely, measured against a frozen copy of where it started, the **reference**. A setting called **beta** is how nervous the owner is about leaving the old recipe. A high beta means small steps away, and a low beta gives more freedom. DPO has one habit to watch. If the same cup always wins, it keeps pushing for ever, making the loser less and less likely. **IPO** is a variant that sets a target size for the gap between the two cups and stops pushing once it is reached.
+
+The stall differs in one way: the owner can taste the result himself. For the model, you read the training logs and then judge real answers.
+
+**Where you meet it.** A support team has pairs where agents picked the better of two draft summaries. With a small set, plain DPO may overfit and drive the rejected summaries toward zero chance. IPO, or a single short pass with a sensible beta, keeps the model from over-reacting.
+
+```scene
+title: The chai stall and two cups
+step: ☕ The owner already makes decent chai | SFT model, the reference
+step: 🥤 He pours two cups and a regular picks the better one | chosen and rejected pair
+step: 🍵 He nudges the recipe toward the winner and away from the loser | widen the gap between the two
+step: 🪢 How nervous he is about straying sets the step size | beta
+step: 🌀 If the same cup always wins, DPO never stops pushing | DPO has no ceiling on the gap
+step: 🎯 IPO picks a target gap and stops there | IPO target gap
+takeaway: DPO learns from winner and loser pairs, beta controls how far it strays, and IPO adds a target so it stops.
+```
+
 ## What β does, with numbers
 
 Write $h = \Delta_w - \Delta_l$ for the log-ratio gap: how much more the policy has moved toward the chosen answer than toward the rejected one, in nats. The loss sees only $\beta h$. Suppose training has reached $h = 4$:

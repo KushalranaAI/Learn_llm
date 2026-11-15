@@ -7,6 +7,26 @@ A 128,000-token window sounds like it solves retrieval: just paste in every docu
 
 The effect was documented systematically in a 2023 study, "Lost in the Middle": when the one document containing an answer was moved through a list of retrieved documents, accuracy traced a **U-shaped curve**, highest when the document was first or last and lowest in between. Later long-context models have flattened the curve, but the general lesson holds: position and length matter, so measure them for your model.
 
+## In everyday life
+
+You are looking for the venue of a function in a group chat with hundreds of messages. In a short chat you find it at once. In a very long one, you remember the first messages and what was said just now, but the venue posted somewhere in the middle slips past you, even though it is right there on the screen.
+
+A long-context model behaves a little like this. Its **context window** (the most text it can take in at once) may be huge, but fitting text in is not the same as using it. Researchers found that models often use information at the start or end of a long input better than information in the middle, a pattern called **lost in the middle**. Part of the reason is **attention**, the way the model decides which tokens to look at: it spreads its focus over everything visible, so one useful sentence competes with all the rest.
+
+Unlike you, the model does not get tired. The weakness comes from how attention shares focus and from the patterns in its training text.
+
+**Where you meet it.** A company help assistant pastes twenty retrieved documents into one prompt and misses a fact that sits in the middle documents. Engineers fix this by sending fewer, better documents and placing the most relevant ones near the question.
+
+```scene
+title: Finding the venue in a huge chat
+step: 💬 A group chat grows to hundreds of messages | a long context
+step: 📍 Somewhere in the middle, someone posts the venue | the key fact sits mid-context
+step: 👀 You remember the first messages and the newest ones best | start and end positions
+step: 🙈 The venue is on screen but gets lost among the rest | attention diluted by many tokens
+step: 📌 The fix is fewer, better messages, with the venue near the end | fewer chunks, best one near the question
+takeaway: A fact inside the window may still be missed, so send less text and place it well.
+```
+
 ## A simple model of dilution
 
 Why would length hurt? One part of the story is that attention is a softmax over every visible token, so relevant tokens compete with everything else. Suppose one relevant token has an attention score $\Delta$ higher than each of $n - 1$ distractor tokens (all distractors scored equally, a deliberate simplification). Its attention weight is

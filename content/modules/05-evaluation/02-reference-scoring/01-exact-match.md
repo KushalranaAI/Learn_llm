@@ -16,6 +16,26 @@ The simplest way to score an answer against a reference is to ask whether they a
 
 The trouble is that "equal" is very strict. "1989", "1989.", " 1989" and "In 1989" are all correct, and a naive string comparison rejects three of them. So exact match is never applied to raw strings. Both sides first go through **normalisation**: a fixed set of transformations that removes differences you have decided not to care about.
 
+## In everyday life
+
+You get an OTP by SMS, say 483921, and type it into a payment app. The app asks one question: is this exactly the code I sent? If yes, the payment goes through. If no, it fails. There is no "almost right", and that is a good thing here, because a nearly right code is still a wrong code.
+
+Scoring a model's answer can work the same way. **Exact match** means you compare the model's answer with the correct answer a person wrote, called the **reference**, and give 1 point if they are identical and 0 if they are not. It is cheap, fast and never argues.
+
+The catch is that we are not strict about everything. A good app ignores a stray space you typed inside the OTP, because that difference does not matter. Scoring does the same through **normalisation**: you first clean both texts in the same way, for example by ignoring capital letters and full stops, and only then compare. Unlike an OTP, though, an answer such as "In 1989" for the reference "1989" is right in real life and still scores 0. The rest of the lesson explores that gap.
+
+**Where you meet it.** A support team checks a model that reads emails and labels each one as billing, delivery or other. There is exactly one right label, so exact match counts the matches in seconds and is trusted. It fails when the same team asks the model to write a free-form reply, because a good reply almost never matches a reference word for word.
+
+```scene
+title: An OTP check, scored like an answer
+step: 📩 The app sends a code and keeps its own copy safe | The reference answer
+step: 📱 You type the code, with a stray space in the middle | The model's output
+step: 🧹 The app removes spaces so only the digits are compared | Normalisation of both sides
+step: 🔍 The app asks only one thing: are the two identical? | Exact match
+step: ✅ Identical gives a pass, anything else fails, no half marks | Score of 1 or 0
+takeaway: Exact match is strict and trustworthy when it says yes, but it also rejects correct answers worded differently.
+```
+
 ## The maths: EM after a normalising function
 
 Let $\nu$ be the normalisation function, applied to both the prediction $\hat y$ and the reference $y$. Then

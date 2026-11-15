@@ -5,6 +5,28 @@ minutes: 7
 
 Sound is a pressure wave sampled thousands of times per second, far too many numbers to feed to a transformer one by one. At 16 kHz, a single minute of speech is $16{,}000 \times 60 = 960{,}000$ samples. A model needs a much shorter sequence. There are two main strategies, and they produce very different token rates.
 
+## In everyday life
+
+Look at the equaliser bars on a music player. Every instant they jump up and down to show how loud the low, middle and high sounds are. Sound itself is a wave measured many thousands of times each second, far too much detail for a model to read. The bars are a tidy summary of each tiny moment.
+
+Speech-recognition models do something similar. They cut audio into very short slices and record the loudness in each pitch band. That picture is a **spectrogram**, and an encoder shortens it into a sequence the transformer can read. This route keeps everything as ordinary numbers.
+
+The other route is a **neural audio codec**. Think of a shorthand notebook where each moment is written as a few stamps from fixed stamp books, each new stamp fixing what the last one missed. The stamps are **tokens** (small pieces a model reads), so a language model can read them and even generate them. More stamps per moment sounds better but makes the notebook much longer.
+
+The bars stop fitting in one respect: they only show loudness, while a codec's stamps must carry enough to rebuild the sound.
+
+**Where you meet it.** A voice assistant has to turn your speech into something a model can read. Audio takes many more positions than the same words written as text, so designers check tokens per second before they price or build the feature.
+
+```scene
+title: From sound wave to tokens
+step: 🎵 A song is a wave measured thousands of times a second, too much to read | raw audio samples
+step: 📊 Equaliser bars show loudness per pitch band every instant | spectrogram frames
+step: 🗜️ Merging neighbouring snapshots halves the length of the list | encoder shortens the sequence
+step: 📒 A notebook writes each instant as stamps, each fixing what the last missed | codec tokens with residual quantisation
+step: ⏱️ More stamps per instant sound better but make the notebook longer | tokens per second tradeoff
+takeaway: Audio is token-hungry, so always work out tokens per second before building a voice feature.
+```
+
 ## Strategy 1: spectrogram frames (continuous features)
 
 Slice the waveform into short overlapping windows (typically 25 ms long, shifted by 10 ms), and compute the energy in each frequency band using a mel-scaled filter bank. Each window becomes one column of a **log-mel spectrogram**: a vector of, say, 80 numbers. That is a picture with time on one axis and frequency on the other, and an encoder (convolutions followed by a transformer) turns it into a shorter sequence of embeddings.

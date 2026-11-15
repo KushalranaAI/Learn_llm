@@ -16,6 +16,26 @@ Ask a food critic to cook the perfect risotto and most will struggle. Put two ri
 
 SFT can only teach what demonstrators can write, and it treats every target token as equally right. **Preference tuning** uses a different signal: for a prompt $x$, a **chosen** response $y_w$ (the winner) and a **rejected** one $y_l$ (the loser). From many such pairs the model learns *what makes answers better*, including qualities that are hard to demonstrate but easy to recognise: honesty about uncertainty, appropriate length, avoiding subtle errors, refusing harmful requests without refusing harmless ones.
 
+## In everyday life
+
+Picture a team lead at a call centre. She cannot recite the perfect reply to every angry customer, and nobody can. But give her two recordings of the same call and she can tell you quickly which agent handled it better: calmer, clearer, less defensive. Her verdict does not say what the ideal call sounds like. It only says "this one, not that one".
+
+That small verdict is surprisingly powerful. After hundreds of them, an agent starts to feel what good handling looks like, including things that are hard to write in a rulebook. Language models can learn the same way. **Preference tuning** means training a model from pairs of answers where a person (or a strong model) marked one as better. The better answer is called **chosen** and the other **rejected**. The model is not copying a fixed script. It is learning which qualities win: honesty, the right length, no silly mistakes.
+
+One limit of the picture: a human agent understands why the lead preferred a call. A model only sees the pattern across many pairs, so the quality of those pairs matters a great deal.
+
+**Where you meet it.** A company building an email-writing assistant asks reviewers to look at two drafts for the same request and pick the better one. Without this, the model can only imitate the example emails someone bothered to write. With these pairs, it also learns the quiet qualities, such as sounding polite without being wordy.
+
+```scene
+title: The team lead and two recordings
+step: 📞 Two agents handle the same customer call, and both calls are recorded | Two sampled responses for one prompt
+step: 👩 The team lead listens to both and says which was better | A chosen and a rejected response
+step: 📓 She keeps a notebook of hundreds of better-or-worse verdicts | Preference dataset
+step: 🔁 Agents practise, leaning toward what earned approval | Preference tuning
+step: 🌟 Over weeks they pick up good habits nobody wrote in a rulebook | Learning what makes answers better
+takeaway: Judging two answers is easier than writing the perfect one, and preference tuning learns from exactly those judgements.
+```
+
 ## The data
 
 A preference dataset is a list of triples $(x, y_w, y_l)$. Typically the current model generates two or more responses per prompt, and humans (or a strong model acting as judge) pick the better one, sometimes with a strength rating or a tie option.

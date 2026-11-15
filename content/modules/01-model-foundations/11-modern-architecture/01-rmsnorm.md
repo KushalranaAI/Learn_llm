@@ -13,6 +13,26 @@ RMSNorm keeps only the half of LayerNorm that turned out to matter. It rescales 
 
 The theory, with a worked LayerNorm-versus-RMSNorm comparison, is in [LayerNorm and RMSNorm](/learn/model-foundations/transformer-block). Here the focus is the dozen lines of code and the numerical details that only appear once you write them.
 
+## In everyday life
+
+Every passport photo has to fit the same frame, whether the original shot was a tiny snapshot or a big portrait. The studio first resizes the photo so the face has the standard size. A fussier studio also slides the face to the exact centre of the frame. In practice, getting the size right matters most, and the centring changes little.
+
+Inside a language model, each **token** (a word or word piece) is held as a list of numbers called a **vector**, and as vectors pass through many layers, their overall size can drift. A **normalisation** step rescales each vector to a standard size so the next layer sees something steady. The older kind, **LayerNorm**, does both jobs: it rescales and re-centres. **RMSNorm** keeps only the rescaling. That is one fewer pass over the numbers, and models train about as well.
+
+Unlike a photo frame, the layer then applies a learned stretch to each number, so training can still tune the result.
+
+**Where you meet it.** Large models stack dozens of layers, and without normalisation the numbers can grow or shrink until training becomes unstable. Using the cheaper RMSNorm saves a little time in every layer on every step, and that adds up over a huge training run.
+
+```scene
+title: The passport photo studio
+step: 📷 Photos arrive in all sizes, tiny and huge | token vectors of varying size
+step: 📐 The studio resizes each so the face is a standard size | rescale to unit root-mean-square
+step: 🎯 A fussier studio also slides the face to the exact centre | LayerNorm re-centring
+step: ⏩ The quick studio skips centring, since it matters little | RMSNorm drops mean subtraction
+step: 🔧 A final knob lets the lab stretch results to taste | learned gain
+takeaway: RMSNorm keeps the rescaling that matters and skips the centring, saving time at no real cost.
+```
+
 ## The maths
 
 For one token's vector $\mathbf{x} \in \mathbb{R}^d$ with learned gain $\boldsymbol{\gamma} \in \mathbb{R}^d$:

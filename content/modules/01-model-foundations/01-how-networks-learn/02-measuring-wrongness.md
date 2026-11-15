@@ -7,6 +7,27 @@ Before you can improve something you need a score. A darts player gets one from 
 
 The loss is the only thing training ever looks at. The model never "understands" that it should translate well or write good code; it only ever pushes one number down. So the choice of loss decides what the model learns. Two losses cover almost everything in this course: **mean squared error** for predicting numbers and **cross-entropy** for predicting categories, which is what a language model does every time it picks the next token.
 
+## In everyday life
+
+Think of a weather forecaster who announces chances every evening: some chance of sun, of clouds, of rain. The next day the real weather arrives and you score the forecaster. If the real weather had a high chance, the penalty is small. If the forecaster gave it almost no chance, the penalty is big. Sounding sure and being wrong is punished most.
+
+That score is a **loss**: one number that says how wrong a prediction was, zero when perfect and larger as it gets worse. A **loss function** is the rule that produces it. For guessing a number, such as a delivery time, a common rule is **mean squared error**: square each miss, so one big miss costs far more than several small ones, then average. For choosing among options, such as the next token, the rule is **cross-entropy**, which punishes low probability on the right answer. Training only ever tries to push this one number down, so the choice of loss decides what the model learns.
+
+Unlike the forecaster, the model is never told why it was wrong, only the score.
+
+**Where you meet it.** A food-delivery app predicts arrival times. A long delay annoys customers far more than a small one, and squaring each miss builds that into the score. A language model's loss instead measures how much probability it gave to the word that really came next.
+
+```scene
+title: Scoring a weather forecaster
+step: 🌦 Each night the forecaster states chances for sun, clouds and rain | model outputs probabilities
+step: ☔ Next day the real weather arrives | the correct answer
+step: 📉 A high chance on the real weather earns a small penalty | low loss
+step: 😬 Almost no chance on the real weather earns a huge penalty | confidently wrong, high loss
+step: 🧮 Penalties are averaged over many days into one score | average loss
+step: 🔧 The forecaster changes habits to bring the score down | training lowers the loss
+takeaway: The loss is one number for how wrong the model is, and training only ever pushes it down.
+```
+
 ## Mean squared error: for numbers
 
 Suppose the model predicts a house price, a temperature or any other real number. For each example $i$ the model outputs $\hat y_i$ (read "y-hat", the prediction) and the true value is $y_i$. The **error** is $\hat y_i - y_i$. Squaring it makes every error positive and punishes big misses much more than small ones. Averaging over $N$ examples gives the **mean squared error**:

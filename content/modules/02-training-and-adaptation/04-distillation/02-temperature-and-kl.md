@@ -5,6 +5,28 @@ minutes: 8
 
 A well-trained teacher is usually very confident: it puts $0.99$ on one token and scatters tiny numbers over the rest. Those tiny numbers hold the dark knowledge, but cross-entropy barely notices them. The fix, from Hinton et al. (2015), is to **soften** both distributions with a **temperature** $T > 1$ before comparing them, which inflates the small probabilities.
 
+## In everyday life
+
+Imagine a night photo where one street lamp blazes and everything else looks black. Two such photos can look identical, even though the dim shapes in the shadows, a parked scooter or a tree, are different. To compare them properly, you would first brighten both by the same amount.
+
+A well-trained teacher model is often like that photo. It is so sure of one next word that it gives it nearly all the **probability** (the model's score for how likely a word is), and every other word gets a tiny leftover. Those tiny scores hold the useful hints. **Temperature** is the brightness knob: turning it up spreads the probabilities out so the small ones become visible, without changing which word ranks first. Teacher and student are brightened by the same amount.
+
+Then you need a score for how different the two are. **KL divergence** is that score. It is zero when the student matches the teacher exactly and grows as they drift apart. Brightening makes the differences small, so the score is scaled back up to stay noticeable.
+
+The photo is only a picture of the idea: the model brightens lists of numbers, not images.
+
+**Where you meet it.** A team shrinking a large model to serve it more cheaply trains the small one with this loss. Without the brightening step, the student mostly copies the teacher's top word and misses the near misses that carry the teacher's judgement.
+
+```scene
+title: Brighten the shadows, then compare
+step: 📸 A night photo shows one bright lamp and an almost black street | confident teacher, one token near certain
+step: 🛵 Faint shapes in the shadows hold details but are too dim to compare | tiny probabilities carry dark knowledge
+step: 🔆 You brighten both photos by the same amount | temperature softens both distributions
+step: 🔍 You compare the two brightened photos spot by spot | KL divergence
+step: 🎚️ Brightening shrinks differences, so you scale the score back up | multiplying the loss by T squared
+takeaway: Softening both distributions lets the student learn from the teacher's small probabilities, and KL scores the gap.
+```
+
 ## The ingredients
 
 For logits $z$, the temperature-$T$ softmax is

@@ -16,6 +16,26 @@ A pretrained GPT continues text. Show it "What is the first prime number?" and i
 
 The model never sees "a question" and "an answer" as separate objects. It sees one string of tokens. So the first job is to decide how a (question, answer) pair becomes that string, in a way the model can recognise again at inference time. That fixed layout is the **template**, and the boundary markers inside it are what tell the model "the user's part is over, now you speak" and "you are done".
 
+## In everyday life
+
+Think of two people on walkie-talkies. One says, "Control, where is the lorry? Over." The word "over" tells the other person the question is finished and it is their turn. They reply, "Lorry is at the gate. Out." and "out" says the reply is finished. Without these signals, both people talk at once or both wait in silence.
+
+A language model is in the same spot. It only ever sees one long stream of **tokens**, the small pieces of text it reads one after another. Nothing in that stream says "this part is a question" and "that part is an answer". So you choose a fixed layout, called a **template**, with labels and end signals built in. The model learns from many examples laid out this way when to start answering and when to stop. Training on examples where the right answer is shown is called **supervised fine-tuning**.
+
+The layout must be the same every time. If it changes when the model is in use, the model hears a signal it never practised.
+
+**Where you meet it.** A company turns a plain text-predicting model into a help assistant for its staff. With no template, the model answers a question by writing more questions. With one fixed layout in all training examples and in the live app, it learns to reply once and then stop.
+
+```scene
+title: Walkie-talkie talk with fixed signals
+step: 📻 Both people agree on the signals before they start talking | the template with fixed markers
+step: ❓ One person asks a question and says over | instruction, then the response header
+step: 👂 The other hears over and knows it is now their turn | cue to start the answer
+step: 💬 They answer briefly, then say out so nobody keeps talking | end-of-sequence marker
+step: 🔁 Tomorrow the same signals are used, or the chat breaks down | same template at inference
+takeaway: A fixed template tells the model where the question ends, where its answer begins and when to stop.
+```
+
 ## The template in the repo
 
 The repo uses an Alpaca-style template with plain-text section headers and two boundary markers:

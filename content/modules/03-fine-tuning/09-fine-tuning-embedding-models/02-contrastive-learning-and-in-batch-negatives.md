@@ -7,6 +7,25 @@ How do you tell a model what "similar" means without labelling every pair of tex
 
 It is the same game CLIP plays with images and captions, which [the CLIP contrastive loss](/learn/training-and-adaptation/multimodal/clip-contrastive-loss) derives in full. Here both sides are text and the loss is usually computed in one direction, query to document.
 
+## In everyday life
+
+Remember the match-the-following question in school exams? Column A has questions and column B has answers in jumbled order. You pick the right partner for each question, and the other answers in column B are the wrong options. Nobody had to write wrong answers separately. The neighbours in the list do that job for free.
+
+**Contrastive learning** teaches an embedding model with exactly this exercise. A batch of question and answer pairs is one small match-the-following. For each question, the model scores how well it fits every answer in the batch, and it is rewarded when its true partner gets the highest score. The other answers are the free wrong options, called **in-batch negatives** (negative here only means "not the right match"). A **scale**, a multiplier that stretches the gaps between scores, lets the model become confident instead of lukewarm. A longer list is a harder test: each question must be told apart from more look-alikes, which is why bigger batches usually teach more. Unlike an exam sheet, the model is never told why two texts match, only which ones belong together.
+
+**Where you meet it.** A team wants search over its internal documents to return the right passage for a question. They have questions paired with the passages that answered them. Training on those pairs, with every other passage in the batch as a wrong option, pulls true partners together and pushes the rest apart without anyone labelling wrong answers.
+
+```scene
+title: Match the following, for machines
+step: 📄 The teacher writes a few question and answer pairs | a batch of anchor and positive pairs
+step: 🔀 The answers are jumbled into one column | the batch of passages
+step: 🔍 The student rates how well each answer fits each question | similarity matrix
+step: 🎯 The right partner must score highest; every other answer is a wrong option | in-batch negatives and the InfoNCE loss
+step: ✏️ Mistakes are marked and the student adjusts | gradient update
+step: ➕ A longer list makes the test harder and more useful | larger batch
+takeaway: Every other answer in the batch is a free wrong option, so bigger batches give the model more to contrast against.
+```
+
 ## The loss: InfoNCE as a classification problem
 
 Take a batch of $B$ pairs $(a_i, p_i)$: anchors (queries) and their positives (passages). Encode and normalise all of them, then compute the $B \times B$ matrix of cosines $S_{ij} = \cos(\mathbf{a}_i, \mathbf{p}_j)$. The diagonal holds the true pairs; everything off the diagonal is a negative.

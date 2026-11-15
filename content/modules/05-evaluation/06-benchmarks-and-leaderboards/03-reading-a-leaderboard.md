@@ -7,6 +7,26 @@ A leaderboard is a sorted list, and sorting hides uncertainty. Model A at 82.0% 
 
 Sports tables have the same problem. Two football teams one point apart after ten games are not reliably different in strength; the same gap after the whole season means more. Number of questions plays the role of number of games.
 
+## In everyday life
+
+Before an election, a news channel shows an opinion poll: one party at 41 percent, another at 39. Does the first party lead? A careful reporter adds "margin of error: a few points". The poll asked only a few hundred people, so the true picture could easily be the other way round.
+
+A **leaderboard** is a sorted list of models by score, and sorting hides exactly this kind of doubt. Each score comes from a limited number of questions, so each one carries an **error bar**: a range the true score probably sits in. If the ranges of two models overlap a lot, the order between them could be luck.
+
+Two ideas help. First, when both models answer the very same questions, you can compare them question by question, which makes the doubt about the gap smaller. Second, rank is the shakiest number on the page, because several models can tie for the top spot.
+
+**Where you meet it.** A team needs to choose between two models that sit one row apart on a public leaderboard. Instead of trusting the row order, they check how many questions were used and whether the error bars are shown. They find the two models are statistically tied and decide on price and speed instead.
+
+```scene
+title: The election poll and its margin
+step: 📊 A poll of a few hundred voters puts one party two points ahead | two scores a few points apart
+step: ❓ The poll asked only a sample, so the true gap is uncertain | error bar from limited questions
+step: ↔️ The margins of both parties overlap, so the lead may be luck | gap smaller than the error bars
+step: 🤝 Asking the same voters both questions shrinks the doubt about the gap | paired comparison on shared questions
+step: 🥇 The honest headline says the parties are tied at the top | shared rank among tied models
+takeaway: Trust a leaderboard gap only when it is bigger than the error bars, and treat close models as tied.
+```
+
 ## The maths: the error bar on a difference
 
 Each score has a standard error $\text{SE}_A$, $\text{SE}_B$ (previous topic). If the two models were scored on **different** random question sets, the difference has

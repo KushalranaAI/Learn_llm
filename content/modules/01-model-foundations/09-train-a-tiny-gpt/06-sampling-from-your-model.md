@@ -7,6 +7,26 @@ A trained model does not write text. It outputs, for the last position of whatev
 
 The choice of how to pick is the sampler. [Sampling](/learn/model-foundations/sampling) covered the theory: temperature reshapes the distribution, top-k and top-p cut off its tail. Here we implement those ideas in about thirty lines of PyTorch, and look closely at one off-by-one in top-p that an earlier version of the repo got wrong.
 
+## In everyday life
+
+A group of friends play a story game. One person says a word, the next adds a word, and so on around the circle. Each person hears the whole story so far, thinks about what could come next, picks one word and passes it on. Nobody plans the full story. It appears one word at a time.
+
+This is how a trained GPT writes. It does not produce a paragraph in one go. It looks at the text so far, works out a chance for every possible next **token** (a piece of text), picks one, adds it to the text and looks again. That loop is **autoregressive generation**. How a player picks, always the likeliest word or a chance-weighted pick with silly options trimmed away, is the **sampler**, with settings such as temperature and top-p.
+
+The game differs in one way. Real players remember the whole story, but the model has a fixed **context window**: it sees only the most recent stretch of text, and older words fall out of view. Like the friends, it can also drift into nonsense if an early pick was a poor one.
+
+**Where you meet it.** A small writing helper that suggests the next line of a poem works like this. Early in training it produces word-shaped nonsense mixed with real short words, which is normal progress. If you prompt it in a language it never saw in training, the output will be poor, because it has no experience of such text.
+
+```scene
+title: The one-word story circle
+step: 🗣️ Each friend hears the whole story so far | context fed to the model
+step: 🤔 They think of how likely each possible next word is | probabilities for the next token
+step: 🎯 They pick one word, not always the most likely | the sampler's choice
+step: ➕ The word is added and the next friend hears the longer story | append the token and repeat
+step: 🧠 Friends only recall the last few sentences, and older words fade | cropping to the context window
+takeaway: A GPT writes one token at a time, feeding each choice back in as input, and sees only a limited recent window.
+```
+
 ## The generation loop
 
 Adapted from `GPT.generate` in `model_gpt.py`:

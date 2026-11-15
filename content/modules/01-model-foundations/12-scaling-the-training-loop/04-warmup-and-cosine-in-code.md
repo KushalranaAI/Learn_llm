@@ -9,6 +9,27 @@ The cure, warmup followed by cosine decay, is derived in [Training at Scale](/le
 
 A learning-rate **scheduler** is just a function from the optimizer step $t$ to a number, plus a side effect: it writes that number into every `param_group["lr"]` of the optimizer. PyTorch's optimizer reads `lr` fresh on every `step()`, so whatever value is in the group at that moment is the one used.
 
+## In everyday life
+
+Think of cooking dal in a heavy pan on a gas stove. You do not start on full flame: a cold pan can crack, or the dal can burn at the bottom. You start low, raise the flame to full, and cook fast while there is plenty to do. As the dal nears ready, you lower the flame little by little and let it simmer until it settles.
+
+A model's **learning rate** is the flame. It sets how big a step the model takes each time it adjusts its **weights** (its learned numbers). Early on, those adjustments are wild guesses, so big steps can throw it off. That is why we **warm up**, raising the rate slowly from nearly zero. Later, big steps keep the model bouncing around the best answer instead of settling, so we **decay** the rate along a smooth curve (a half cosine) down to nearly zero. A **scheduler** is the small helper that sets the flame at every step.
+
+Unlike a cook, the scheduler cannot taste the dal. Its plan is fixed in advance, and it must remember where in the plan it is.
+
+**Where you meet it.** A team trains a language model for days. With a flat, high learning rate, the early loss jumps about and the late loss never settles. A warmup and a decay give a calmer curve. If the run is stopped and restarted, the schedule must remember its place, or the flame jumps back to the start.
+
+```scene
+title: Cooking dal on a careful flame
+step: 🔥 She lights the stove on a very low flame | learning rate starts near zero
+step: 📈 She turns it up a little more each minute | linear warmup
+step: 🍲 At full flame, the dal cooks fast | peak learning rate
+step: 📉 As it nears ready, she lowers the flame bit by bit | cosine decay
+step: 🫕 It simmers on a tiny flame and settles | learning rate near zero at the end
+step: ⏰ She goes by the clock on the wall, not by each spoon of salt | schedule counts optimizer steps
+takeaway: Start gently, work fast in the middle, then ease off so the model settles.
+```
+
 ## The schedule the repo implements
 
 The part 4 scheduler warms up linearly over $T_w$ steps and then decays along a half cosine all the way to zero over the remaining $T - T_w$:

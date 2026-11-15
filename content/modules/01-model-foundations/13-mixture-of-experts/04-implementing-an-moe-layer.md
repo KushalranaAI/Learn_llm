@@ -9,6 +9,25 @@ The tricky part is bookkeeping, not maths. A dense FFN takes a tensor of shape $
 
 The first move is to forget the batch and sequence structure. Routing is per token, so the layer flattens $(B, n, d)$ into $T = B \cdot n$ independent rows of width $d$. Position and sequence membership no longer matter inside the layer.
 
+## In everyday life
+
+In a board exam, thousands of answer papers reach the evaluation centre. A coordinator decides which two examiners should mark each paper. She makes a separate stack for every examiner, so each one marks a whole stack in a single sitting. The marks come back with each paper's roll number, and a paper's final mark blends its two examiners' marks. The hard part is the paperwork: every mark must land on the right paper, and the second examiner's mark must not erase the first.
+
+An **MoE layer** does this in three jobs. **Dispatch** gathers, for each **expert**, the **tokens** (pieces of words) that chose it. **Compute** runs each expert once on its own stack. **Combine** multiplies each result by its **gate weight**, the share the router gave that expert, and adds it into the right token's slot. In code the work is bookkeeping: remembering where each token came from so its answer goes back in place.
+
+**Where you meet it.** Engineers building a mixture-of-experts layer must send variable-sized groups of tokens through different experts and then put the outputs back in order. A slip in this bookkeeping, such as overwriting a token's first expert result with the second, runs without any error yet quietly gives wrong outputs.
+
+```scene
+title: Marking papers with two examiners
+step: 📬 Papers arrive, and each is assigned two examiners | the gate picks top-k experts per token
+step: 🗂 The coordinator makes one stack per examiner | dispatch: gathering tokens by expert
+step: 🖊 Each examiner marks a whole stack in one sitting | each expert runs once on its batch
+step: 🔖 Every mark is written with the paper's roll number | remembering each token's position
+step: 🧮 A paper's marks are scaled by their shares and combined | combine with gate weights
+step: 🚫 The second examiner's mark is added to the first, never written over it | accumulating, not overwriting
+takeaway: Group tokens by expert, run each expert once, then add every weighted result back to its own token.
+```
+
 ## The maths of one layer
 
 For token $t$ with chosen set $\mathcal{T}_t$ and gate weights $g_{t,i}$:

@@ -7,6 +7,28 @@ Benchmarks age. When a benchmark is new, scores are low and spread out, and a 5-
 
 **Saturation** is the first: the scores of strong models bunch up near the maximum achievable, so the benchmark no longer separates them. **Contamination** is the second: test items (or close paraphrases, or their answers) appeared in the model's training data, so a correct answer may be recall rather than skill. A student who has seen the exam paper in advance gets a high grade that predicts nothing about the next exam.
 
+## In everyday life
+
+Think of a driving test where the examiner always uses the same short route near the office. Word gets around. Learners practise that exact route again and again, memorising every turn and signal. They pass easily, yet some of them still struggle on an unfamiliar road.
+
+Two things have gone wrong, and they have names. **Contamination** means the test's questions, or their answers, leaked into the material the model learned from, so a right answer may be plain recall rather than real skill. **Saturation** means almost everyone now scores near the top, so the test can no longer tell a good driver from a great one.
+
+Another quiet problem is that the answer key itself is never perfect. If a few questions are marked wrongly, even a flawless candidate cannot reach one hundred percent, and small gaps near the top turn into arguments about the key.
+
+Contamination is also something to check, not to assume. Some models show no sign of it at all.
+
+**Where you meet it.** A team sees a model jump sharply on an old, famous test and wants to switch to it. Before doing so, they write a fresh set of similar questions that nobody could have seen. If the score drops a lot on the fresh set, the jump was partly memory.
+
+```scene
+title: The driving test with one fixed route
+step: 🗺️ The test uses the same route every time, and the route becomes public | benchmark questions become public
+step: 📚 Learners memorise the turns instead of learning to drive | test items leak into training data
+step: 🏆 Nearly everyone passes with top marks, so the test stops separating drivers | saturation
+step: 🛣️ A new, unfamiliar route is set for the same drivers | fresh held-out test set
+step: 📉 Some drivers do much worse on it, which shows the earlier pass was partly memory | contamination inflated the score
+takeaway: A high score on an old public test may be memory, so check it on fresh questions you control.
+```
+
 ## Saturation and the label-noise ceiling
 
 The ceiling is rarely 100%. If a fraction $e$ of the answer key is wrong or ambiguous, a model that always gives the truly correct answer scores at most about $1 - e$. A careful re-annotation of MMLU estimated $e \approx 0.065$, which puts the practical ceiling around 93.5%. Once leading models sit in the low 90s, most of the remaining "errors" are disputes with the key, and a one-point gap between two models is within noise.

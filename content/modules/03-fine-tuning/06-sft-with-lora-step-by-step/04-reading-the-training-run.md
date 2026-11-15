@@ -7,6 +7,27 @@ While the run goes, the trainer prints a stream of numbers: `loss`, `grad_norm`,
 
 The **training loss** is the mean cross-entropy over the assistant tokens in the recent micro-batches. The **eval loss** is the same quantity on the 200 rows the model never trains on. Training loss always keeps falling if you train long enough, because the model can memorise. Eval loss is the one that tells you whether the model is learning the task.
 
+## In everyday life
+
+A batter spends the week in the nets facing the same few bowlers. Scores in the nets keep going up, because the batter learns their habits. On Saturday there is a match against bowlers never seen before. If match scores stop improving while net scores keep climbing, the batter has learned those bowlers, not the game.
+
+Reading a training run is the same check. The **training loss** is a score for how wrong the model is on the examples it practises on, and lower is better. The **eval loss** is the same score on examples it never practises on. Training loss nearly always keeps falling, because the model can memorise. Eval loss tells you whether real learning is happening. One full pass through all the examples is an **epoch**, and a small drop in training loss right after a pass ends is normal, since the second round of the same drills feels easier. Spikes, a loss that turns into not-a-number, or a loss stuck where it began are warning signs, often of a learning rate that is wrong or a marking setup that is broken. A **checkpoint** is a saved copy of the model during training, so you can keep the one from the best week.
+
+Unlike a batter, the model cannot feel that it is overdoing it, so the log is your only warning.
+
+**Where you meet it.** A team fine-tuning a support model glances at the log after five minutes and sees the loss stuck at its starting value. They stop the run, find the learning rate was left at the wrong default, and save hours of GPU time.
+
+```scene
+title: Net practice versus the Saturday match
+step: 🏏 A batter practises against the same few bowlers in the nets | training examples
+step: 📈 Net scores climb each day as habits are learned | training loss falls
+step: 🆕 On Saturday comes a match against bowlers never seen | eval loss on unseen rows
+step: 🔄 After the first full round of drills, net scores jump | drop at the epoch boundary
+step: 🚨 Net scores still climb but match scores flatten or slip | overfitting
+step: ✅ The coach picks the week when match form was best | best checkpoint
+takeaway: Watch eval loss, not just training loss: one shows learning, while the other can also show plain memorising.
+```
+
 ## Counting steps before you start
 
 If you know how many optimizer steps the run will take, the log is easier to read: you know where epoch boundaries fall and when each eval comes. With $N_{\text{train}}$ examples and effective batch $B_{\text{eff}}$:

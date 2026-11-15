@@ -26,6 +26,26 @@ How do I rotate my API key?<|im_end|>
 
 The final line is the **generation prompt**: an opened assistant turn with no content. It is what makes "start of an assistant reply" the most probable continuation. Forget it, and the model may continue the user's message instead of answering it.
 
+## In everyday life
+
+Imagine a drama club that always rehearses from scripts in one exact layout. Each line starts with the character's name in capitals, then a colon, then the words. Stage directions go in brackets. The actors have practised thousands of pages in this layout, so they know at a glance whose turn it is.
+
+Now hand them a script in some other layout, with no names and no colons. They can still read it, but they will stumble over who speaks when. A chat model is the same. During training it saw millions of conversations written in one fixed format. That format is the **chat template**: the rule for turning a list of messages into a single string, with special **marker tokens** (reserved symbols for "a turn starts" and "a turn ends") around each part.
+
+Each message also carries a **role**, a label such as system, user or assistant. At the end, the template leaves an opened assistant turn with nothing in it, like a script that ends with the next character's name and a colon. That empty turn is the cue to start talking. Unlike actors, the model cannot improvise around a wrong layout. It simply behaves like a half-trained version of itself.
+
+**Where you meet it.** A team runs an open model on their own server and formats prompts by hand. Answers are poor, even though the text looks right. The markers were being read as plain text, so the model never saw the turn boundaries. Using the model's own template function fixes it.
+
+```scene
+title: The drama club script
+step: 🎭 The club always rehearses scripts in one fixed layout | the chat template
+step: 🏷️ Each line starts with the speaker's name | role labels on every message
+step: 🔔 Bells mark where a speech begins and ends | special marker tokens
+step: ➡️ The script ends with the next speaker's name and a colon | the generation prompt
+step: 🗣️ The actor sees the cue and starts speaking | the assistant reply begins
+takeaway: The model only behaves well when its input matches the exact format it was trained on.
+```
+
 ## The maths: template overhead
 
 Every message pays a fixed number of extra tokens for its markers. Let message $i$ have $\ell_i$ content tokens, let each message cost $o$ overhead tokens (start marker, role name, newline, end marker), and let the generation prompt cost $g$ tokens. For $k$ messages the rendered prompt length is

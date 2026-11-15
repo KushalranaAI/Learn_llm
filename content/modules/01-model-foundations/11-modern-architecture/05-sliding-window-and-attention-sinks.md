@@ -9,6 +9,26 @@ With a KV cache, each decode step is cheap in FLOPs but still reads every cached
 
 There is a catch, found when people tried to stream a model trained with full attention past its window. The moment the very first tokens fell out of the window, the output collapsed into nonsense, even though those tokens were usually something meaningless like a beginning-of-sequence marker. The fix is to keep a handful of them forever. They are called **attention sinks**.
 
+## In everyday life
+
+In a classroom, the teacher writes on a whiteboard that has room for only so many lines. When it fills up, the oldest lines are wiped off to make room for new ones, so the board never grows. But the teacher always leaves the heading at the top. The class keeps glancing at it to get their bearings, even though it says little. If the heading is wiped too, students look around, confused.
+
+That is **sliding-window attention**. Each **token** (a word or word piece) looks back only at the most recent fixed number of tokens, the **window**, so memory and work stop growing however long the text gets. Surprisingly, the first few tokens act like the heading: the model learned to park spare attention there when nothing else matters. Keeping those few tokens forever is what **attention sinks** means.
+
+Unlike a board, earlier information is not always lost, because stacked layers let a token read others that had read further back. Still, a window forgets distant facts.
+
+**Where you meet it.** A live captioning tool or voice assistant that runs for hours needs memory that does not keep growing. A window with sinks lets it keep streaming without crashing. It does not let the model recall what was said long ago.
+
+```scene
+title: The whiteboard and its heading
+step: 🏫 The teacher writes on a board with a fixed number of lines | window of recent tokens
+step: 📝 New lines go in at the bottom as the lesson goes on | each new token
+step: 🧽 When the board is full, the oldest lines are wiped off | tokens fall out of the window
+step: 📌 The heading at the top is never wiped | attention sink tokens kept
+step: 😵 Wipe the heading too and the class gets confused | output collapses without sinks
+takeaway: A window keeps memory fixed, and a few kept starting tokens stop the model losing its bearings.
+```
+
 ## The maths
 
 A sliding window with $s$ sink tokens is a mask. For query position $i$ and key position $j$ (both 0-based):

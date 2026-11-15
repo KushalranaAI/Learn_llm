@@ -7,6 +7,26 @@ Public numbers answer "which models are generally strong?". Your question is nar
 
 A hiring analogy fits. A degree and a CV (public benchmarks) get a candidate onto the shortlist. A reference from a previous employer (arena ratings, other teams' reports) adds evidence. But you still run a work-sample test on the actual job (your own eval set) before hiring, because that is the only evidence about the role you are filling.
 
+## In everyday life
+
+You need new shoes for daily walking. You read online reviews, see a famous brand ad, and ask two friends. All of this helps you narrow the list to a few pairs. But you would not buy before trying them on in the shop, because only your own feet can tell you whether they pinch.
+
+Choosing a model is the same. Public numbers such as **benchmarks** (shared test sets) and **arena ratings** (rankings from user votes) tell you which models are generally strong. They are the reviews. They cannot say how a model handles your customers, your language or your document format. The try-on is your own **eval set**: a private collection of real examples from your work, with the answers you would count as correct.
+
+The try-on has a price too. If two models do about equally well, the cheaper one is usually the better buy. If a mistake is costly, a pricier and more accurate model may be worth it.
+
+**Where you meet it.** A team building a bot that answers loan queries shortlists three models from public rankings. They then run all three on a few hundred real, anonymised past queries, and compare how often each is right and what each costs per correct answer. The final pick comes from that private test.
+
+```scene
+title: Shoe shopping, reviews versus try-on
+step: 📱 You scan online reviews and ads for walking shoes | public benchmarks and arena ratings
+step: ✂️ You drop the obviously poor choices and keep three pairs | shortlist of two to four models
+step: 👟 You try each pair on your own feet in the shop | run your own eval set
+step: 💰 Two pairs fit well, so you compare the price tags | cost per successful answer
+step: 🛍️ You buy the cheapest pair that fits comfortably | cheapest model meeting the quality bar
+takeaway: Use public numbers to shortlist, and let your own test on your own data make the final choice.
+```
+
 ## A ladder of evidence
 
 | Evidence | What it is good for | What it cannot tell you |

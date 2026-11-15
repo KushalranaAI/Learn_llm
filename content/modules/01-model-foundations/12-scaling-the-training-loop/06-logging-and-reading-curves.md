@@ -9,6 +9,25 @@ Part 4 adds a small logger with three back ends: **TensorBoard** (event files on
 
 The important question is not which tool to use but **what to log**. Five signals answer almost every question about a run: the loss, the learning rate, the gradient norm, throughput, and a sample of generated text. Each one is cheap, and each one catches a class of bugs the others miss.
 
+## In everyday life
+
+Picture a student preparing for an entrance exam over many months. She does not just feel that she is improving. She keeps a notebook: the score of every practice test, her study plan for the week, how many questions she solves per hour, and now and then one of her own answers copied out in full. When her marks suddenly drop, the notebook shows what changed.
+
+A training run needs the same notebook. **Logging** means writing key numbers to disk together with the step they belong to, so you can plot them as **curves**. The **loss** is the model's mistake score (lower is better). The **learning rate** is how big its adjustments are. The **gradient norm** measures how hard the model is being pushed to change, and **throughput** is how much text it gets through per second. A sample of text the model writes is the "read one answer" check. Curves matter because most training problems do not crash anything. They only show up as odd shapes.
+
+**Where you meet it.** A team starts a training run on a Friday evening. On Monday the loss curve shows a sudden jump, at the same step where the logged learning rate changed, which points straight at the cause. Without those logs, they would only know that the final result came out worse.
+
+```scene
+title: A study notebook for a long run
+step: 📝 After each practice test she writes down the score | logging the loss
+step: 📅 She notes her study plan for the week | logging the learning rate
+step: 🏃 She counts how many questions she solves per hour | logging throughput
+step: 📈 When marks suddenly drop, she checks what else changed | reading a spike against other curves
+step: 🔎 She copies out one full answer to see if it makes sense | sampling generated text
+step: 🧠 Old papers score higher and higher, but a fresh paper does worse | training loss falls, validation loss rises
+takeaway: Log several signals side by side, because odd curves explain silent problems that never raise an error.
+```
+
 ## The numbers worth computing
 
 **Throughput** is tokens processed per second, and from it you get **model FLOPs utilisation** (MFU), the fraction of the GPU's peak you are actually using. With the standard estimate of about $6N$ training FLOPs per token for a model with $N$ parameters (2 forward, 4 backward):

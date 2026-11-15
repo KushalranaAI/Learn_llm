@@ -7,6 +7,27 @@ Many LLM tasks are really detection or extraction tasks in disguise. "Pull every
 
 A fishing net makes the distinction concrete. A fine net catches every fish in the lake but also boots, weeds and plastic. A coarse net brings up only fish but lets most of them escape. **Precision** asks: of what I caught, how much is fish? **Recall** asks: of all the fish, how many did I catch? Neither number alone tells you whether the net is good.
 
+## In everyday life
+
+At a metro station, a guard checks bags. One guard pulls aside everyone with a bag. He will catch anything dangerous, but the queue grows and most people he stops did nothing wrong. Another guard stops only the bags that look clearly suspicious. Few innocent people are bothered, but he lets some real problems walk through. Neither guard is simply better. They make different mistakes.
+
+This chapter gives those mistakes names. A **false positive** is a false alarm: flagging something that was fine. A **false negative** is a miss: letting through something that was real. **Precision** asks: of everything I flagged, how much was truly a problem? **Recall** asks: of all the real problems, how many did I catch? **F1** is one number that blends the two, and it stays low unless both are decent. Many AI jobs are the guard's job: pull action items out of meeting notes, flag messages with medical advice, or fetch the documents that are relevant to a question.
+
+One warning. If real problems are rare, a guard who flags nothing is right almost every time. Plain accuracy then looks excellent while the guard is useless.
+
+**Where you meet it.** A company's safety filter scans chat messages for harmful requests, and harmful ones are rare. A filter that never flags anything would score very high on accuracy while blocking nothing. Reporting precision and recall for the harmful class shows how many it catches and how many innocent users it bothers.
+
+```scene
+title: The guard at the metro gate
+step: 🛂 A guard checks the bags passing through the station | the model makes yes or no detections
+step: 🚨 He flags a bag that really had a problem | true positive
+step: 🙄 He flags a harmless bag and delays its owner | false positive
+step: 😬 He waves through a bag that did have a problem | false negative
+step: 🧮 Staff compare good flags with all flags and with all real problems | precision and recall
+step: ⚖️ One number blends both and stays low if either is poor | F1
+takeaway: Precision counts false alarms, recall counts misses, and you need both to judge a detector.
+```
+
 ## The confusion matrix
 
 For a yes/no decision on each item, every case lands in one of four cells:

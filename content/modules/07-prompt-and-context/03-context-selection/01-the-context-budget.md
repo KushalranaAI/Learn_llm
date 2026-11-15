@@ -17,6 +17,26 @@ A context window is like a suitcase with a weight limit. Some things must go in 
 - **The question** itself.
 - **The output reserve**: tokens the model needs to write its answer (and any reasoning). Input and output share the window on most models.
 
+## In everyday life
+
+Picture the one-page summary sheet a clinic keeps for each patient. The top has a printed header. Below it come notes from past visits, then today's complaint, then any lab reports the nurse clipped on. At the bottom the doctor needs blank space to write the new note. If the nurse fills every line with old reports, the doctor has nowhere to write.
+
+A language model works with a sheet like this. The **context window** is the fixed amount of text the model can hold in view for one request. Text is counted in **tokens**, small pieces of words. The **system prompt** is the standing instructions at the top, like the printed header. The **output reserve** is the blank space kept for the answer, because the answer is written on the same sheet as the question.
+
+So **context engineering** starts with simple bookkeeping: add up what must go in, keep room for the reply, and only then decide how much extra material fits. Unlike a paper sheet, the model counts tokens, not lines, so you must count with its own counter.
+
+**Where you meet it.** A company's help chatbot pastes in the user's past chats and a few policy pages before every question. If nobody does the sum, a long chat history pushes the policy pages out, or leaves the answer no room and it is cut mid-sentence. A budget calculation in code prevents both.
+
+```scene
+title: The clinic sheet that ran out of space
+step: 🏥 The header and standing instructions are printed on the sheet first | system prompt and tool definitions
+step: 📋 Notes from earlier visits and today's complaint go on next | history and the question
+step: 🧾 The nurse wants to clip on many lab reports | retrieved chunks
+step: ✍️ The nurse keeps blank lines at the bottom for the doctor's note | output reserve
+step: ➗ Whatever space remains decides how many reports can be added | retrieval budget
+takeaway: Reserve room for the answer first, then fill what is left with extra material.
+```
+
 ## The maths: the budget equation
 
 Let $W$ be the window size in tokens. For one request,

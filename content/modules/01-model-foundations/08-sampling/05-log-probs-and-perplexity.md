@@ -13,6 +13,26 @@ $$
 
 $x_t$ is the token at position $t$, $x_{<t}$ all tokens before it, $p_\theta$ the model's softmax output for that token, and $n$ the sequence length. This is exactly how the model was trained: one next-token prediction per position.
 
+## In everyday life
+
+At a family get-together, someone starts singing an old film song and everyone tries to guess the next word. On a song you know well, you are nearly always right. On a new song, you may be torn between several words at every step and you are often surprised.
+
+Suppose you noted, for each word, how likely you thought the word that actually came. Now you want one score for the whole song. Multiplying all those chances gives a number so tiny it is useless, because the chance of getting a long song fully right is tiny for everybody. So you keep a tally of surprise points instead, one per word, and add them. Adding is easy and nothing vanishes. Dividing by the number of words gives the average surprise per word.
+
+A language model can be scored the same way. A **log-prob** is the logarithm (a way to turn tiny chances into manageable numbers) of the probability the model gave to a **token**, a piece of a word. The average over a text is the **loss**. **Perplexity** turns that average into a friendly reading: how many options the model seems torn between at each step. Lower is better. Unlike song fans, models cut text into tokens in different ways, so scores compare fairly only when the cutting is the same.
+
+**Where you meet it.** A company running a support-ticket assistant checks its perplexity on new tickets every month. If it suddenly rises, tickets have changed, perhaps after a new product launch, and the model is more surprised than before. Without the check, drift would show up only as customer complaints.
+
+```scene
+title: Guessing the next word of a song
+step: 🎤 A song plays and you guess each next word before it is sung | next-token prediction
+step: 🤔 For each word you note how likely you thought the real one was | probability of the correct token
+step: ➕ Multiplying the chances gives a tiny number, so you add surprise points | sum of log-probs
+step: ➗ You divide by the number of words for the average surprise | average loss per token
+step: 🎯 You express it as how many options you were torn between | perplexity
+takeaway: Perplexity is the average surprise per token, read as how many options the model seems torn between.
+```
+
 ## Why logs
 
 Multiply a few hundred probabilities of around 0.1 and the result underflows any floating-point number ($0.1^{400} = 10^{-400}$, far below anything a 64-bit float can hold, which bottoms out around $10^{-308}$ for normal numbers). Taking logs turns the product into a sum, which is numerically safe:

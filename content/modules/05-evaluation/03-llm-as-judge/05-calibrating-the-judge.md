@@ -7,6 +7,26 @@ Suppose the judge says 72% of outputs pass. Is the real pass rate 72%? Only if t
 
 You can estimate those two rates from a small human-labelled sample, and then use them to correct the number the judge reports on the thousands of items humans never saw. That is **judge calibration** in the sense of "calibrating a measuring instrument", the same idea as zeroing a scale.
 
+## In everyday life
+
+At a biscuit factory, an inspector looks at packets coming off the line and rejects the broken ones. She is human, so she sometimes lets a bad packet through and sometimes rejects a good one. If she reports that most packets are fine, the true share is probably not exactly the number she gives.
+
+To fix that, the manager has an expert re-check a small sample and learns two things about the inspector: how often she accepts a truly good packet, and how often she wrongly accepts a bad one. These are the **true positive rate** and the **false positive rate**. With them, the manager can adjust her daily figure into a better estimate of the truth. That is **judge calibration**: measuring an instrument's errors on a small, carefully checked sample, then correcting the numbers it reports on the big pile nobody rechecked. The AI judge is the inspector, and the expert's labels are the human labels.
+
+Two cautions. A lenient inspector inflates quality, and a harsh one understates it. And the adjustment cannot create certainty: a less reliable inspector makes the corrected number wobblier.
+
+**Where you meet it.** A team reports a monthly pass rate for a chatbot that is graded by a model. They keep a gold set of a few hundred human-labelled answers, re-run the judge on it after every change, and correct the headline number. If the judge's two rates shift, they know old and new scores cannot be compared directly.
+
+```scene
+title: The biscuit inspector's second opinion
+step: 🏭 An inspector checks packets and rejects the broken ones | The judge grades outputs
+step: 🔬 An expert re-checks a small sample of the same packets | Human-labelled sample
+step: 🔍 You count good packets accepted and bad packets wrongly accepted | True and false positive rates
+step: 📊 For the whole day she reports how many packets are fine | Judge-reported pass rate
+step: 🧮 You adjust that figure using the two error rates | Corrected pass rate
+takeaway: A judge's pass rate is not the true pass rate until you correct it with its measured error rates.
+```
+
 ## The maths: undoing the judge's errors
 
 Let $p$ be the true pass rate we want. Let $\text{TPR}$ be the probability the judge passes an output that humans call good, and $\text{FPR}$ the probability it passes one humans call bad. The judge's observed pass rate $q$ is a mixture:

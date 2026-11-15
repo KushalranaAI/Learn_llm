@@ -7,6 +7,27 @@ In standard **multi-head attention (MHA)**, every head has its own query, key an
 
 That is exactly what modern models do. **Multi-query attention (MQA)** goes to the extreme: all query heads share a single key head and a single value head. **Grouped-query attention (GQA)** is the middle ground: query heads are split into groups, and each group shares one key/value head.
 
+## In everyday life
+
+In a large apartment building, every flat could take its own newspaper. Each reader gets a full copy, but the building fills with paper and the vendor's cart is heavy. A cheaper plan is for each floor to share one copy. The readers on that floor still read it their own way: one looks for sports, another for jobs. The cheapest plan is one copy for the whole building, but now readers queue for it and some get less out of it.
+
+In attention, each **head** is a reader: one of several parallel attention units in a layer. Every head asks its own question (a **query**) and looks through saved notes, the **keys and values** kept in the **KV cache**. In **multi-head attention** every head keeps its own copy. In **grouped-query attention** a few heads share a copy, and in **multi-query attention** all heads share one.
+
+Sharing shrinks what the GPU must store and read. Unlike newspaper readers, each head still forms its own question and its own pattern of attention; only the material is shared.
+
+**Where you meet it.** A company serving a chat model to many users picks a model with fewer key and value copies. Each GPU can then hold many more chats at once, so each answer costs less to serve. Without sharing, memory would cap the number of users.
+
+```scene
+title: One newspaper per floor
+step: 🏢 Every flat in the building takes its own newspaper | multi-head attention, own keys and values
+step: 📰 The building fills with copies and the cart gets heavy | a large KV cache
+step: 🏬 Flats on one floor share a single copy | grouped-query attention
+step: 👀 Each reader still reads for their own interests | each query head keeps its own pattern
+step: 🏠 One copy for the whole building saves most but strains readers | multi-query attention
+step: ✅ Most buildings settle on one copy per floor | GQA with a few KV heads
+takeaway: Sharing keys and values among query heads shrinks the cache while each head keeps its own question.
+```
+
 ## The idea in symbols
 
 Let $h$ be the number of query heads and $h_{kv}$ the number of key/value heads. The **group size** is

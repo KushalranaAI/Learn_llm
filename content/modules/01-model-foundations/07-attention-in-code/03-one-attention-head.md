@@ -7,6 +7,27 @@ The [Attention](/learn/model-foundations/attention) lesson worked out a single h
 
 The head here is the **single-head self-attention** module from the companion repo. It takes activations of shape $(B, n, d)$ and returns outputs of shape $(B, n, d_h)$ plus the attention weights $(B, n, n)$, which are useful for inspection and tests.
 
+## In everyday life
+
+Open a busy WhatsApp group and read the newest message. To reply well, you do not reread everything. You scan the earlier messages and give extra attention to the few that matter, for example the one that mentions the venue you are being asked about. You never look at messages that have not been sent yet.
+
+An attention head does exactly this for every word. It builds three things from each token. A **query** is what this word is looking for. A **key** is a label each word wears to say what it offers. A **value** is the actual content it can share. The head compares the query with every earlier key to get **scores**, turns the scores into shares that add up to 100 percent (a step called **softmax**), and blends the values using those shares. A **mask** blocks later positions so a word cannot peek at the future.
+
+Unlike you, the head does not choose what to look for on purpose. It learns that during training.
+
+**Where you meet it.** In "Asha picked up the phone because she wanted to call Ravi", the word "she" must work out who it points to. Attention lets "she" score the earlier words and pull in information from the best matches. Without the mask, the model could cheat in training by reading the very word it is meant to predict.
+
+```scene
+title: Replying in a busy group chat
+step: 💬 A new message arrives and you wonder what you need to know | The query
+step: 🔖 Each earlier message wears a topic tag | The keys
+step: 🎯 You match your need against each tag and rate the matches | Query and key scores
+step: 🚫 Messages not yet sent are off limits | The causal mask
+step: 📊 You turn the ratings into shares that add up to 100 percent | Softmax weights
+step: 🧩 You blend the messages' content in those shares to write your reply | Weighted sum of the values
+takeaway: Each word asks a question, rates the earlier words by how well they answer it, and blends what they offer.
+```
+
 ## The maths
 
 $$

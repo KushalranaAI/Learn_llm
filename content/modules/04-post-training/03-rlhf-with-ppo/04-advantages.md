@@ -7,6 +7,26 @@ A shaped reward says what each token earned. The policy gradient needs something
 
 Think of a football team that wins 1–0 with a goal in the last minute. Crediting only the scorer is unfair to the defender who stopped three shots earlier. Crediting everyone equally ignores who actually played well. A good credit assignment compares each moment with what the team expected at that moment.
 
+## In everyday life
+
+You order dinner online and rate the delivery five stars. The rating covers everything: the kitchen, the packing, the rider's route. But the app also wants to know which step deserved the praise. A fair way is to ask at each step, "Did this go better or worse than expected?" A rider who finds a quick shortcut in heavy traffic earns credit. A rider who takes the usual road does not, even if the food arrives on time.
+
+In PPO that "better than expected" number is the **advantage**. The model also keeps a **value**, its guess at each point of how good the final score will be, which is the expectation. The advantage is what happened minus what was expected. A positive advantage makes that token more likely next time. A negative one makes it less likely.
+
+The repo's code takes a shortcut and looks only at each token's own immediate reward. The worked numbers show what that costs: almost all the credit lands on the last token. Better methods, called reward-to-go and **GAE**, send the end score back to the earlier tokens as well.
+
+**Where you meet it.** In a chat assistant the reward arrives only after the whole reply. Without a fair way to share credit, only the final words of a long reply would learn anything from the grade.
+
+```scene
+title: Who deserves the five stars
+step: 📦 Dinner arrives and the customer gives one rating | reward at the end of the answer
+step: 🤔 Each stage had an expected time, like usual packing time | value estimate per token
+step: 🏍 The rider beats the expected time in heavy traffic | outcome better than expected
+step: ➕ That beat earns praise, an ordinary stage earns none | advantage, outcome minus expected
+step: ↩️ Praise for early stages needs the end rating passed back | reward-to-go and GAE
+takeaway: The advantage says how much better than expected each token did, and that decides who gets pushed up or down.
+```
+
 ## Three ways to compute it
 
 The general form is the return from step $t$ minus the value baseline:

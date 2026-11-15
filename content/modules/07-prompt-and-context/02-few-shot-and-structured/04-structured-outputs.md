@@ -29,6 +29,26 @@ There are three levels of enforcement, from weakest to strongest:
 2. **Validate and retry.** Parse the output, validate it against the schema, and on failure call again, often with the error message included.
 3. **Constrained decoding.** Make invalid output impossible by restricting which tokens the model may emit (next topic). Many APIs expose this as a "structured output" or "JSON mode" option.
 
+## In everyday life
+
+At a bank counter you fill in a deposit slip. It has boxes: name, account number, amount in numbers, amount in words, date. The clerk's computer can only read those boxes. If you wrote a friendly letter instead, saying "please put some money in my account, about five thousand", a human could understand it, but the system could not process it.
+
+If the slip comes back with a mistake, say letters in the account number box, the clerk returns it with a note saying what is wrong, and you fix it and submit again. If it fails twice, the clerk does not guess. The slip goes to a supervisor.
+
+That is **structured output**. Your program does not want a paragraph. It wants data in a fixed, machine-readable shape, usually **JSON** (a text format with named fields, like the boxes on the slip). A **schema** is the description of the slip: which boxes exist, what each may contain, and which are required. You check the model's answer against the schema before using it, and if it fails you retry with the error message. Unlike a bank customer, the model sometimes breaks the rules even when it knows them, so you must check every time.
+
+**Where you meet it.** A company triages support tickets automatically. The next step in the program expects a category from a short list and an urgency number from one to five. The model's reply is checked against the schema before anything is routed.
+
+```scene
+title: The bank deposit slip
+step: 🏦 The bank gives a slip with fixed boxes, not a blank page | a JSON schema
+step: ✍️ You fill in each box with the allowed kind of entry | the model writes JSON
+step: 🧾 The clerk checks every box against the rules | validation against the schema
+step: ↩️ A bad slip returns with a note saying what is wrong | retry with the error message
+step: 🧑‍💼 After repeated failures the slip goes to a supervisor | a typed error, not bad data
+takeaway: Ask for data in a fixed shape, check it every time, and never pass unchecked output on.
+```
+
 ## The maths: rare failures at scale
 
 Let $\varepsilon$ be the probability that one call returns output that fails validation. Over $N$ independent calls, the expected number of failures is $N\varepsilon$, and the probability that at least one call fails is

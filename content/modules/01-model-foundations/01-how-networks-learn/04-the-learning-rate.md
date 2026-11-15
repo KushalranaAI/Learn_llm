@@ -7,6 +7,26 @@ Back on the foggy hillside: the gradient tells you which way is downhill, but no
 
 It is a **hyperparameter**: a setting chosen by the engineer, not learned by gradient descent. Too small wastes compute; too large makes the loss bounce or explode to infinity (engineers say the run **diverged**). There is a precise reason for both, and it fits in three lines of algebra.
 
+## In everyday life
+
+Think of learning to drive. The car drifts left of the lane and you steer back towards the middle. How much you steer matters. With tiny corrections you do get back, but it takes ages. With huge corrections it is worse: you swerve across the lane, end up further out on the other side, and correct even harder. A well-sized correction settles the car in the lane quickly.
+
+In training, the size of the correction is the **learning rate**. Each step of **gradient descent** (the repeated nudging of a model's numbers to lower its error) moves the numbers by the slope times the learning rate. It is a **hyperparameter**: a setting the engineer chooses, not something the model learns. Too small wastes time and compute. Too large makes the loss bounce or blow up, which engineers call the run **diverging**.
+
+Unlike a driver, the model cannot see the road ahead. It only gets the slope at its current spot.
+
+**Where you meet it.** Engineers training a language model watch the loss curve. If it falls very slowly, they try a larger learning rate. If it jumps around or shoots off to an error value, the rate is too large, so they lower it or raise it gently at the start.
+
+```scene
+title: Steering a car back into the lane
+step: 🚗 The car drifts left of the lane centre | the loss is the error
+step: 🧭 You steer back towards the middle | one gradient step
+step: 🐢 With tiny corrections you straighten, but only after a very long time | learning rate too small
+step: 🔀 With huge corrections you swerve further out each time | learning rate too large, diverging
+step: 🛣 A well-sized correction settles the car in the lane quickly | a good learning rate
+takeaway: The learning rate is the size of each correction: too small crawls, too large swerves out of control.
+```
+
 ## Why there is a speed limit
 
 Near a minimum, almost any smooth loss looks like a bowl. Write it as a parabola with **curvature** $a$ (how sharply the bowl bends) and minimum at $w^*$:

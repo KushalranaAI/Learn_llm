@@ -13,6 +13,26 @@ Attention uses exactly this split. From each token's vector it computes three di
 
 The score between positions is the dot product of a query with a key, and the output is a weighted average of values. Why three vectors instead of using the token vector for everything? Because "what I am looking for" and "what I am" are different questions. The word "it" is looking for a noun; it is not itself a good match for other words looking for a noun.
 
+## In everyday life
+
+Think of a group project where you are stuck on drawing graphs. You look around the room. Each classmate wears a sticker saying what they are good at, such as "graphs", "writing" or "slides". You compare your need with every sticker and walk over to the best matches. Then you copy down what they actually know. The sticker is how they advertise. The notes in their head are what they hand over. These are two different things.
+
+Attention gives every word three such roles, all made from the same starting vector (the word's list of numbers). The **query** is what this word is looking for, like your need. The **key** is the sticker each word wears. The **value** is the content a word gives away when chosen. The word is turned into these three by three **weight matrices**, grids of learned numbers. Training decides what a good sticker looks like.
+
+Why not one vector for everything? "What I want" and "what I am" differ. The word "it" wants a noun, but it is not a good answer to another word wanting a noun.
+
+**Where you meet it.** In a translation app, a verb must find its subject, which may sit many words earlier. Its query looks for a subject, every word's key says what kind of word it is, and the matching word's value is what flows in.
+
+```scene
+title: Stickers and notes in a group project
+step: 🙋 You need help with graphs, so you carry a need in your head | query
+step: 🏷️ Each classmate wears a sticker naming their strength | key
+step: 🔍 You compare your need with every sticker and rate the matches | query-key scores
+step: 📓 You copy notes from the best matches, not from the stickers | values are blended
+step: 🧑‍🏫 Over time you learn how to write stickers and needs better | learned weight matrices
+takeaway: A token searches with its query, advertises with its key, and shares its value, and all three are learned.
+```
+
 ## Three learned projections
 
 All three come from the same input by multiplying with three learned weight matrices. Stack the $n$ token vectors as the rows of $X$ (shape $n \times d$). Then

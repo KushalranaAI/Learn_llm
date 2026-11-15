@@ -17,6 +17,27 @@ In PEFT, those settings live in one `LoraConfig` object:
 
 `"all-linear"` adapts every linear layer: the attention projections $W_q, W_k, W_v, W_o$ and the MLP's gate, up and down projections. PEFT's documentation states that it leaves out the output layer, the large matrix that maps hidden states back to vocabulary logits. You don't need to know the module names of each architecture, which is why it is the default choice.
 
+## In everyday life
+
+Picture a restaurant kitchen with one big pot of basic curry base that every dish starts from. The owner wants a spicier house style but will not cook the whole base again. So a small bowl of masala is stirred into each dish at the end.
+
+LoRA works like that. The big model is **frozen**, meaning its numbers are never changed, and you train only a small add-on beside chosen **layers**, the stages the model's processing passes through. Four settings shape the add-on. The **rank** is how many small bowls you prepare, so how rich the add-on can be. The **scale** is how strongly the masala is stirred in, and it is set by the strength setting and the rank together. If you change the rank, change the strength with it, or the add-on speaks louder or softer than you planned for. **Dropout** means skipping part of the add-on at random during practice, so it does not lean on any one bit. The **target modules** are the layers that get an add-on, and the easy choice is all of them. Before training, print how many numbers are trainable and compare with your own count.
+
+The kitchen picture stops at one point: masala is chosen by taste, while the add-on's contents are learned from your data.
+
+**Where you meet it.** A team tuning a small model for a support desk has one GPU with limited memory. If the add-on is too big, or attached to the wrong layers, they waste memory or the model barely changes. Choosing sensible values and checking the count first lets them start a long run with confidence.
+
+```scene
+title: Masala bowls on a base curry
+step: 🍛 One big pot of base curry feeds every dish and is never remade | frozen base model
+step: 🥣 The owner decides how many small bowls of masala to prepare | rank
+step: 🧂 How strongly the masala is stirred in is set together with the bowl count | alpha scaled by rank
+step: 🍴 Every dish on the menu gets its own masala bowl | target modules, all linear layers
+step: 🙈 During practice, some bowls are skipped at random | dropout
+step: 🔍 Before opening, count the bowls and compare with your list | check trainable parameters
+takeaway: LoRA adds a small trainable add-on to a frozen model, and four settings decide its size, strength and place.
+```
+
 ## The scale and the count
 
 The adapted layer computes $h = W x + \frac{\alpha}{r} B A x$. The factor $\alpha / r$ sets how strongly the update speaks. With $r = 16$ and $\alpha = 32$ it is $2$. If you later double the rank to 32 and keep $\alpha = 32$, the scale halves to 1, so the effective step size changes and the learning rate you tuned no longer fits. Keep $\alpha = 2r$ when you change the rank, and the scale stays at 2. (PEFT also offers `use_rslora=True`, which uses $\alpha / \sqrt{r}$ instead.)

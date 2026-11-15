@@ -7,6 +7,27 @@ Generation is a loop: run the model, pick a token, append it, run the model agai
 
 The **KV cache** is the observation that the expensive per-token results needed by later tokens, the keys and values in every attention layer, never change once computed. So compute them once, keep them in GPU memory, and at each step process only the newest token.
 
+## In everyday life
+
+Imagine writing a long exam answer with a thick reference book beside you. For every new sentence you could re-read the whole book from page one. A smarter student makes index cards on the first read: one card per page, with a short label on top and the key point underneath. For each new sentence, they glance through the labels, pick the matching cards and read their points.
+
+A language model writes the same way, one **token** (a word or word piece) at a time. For every token it has already seen, each attention layer works out a **key** (a label saying what this token is about) and a **value** (the information it can offer). These never change once computed, so the model stores them in the **KV cache**, a store in GPU memory. For each new token it works out only that token's own question, called its **query**.
+
+Unlike the student, the model throws the question away after one use, because no later token needs it. The price is memory: the cards pile up with every token.
+
+**Where you meet it.** A chat service that streams an answer word by word keeps one such cache for each user. Without it, the server would redo almost all the work for every new word, and replies would crawl. With it, each new word needs only a little new work plus a look through the saved cards.
+
+```scene
+title: Index cards for a long answer
+step: 📚 You read the long reference book once while preparing | processing the prompt
+step: 📇 For each page you write one card: a label and a key point | a key and a value per token
+step: 📦 The cards sit in a box on your desk and are never rewritten | KV cache, past values never change
+step: 📝 You begin a new sentence and form a question about what to say | the new token's query
+step: 🔎 You match the question to the labels and mix the best points | attention over cached keys and values
+step: 🧹 The question is used once; only a new card is added | query discarded, new key and value kept
+takeaway: Keys and values are saved because later tokens keep reading them; queries are used once.
+```
+
 ## Why past keys and values never change
 
 In layer $\ell$, a token at position $t$ produces

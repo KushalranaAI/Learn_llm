@@ -17,6 +17,27 @@ $$
 
 Note the order: compute $Ax$ first, a small $r$-dimensional vector, then expand with $B$. The full $d_{\text{out}} \times d_{\text{in}}$ update matrix is never formed during training.
 
+## In everyday life
+
+Think of a big store with a price list of millions of items. Festival season arrives and prices must change. You could print a whole new list, entry by entry. But look at the changes: everything in electronics drops a little, one brand drops a bit more, and sweets go up. A few simple rules explain almost the whole change. So instead of a new list, you keep the old list and add a short rulebook.
+
+That is **LoRA**, short for low-rank adaptation. A model's knowledge sits in giant grids of numbers called **weight matrices**, and fine-tuning has to change them. Full fine-tuning stores a change for every single entry. LoRA bets that the change follows only a few patterns, and stores just those patterns as two thin tables. The number of independent patterns allowed is called the **rank**. Rank one means one rule. Higher means more freedom.
+
+Two details match the story. The rulebook starts out as "no change", so on day one every price is exactly the old one. And once you are happy, you can print a new list with the rules built in, so nobody has to consult the rulebook again. Unlike a store manager, LoRA does not get its rules written by a person. It learns them from examples.
+
+**Where you meet it.** A team wants a model to follow their output format. Instead of changing billions of numbers, they train a small pair of thin tables for each chosen layer. GPU memory stays low, and the original model is left untouched and can be reused for other jobs.
+
+```scene
+title: A rulebook instead of a new price list
+step: 🏬 A store has a huge price list with an entry for every item | pretrained weight matrix
+step: 🎉 Festival season means prices must change in a sensible way | the fine-tuning update
+step: 📋 The changes follow a few rules, not item-by-item edits | low-rank update from two thin matrices
+step: 🧾 The rulebook starts as no change, so prices begin unaltered | one matrix starts at zero
+step: 🛒 A bill uses the old price plus what the rules add | frozen weights plus adapter
+step: 🖨 Once happy, a new list is printed with the rules built in | merging the adapter
+takeaway: LoRA stores a small set of patterns instead of a full change, so the original model stays intact and the update is tiny.
+```
+
 ## What rank means
 
 The **rank** of a matrix is the number of independent directions it uses. A product $BA$ of an $d_{\text{out}} \times r$ and an $r \times d_{\text{in}}$ matrix has rank at most $r$: every column of $BA$ is a combination of the $r$ columns of $B$. A rank-1 update is an outer product of one column and one row, a single "pattern".

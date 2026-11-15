@@ -13,6 +13,26 @@ The plumbing is three pieces:
 
 Everything else is the blocks.
 
+## In everyday life
+
+Walk into a big hospital and follow a patient's file. At the front desk the patient gets a card with their details and a queue number. The file then passes through several rounds of specialists. Each round is a similar team that adds notes to the same file, building on the notes before. At the end, a final desk reads the file and writes a score for every possible diagnosis.
+
+A GPT, the kind of model behind most chatbots, has the same shape. The front desk turns each **token** (a piece of text) into a list of numbers, an **embedding**, and adds a second list saying where the token sits in the sequence, the **position embedding**. The specialist rounds are the **blocks**: one design stacked several times, each copy with its own learned numbers. The final desk, called the **LM head**, gives a score for every token the model knows, saying how likely each one is to come next.
+
+The picture bends in one place. The queue-number table has a fixed number of rows. Once the queue is longer than the table, there is no number left to hand out, so the model can only take in a sequence up to a set length.
+
+**Where you meet it.** Before spending hours on a training run, an engineer builds the model and counts its numbers, the **parameters**, against a hand calculation. If the count is off, a stage has the wrong size or is missing. Without that check, such mistakes surface much later as a mysterious loss curve.
+
+```scene
+title: A file moving through the hospital
+step: 🪪 The front desk makes a card for each patient with a queue number | token plus position embedding
+step: 🩺 The file passes through a round of specialists who add notes | transformer block
+step: 🔁 More rounds follow, each team building on the earlier notes | L stacked blocks
+step: 🧾 The final desk tidies the notes and scores every possible diagnosis | final LayerNorm and LM head
+step: 📋 Scores come out for every position in the queue | logits for every token
+takeaway: A GPT is a stack of identical blocks with an embedding step at the bottom and a scoring step at the top.
+```
+
 ## Shapes through the model
 
 Input IDs have shape $(B, n)$. Write $E \in \mathbb{R}^{V \times d}$ for the token table, $P \in \mathbb{R}^{n_{\max} \times d}$ for the position table and $W_{\text{head}} \in \mathbb{R}^{d \times V}$ for the head. For one sequence:

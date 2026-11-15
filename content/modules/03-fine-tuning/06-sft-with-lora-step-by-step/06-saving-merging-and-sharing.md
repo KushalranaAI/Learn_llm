@@ -7,6 +7,27 @@ When training finishes, `trainer.save_model(...)` writes only the adapter: an `a
 
 From there you have two ways to ship it. Keep it **separate** and load it on top of the base at run time. That costs a little latency, but one base can serve many adapters. Or **merge** it, folding $\frac{\alpha}{r}BA$ into $W$ to get an ordinary model with no PEFT dependency and no extra latency. [Merging an adapter](/learn/fine-tuning/peft-lora/adapters-in-practice) derives why the merge is exact.
 
+## In everyday life
+
+A photographer owns a good camera and buys a thin lens filter that gives pictures a warm look. The filter clips onto the lens. It can be removed, carried in a small case and lent to a friend, but only if the friend has the same lens.
+
+That is how a LoRA adapter behaves after training. Saving the run stores only the **adapter**, the small file of newly learned numbers, not the big model. That keeps it light, but it is useless without the exact base model it was trained on. Then you choose how to ship it. Keep the adapter **separate** and attach it when needed, which costs a little speed but lets one base model serve many adapters. Or **merge** it, meaning you fuse the adapter into the model's own numbers to get one ordinary model with no extra parts, like coating the filter onto the glass. Merge into a full-quality copy of the base. Fusing into a coarser, compressed copy rounds away much of the small change. After merging, test again, and share with a note saying which base model it needs.
+
+A coated lens cannot be undone, but here you keep the adapter file, so you can always merge again.
+
+**Where you meet it.** A company with one task wants the simplest setup, so it merges the adapter and serves a single model. Another team serves many customers from one base, so it keeps a small adapter per customer and loads the right one for each request.
+
+```scene
+title: A lens filter, clipped or coated
+step: 📷 The camera lens stays fixed while a thin filter clips on | frozen base, small adapter
+step: 🎒 The filter travels alone in a small case | adapter saved on its own
+step: 🔗 It fits only the lens it was made for | needs the exact base model
+step: 🔬 Fusing it into the glass removes the clip and adds no delay | merge the adapter
+step: 🧪 Test shots check that the fused lens looks the same | re-test the merged model
+step: 📤 It is shared with a note naming the lens and settings | model card, private first
+takeaway: Ship the small adapter with its base model, or merge it into one model after testing.
+```
+
 ## Sizes on disk
 
 The adapter's size is its parameter count times the bytes per stored value. PEFT keeps the trainable adapter weights in fp32 during training and saves them that way by default. With $P_{\text{lora}}$ adapter parameters and $N$ base parameters:

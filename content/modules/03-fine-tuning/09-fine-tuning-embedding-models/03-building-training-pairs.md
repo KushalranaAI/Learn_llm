@@ -5,6 +5,24 @@ minutes: 9
 
 The loss from the previous topic needs one thing from you: a list of (anchor, positive) pairs where the positive is what a good model should return for the anchor. Everything about the fine-tuned model's notion of similarity comes from these pairs. Get them right and a few thousand are enough; get them wrong and the model learns your mistakes faithfully.
 
+## In everyday life
+
+A new assistant in a hardware shop learns what customers mean by watching the owner. The owner keeps notes. One customer asked for "something to fix a dripping tap" and walked out with a washer. Real requests with the item that was bought are the best teaching material, so the owner starts there. For items nobody has asked about yet, he writes imagined requests in the words a customer would use, not the words printed on the box.
+
+That is how you build **training pairs** for an embedding model: an **anchor** (the query) and its **positive** (the right passage). When you only have documents, an AI can write the imagined questions, called **synthetic queries**. Next the owner shows the assistant look-alike items that are the wrong choice, such as a washer for a different tap. These are **hard negatives**: passages that look relevant but do not answer the question. Beware the trap. Sometimes the look-alike would have worked too. That is a **false negative**, and teaching the assistant that it is wrong makes him worse. Finally, the owner keeps some products out of the lessons completely, so the final quiz tests understanding, not memory.
+
+**Where you meet it.** A company wants its help search to find the right article. Support tickets already link each question to the article an agent sent, which gives free pairs. Careful hard negatives teach the model to tell apart two near-identical pages instead of only avoiding obviously unrelated ones.
+
+```scene
+title: Training a new shop assistant
+step: 🏪 The owner notes real requests and what each customer bought | pairs from tickets and click logs
+step: ✍️ For items nobody asked about he writes imagined requests in customer words | synthetic queries
+step: 🔩 He shows look-alike items that are the wrong choice | hard negatives
+step: ⚠️ He checks that a look-alike is not actually a fine substitute | false negatives
+step: 🧪 Some products stay out of the lessons and appear only in the final quiz | split by document
+takeaway: Good pairs, careful look-alike negatives and a split by document matter more than having a huge pile of pairs.
+```
+
 ## Where pairs come from
 
 Look for pairs your data already contains before generating any:

@@ -7,6 +7,26 @@ Pipeline parallelism splits the model by depth. With $p$ stages, GPU 1 holds the
 
 Think of an assembly line with four workstations. A single car still passes through all four in sequence, so one car takes just as long as it would in a one-station factory. The line only helps when many cars are in progress at once, each station always working on a different one.
 
+## In everyday life
+
+A laundry has three rooms in three different buildings: washing, drying and ironing. A bundle of shirts goes from building to building in order. The roads between the buildings are slow, but that hardly matters, because only the bundle needs to be carried, not the machines.
+
+One bundle still needs all three rooms in turn, so a single bundle is no faster than in one big room. The laundry only gains when many bundles are in progress at once, so each room is always busy with a different one. At the start, the drying and ironing rooms wait for the first bundle, and at the end the washing room sits idle. These idle moments are the **bubble**.
+
+That is **pipeline parallelism**. A language model has many **layers** (steps it applies in order). They are split into stages, each on its own **GPU** (the graphics chip that runs the model). Only a small block of data passes between stages, so slow links are fine. To keep every stage busy, requests are cut into **micro-batches** (small groups sent through one after another).
+
+**Where you meet it.** A very large model does not fit in one machine, so it is spread over two machines linked by a slower network. Pipeline stages suit that link. Within one machine, a different kind of splitting is used for speed.
+
+```scene
+title: The laundry in three buildings
+step: 🧺 A laundry has three rooms in different buildings: wash, dry, iron | stages holding consecutive layers
+step: 🚲 Only a bundle of clothes travels between buildings, so slow roads are fine | small activation passed between stages
+step: ⏳ One bundle still needs all three rooms in order | per-token latency is not reduced
+step: 👕 Many bundles in progress keep every room busy | micro-batches fill the pipeline
+step: 😴 At the start and end some rooms sit idle | the pipeline bubble
+takeaway: Pipeline stages cope with slow links, but they raise throughput, not the speed of a single request.
+```
+
 ## Latency is not reduced
 
 For one sequence in decode, the token must traverse all stages sequentially. Each stage reads its own share of the weights, $W/p$ bytes, taking $W/(p\beta)$, and the token needs all $p$ stages, so

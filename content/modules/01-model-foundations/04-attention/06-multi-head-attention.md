@@ -7,6 +7,26 @@ When you read a sentence you track several things at once: who did what, which a
 
 **Multi-head attention** runs several attention operations side by side, each with its own query, key and value projections. Each one, a **head**, can learn to look for something different. Their outputs are concatenated and mixed by one more matrix. Researchers who inspect trained models find heads that attend to the previous token, heads that match brackets or quotes, and heads that copy a token seen earlier in the context; most heads are less tidy than that.
 
+## In everyday life
+
+When a patient arrives with a thick report, the hospital does not ask one doctor to catch everything. A heart specialist reads it looking for heart signs. A diabetes specialist reads the same pages for sugar levels. A bone specialist looks for fractures. Each writes a short note, and the family doctor reads all the notes together and writes one summary. The report is the same. The questions asked of it differ.
+
+**Multi-head attention** works like this. A **head** is one complete attention operation with its own queries, keys and values. The model runs many heads side by side on the same input. Each head works in a smaller slice of the vector, so the total size stays the same. Their outputs are glued together, then mixed by one more learned grid of numbers called the **output projection**.
+
+Nobody tells the heads what to look for. Training sorts that out. Researchers find heads that watch the previous word, heads that match quotation marks, and many that are less tidy. Unlike real specialists, some heads overlap and some do little.
+
+**Where you meet it.** A chatbot reading "The nurse told the patient that she was fine" must track who "she" is and how the sentence is built. One head can follow one clue while another follows a different one, instead of squeezing every clue into a single pattern.
+
+```scene
+title: Specialists reading one report
+step: 🏥 One patient report is handed to a team of specialists | same input to every head
+step: 🫀 Each specialist reads it through their own focus | separate query, key and value per head
+step: 📋 Each writes a short note on what they found | each head's output
+step: 📎 The notes are stapled side by side on one sheet | concatenate the heads
+step: 🩺 The family doctor merges them into a single summary | output projection
+takeaway: Several heads look at the same tokens in different ways, then their findings are combined.
+```
+
 ## The maths
 
 With $h$ heads, each head works in a smaller space of dimension $d_h = d / h$. For head $i$:

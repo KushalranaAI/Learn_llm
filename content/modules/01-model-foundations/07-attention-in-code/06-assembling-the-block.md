@@ -9,6 +9,27 @@ The wiring used here is **pre-norm**, the GPT-2 arrangement: normalise, run the 
 
 The block's contract is what makes stacking possible: **shape in equals shape out**, $(B, n, d) \to (B, n, d)$. A model is this block repeated $L$ times, and the tests at the end of this topic are the ones you will rely on for the rest of the module.
 
+## In everyday life
+
+Think of a file moving through a government office. The original papers are never rewritten or thrown away. At each desk, the clerk first makes a clean photocopy at a standard size and brightness, so every file is easy to read. The clerk studies the copy, writes a note on a separate sheet and staples that sheet onto the original file. The file then moves on, a little thicker but still the same file.
+
+A **transformer block** works this way. The running vector for each token is the file. **LayerNorm** is the photocopy step: it rescales the numbers of each token so they sit in a steady range. A **residual connection** is the stapling: each part adds its result onto its input instead of replacing it. A block has two desks. The first is attention, where the clerk compares this file with the earlier ones. The second is the feed-forward network, where the clerk studies this file alone.
+
+The file leaves in the same shape it arrived, which is why many blocks can be stacked like offices in a row.
+
+**Where you meet it.** A chatbot's model is many of these blocks stacked. If the wiring is slightly wrong, say a mask lets later tokens leak backward, the model can still train and pass a shape check. Writing the three tests from this lesson, shape, parameter count and "does the past change?", catches such quietly broken blocks.
+
+```scene
+title: A file passing two office desks
+step: 📁 A file arrives carrying the token's current numbers | The input to the block
+step: 📄 The first clerk makes a clean standard-size photocopy | LayerNorm before attention
+step: 🔎 The clerk compares it with earlier files and writes a note | Multi-head attention
+step: 📎 The note is stapled onto the original, not copied over it | The residual add
+step: 🔁 The second clerk repeats this but studies the file alone | Second LayerNorm, FFN and residual add
+step: 📤 The file leaves in the same shape, ready for the next office | Shape in equals shape out
+takeaway: A block reads a cleaned copy, writes a note, and adds the note back, so the original is never lost.
+```
+
 ## The maths
 
 $$

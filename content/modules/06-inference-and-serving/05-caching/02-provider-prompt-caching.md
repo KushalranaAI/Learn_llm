@@ -5,6 +5,24 @@ minutes: 8
 
 If you call a hosted model, you do not run the server, but you still benefit from prefix caching: many API providers offer a cheaper price for input tokens that hit their cache. Details differ between providers (whether caching is automatic or opted into with markers, the minimum prefix length, how long entries live, and the exact prices), so treat the numbers below as an illustrative pricing shape and always read the current price list. The arithmetic is the same everywhere.
 
+## In everyday life
+
+A tailor gets an order for a new shirt design. The first time, the tailor spends extra effort cutting a paper pattern, and may charge the first customer a little more for it. Every repeat order for that design is much cheaper, because the pattern already exists. But patterns are not kept forever: if nobody orders the design for a while, the pattern goes in the bin. Whether this pays off depends on how often the design is ordered again.
+
+Hosted AI services price your prompts this way. The text you send is billed as normal input, as a **cache write** (the first time a long opening part is stored for reuse), or as a **cache read** (a later request that finds it already stored). Reads cost a small fraction of normal, while a write can cost a little extra. The stored part expires after a short time without use, its **time to live**. The share of requests that find it stored is the **hit rate**, and the lowest hit rate at which caching saves money is the **break-even**.
+
+**Where you meet it.** A document question-answering app sends the same long document with every question. With caching, most of those tokens bill at the cheap rate. But if documents rarely repeat, the extra cost of writing can make the bill higher.
+
+```scene
+title: The tailor and the paper pattern
+step: ✂️ A tailor cuts a paper pattern for a new design, which takes extra effort | cache write
+step: 💰 The first customer pays a little extra for that effort | write premium
+step: 🧵 Repeat orders reuse the pattern and cost much less | cache read discount
+step: ⏳ A pattern nobody uses for a while is thrown away | cache expires (time to live)
+step: 📊 If few orders ever repeat, the extra effort is never recovered | break-even hit rate
+takeaway: Caching pays only when enough requests reuse the stored text before it expires.
+```
+
 ## The pricing model
 
 Let the normal input price be $p$ dollars per token. A typical structure has three prices:

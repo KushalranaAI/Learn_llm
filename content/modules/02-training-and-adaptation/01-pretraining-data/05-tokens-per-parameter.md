@@ -11,6 +11,25 @@ $$
 
 where $D$ is the number of training tokens and $N$ the number of parameters. It is a rough measure of how thoroughly each parameter has been "fed". A model with a low ratio has capacity it never learned to use; a model with a very high ratio has squeezed a lot of data into a small set of knobs.
 
+## In everyday life
+
+A cricket academy has a fixed coaching budget for the season. It can sign a large squad and give each player only a few sessions, or sign a smaller squad and give each player far more practice. A big squad with little practice has plenty of talent that never gets developed. A smaller, well-drilled squad often plays better, and it is cheaper to take on tour.
+
+Models face the same trade-off. **Parameters** are the model's adjustable numbers, which set how much it can learn. Tokens are the text it reads during training. **Tokens per parameter** is the number of training tokens divided by the number of parameters: how much practice each one gets. Early very large models had low ratios, so they were under-practised for their size. Later work found a balanced ratio for a given budget. Models that must serve many users are often trained well past that balance, because a small, well-practised model is cheaper to run every day. Unlike a squad, the supply of fresh practice material can run out, since good human-written text is finite.
+
+**Where you meet it.** Reading a model card, you see a small model trained on a very large amount of text. A quick ratio check tells you the designers chose a small, heavily trained model that is cheap to run, rather than a bigger one trained on less. That tells you what they cared about.
+
+```scene
+title: Coaching budget at a cricket academy
+step: 🏏 The academy has a fixed coaching budget for the season | Fixed training compute
+step: 👥 It must pick a squad size: many players or few | Number of parameters
+step: 🎯 A bigger squad means fewer practice sessions each | Fewer tokens per parameter
+step: 📈 A smaller, well-drilled squad often beats a big under-practised one | A balanced ratio, as in Chinchilla
+step: 🧳 A small squad is cheaper to take on tour, so some are drilled extra hard | Training past the balance to cut serving cost
+step: 📦 Eventually the supply of fresh practice material runs low | Finite human text
+takeaway: Tokens per parameter tells you how well-fed a model is, and what its designers valued.
+```
+
 ## The ratio across well-known models
 
 | Model | Parameters $N$ | Training tokens $D$ | $\rho = D/N$ |

@@ -7,6 +7,24 @@ If a casino sold lottery tickets at one in twenty odds, you would not be shocked
 
 Evaluation invites this constantly. You try ten prompt variants, compare each against the baseline, report the best one. Or you split results into eight slices and highlight the slice where the new model "significantly" wins. Each of those is a **multiple comparisons** problem, and the nominal 5% no longer describes your real false-positive risk.
 
+## In everyday life
+
+Before an IPL season, 20 friends each predict the winner of every match. By the end, one friend has called the first six matches right. Everyone says he is a genius. But with 20 people guessing, somebody was bound to have a lucky streak. His record would be impressive only if you had picked him before the season began. The same trap hides in evaluation. Try ten prompt variants, report the best one, and you have played all 20 friends and the genius at once.
+
+This is the **multiple comparisons** problem: the more comparisons you make, the higher the chance that at least one looks like a real win purely by luck. The cure is to be stricter when you look at many things. **Corrections** such as Bonferroni and Holm raise the bar for each single comparison, and Benjamini-Hochberg allows some false leads but controls their share. The simplest habit of all is to name your one main comparison before you see any results. Unlike the friends' predictions, your discarded experiments are invisible, so you must count them yourself.
+
+**Where you meet it.** A team tries ten prompt rewrites and eight slices of users, then announces that the winner is significantly better. Many of those tests were run only because earlier ones failed. Without a correction or a fresh confirmation set, the announced gain tends to shrink after launch.
+
+```scene
+title: Twenty friends and a lucky streak
+step: 🏏 Twenty friends each predict every match of the season | many comparisons at once
+step: 🍀 One friend gets a lucky streak of correct picks | a false positive among many tests
+step: 📣 Everyone calls him a genius and forgets the other nineteen | ignoring the discarded tests
+step: 🧱 A sensible club demands a higher bar when many people guess | Bonferroni or Holm correction
+step: 🔒 Better still, a pick is named before the season starts | one pre-chosen primary comparison
+takeaway: The more things you test, the more luck looks like skill, so name your main test first.
+```
+
 ## The maths: family-wise error
 
 If you run $m$ independent tests, each at level $\alpha$, and every null is true, the probability of at least one false positive is the **family-wise error rate**:

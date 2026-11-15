@@ -11,6 +11,26 @@ The trade-off has three ingredients:
 - **Token cost per example**: example length times the input price, paid on every call.
 - **Cost of an error**: what a wrong answer costs you downstream (a human review, a refund, a lost customer). This is the number teams most often forget to estimate, and it decides the answer.
 
+## In everyday life
+
+Picture yourself in an open-book exam, where you may keep a few solved sample questions beside you. The first sample teaches you the style of answer. The second one clears up a doubt. By the tenth, you are mostly flipping pages and losing time. Each extra sample helps a little less than the one before, and each one costs minutes you could spend writing.
+
+Whether another sample is worth it depends on one more thing: what a mistake costs. In a practice quiz, a slip costs nothing, so a couple of samples is plenty. In the final board exam, one lost mark matters a lot, so spending extra time on samples is sensible.
+
+Few-shot prompting follows the same logic. Each **example** is text the model must read on every request, and you pay for it in **tokens** (small pieces of text) each time. The **accuracy** gain from each new example shrinks, while its cost stays the same. So there is a best number of examples, and you find it by measuring on a **golden set**, a collection of real inputs with known right answers. Unlike the student, the model re-reads all the samples before every single question.
+
+**Where you meet it.** A team that tags support emails tests zero, two, four and eight examples on a few hundred labelled emails. Two give most of the gain, so they ship with two and save the rest of the tokens. A team where mistakes are costly picks more.
+
+```scene
+title: Sample questions in an open-book exam
+step: 📘 You may keep solved samples beside you during the exam | few-shot examples in the prompt
+step: 💡 The first sample shows you the answer style | big gain from early examples
+step: 🔁 Later samples repeat what you already know | diminishing returns on accuracy
+step: ⏱️ Each extra page you flip costs writing time | each example costs tokens on every call
+step: 🎯 You stop at the point where time lost beats marks gained | the optimal number of examples
+takeaway: Add examples only while the accuracy they buy is worth more than the tokens they cost.
+```
+
 ## The maths: expected cost per call
 
 Let each example be $\ell$ tokens, the input price $p_{\text{in}}$ per token, and the cost of one error $e$. The expected cost per call attributable to the examples and the errors they prevent is

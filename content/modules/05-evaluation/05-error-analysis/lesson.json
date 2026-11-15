@@ -9,7 +9,7 @@
     "Turn findings into a prioritised list of fixes and new eval cases"
   ],
   "prerequisites": "Pass rates and confidence intervals from [Comparing Systems You Can Trust](/learn/evaluation/comparing-systems), and the confusion-matrix vocabulary from [Success Criteria](/learn/evaluation/success-criteria).",
-  "sims": [],
+  "sims": ["eval-gate"],
   "labs": [],
   "sources": [
     { "title": "Exploratory Data Analysis", "authors": "John W. Tukey", "year": 1977, "note": "The case for looking closely at the data before and after summarising it" },

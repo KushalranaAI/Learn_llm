@@ -7,6 +7,24 @@ An open-book exam is easier than a closed-book one, and not because the student 
 
 The second tool is the one a careful student also uses: leave a question blank rather than guess. **Abstention** means the system says "I don't know" (or hands off to a person or a search) when its confidence is too low. Grounding raises the chance of a correct answer; abstention removes the answers most likely to be wrong.
 
+## In everyday life
+
+Walk up to a railway enquiry counter and ask when the next train to a small town leaves. A good clerk does not answer from memory. They open the timetable, find the line and read it out. If the train is not in the book, a good clerk says "I can't confirm this, please ask the station master" rather than guess, because a wrong platform sends you running the wrong way.
+
+Those two habits are this chapter. **Grounding** means making the answer depend on evidence placed in front of the model, such as a pasted passage, instead of whatever the model happens to remember. **Abstention** means the system declines to answer, or hands over to a person, when it is not confident enough. Grounding raises the chance of a right answer. Abstention removes the answers most likely to be wrong. A model cannot open a timetable by itself, so the system around it has to find the right page and put it in front of the model. When the page is missing the model may still guess, which is why you want both habits.
+
+**Where you meet it.** A company's help chatbot answers from the company's own policy pages. Without grounding it invents refund rules that sound right. With grounding it quotes the real policy page and shows where the answer came from. When no page covers the question, it passes the chat to a human agent instead of guessing.
+
+```scene
+title: The enquiry clerk who checks the book
+step: 🧑 A traveller asks the clerk about a train to a small town | The question
+step: 📖 The clerk finds the right page in the timetable instead of answering from memory | Retrieve passages
+step: 💬 The clerk reads the answer out and points to the line used | Answer with citation
+step: 🤔 The clerk asks: do I really have this in the book? | Confidence and citation check
+step: 🙋 If not, the clerk says they cannot confirm and sends the traveller to the station master | Abstain or hand off
+takeaway: Answer from evidence when you have it, and say I don't know when you don't.
+```
+
 ## How grounding shifts the probabilities
 
 Attention lets every generated token read the context. When the context contains "The company was founded in 1994", the tokens " 1994" become very likely at the moment the answer is written, because copying from context is one of the easiest patterns a transformer learns. Suppose that on some question set the model is right $q_0 = 0.40$ of the time from memory alone and $q_1 = 0.95$ of the time when the right passage is in the context. Retrieval finds the right passage with probability $r$ (its **recall**). Then

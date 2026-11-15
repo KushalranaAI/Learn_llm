@@ -7,6 +7,26 @@ A language model is trained to predict the next token. If, while predicting the 
 
 The fix is a **causal mask** (also called a look-ahead mask): each position may attend to itself and to earlier positions, never to later ones. With that rule in place, the prediction at every position depends only on the past, exactly as it will when the model generates text one token at a time. Models built this way are called **decoder-only** or **autoregressive** transformers; GPT-2, Llama and most chat models are of this kind.
 
+## In everyday life
+
+Suppose a student practises guessing the next word of a story. The honest way is to read the book with a card laid over everything after the current word. If the student peeks at the next page, the practice is useless: guesses are always right, but only because the answer was visible. On the real day, when the student must write the next word with no book to peek at, the skill is missing.
+
+A language model practises the same way. A **causal mask** is that card. It stops each position from looking at later positions. Each word may look at itself and all earlier words, never ahead. Models built this way are called **autoregressive**, which means they write one token (a piece of a word) at a time, each based on what came before.
+
+Here is the neat part. The card can be slid to every position at once, so one pass over a sentence gives a guess, and a lesson, at every word. Unlike a student, the model does not need a separate reading for each guess.
+
+**Where you meet it.** A phone keyboard that suggests your next word, or a chat assistant writing a reply, must work with only the past. Without the mask, training would let the model copy answers, and it would fail the moment it had to write something new.
+
+```scene
+title: Practising with a card over the page
+step: 📖 A student practises guessing the next word of a story | next-token prediction
+step: 🃏 A card covers everything after the current word | causal mask
+step: 👀 Each word may use itself and the words before it, nothing later | attention to earlier positions only
+step: 🔁 The card slides along, and the student guesses at every stop | all positions trained in one pass
+step: ✅ On the real day there is no next page, and the skill still works | generation time
+takeaway: The causal mask hides the future so training matches generation, and it lets every position learn at once.
+```
+
 ## The mask as maths
 
 Add a mask matrix $M$ to the scaled scores before the softmax:

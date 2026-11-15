@@ -7,6 +7,27 @@ Token F1 ignores word order: "dog bites man" and "man bites dog" score a perfect
 
 The two metrics lean in opposite directions, and the names tell you which. **BLEU** came from machine translation and is precision-oriented: how many of the candidate's n-grams appear in the reference? **ROUGE** came from summarisation and is recall-oriented: how much of the reference does the candidate cover? You will meet both in papers and older benchmarks. Understanding them mainly helps you know when *not* to trust them.
 
+## In everyday life
+
+Picture a karaoke app that scores your singing. It cannot judge your voice, so it does something simpler. It listens to short runs of words you sang and checks whether the same runs appear in the original lyrics. Singing the chorus in the right order earns points. Singing the right words in a jumbled order earns fewer, because the runs no longer match.
+
+That is the idea behind **n-grams**: runs of n words in a row. A run of two words is a bigram. Checking runs instead of single words gives a little sensitivity to order. Two scores grow out of it. **BLEU** asks how much of what you sang appears in the real lyrics. It also cuts your score if you sang only a tiny part of the song, a rule called the **brevity penalty**. **ROUGE** asks the opposite question: how much of the real lyrics did your singing cover?
+
+The app has a blind spot. If you sing a fresh verse with the same feeling in different words, it gives you a low score, even if the verse is lovely. Text metrics have the same blind spot for paraphrases.
+
+**Where you meet it.** A team translating fixed app messages, such as "Your order has been shipped", compares each translation with a human translation using BLEU. When the wording should stay close to the reference, it works as a quick alarm. It misleads when a model writes a fresh summary that is correct but phrased differently, because the score drops although nothing is wrong.
+
+```scene
+title: Scoring a song by matching phrases
+step: 🎤 You sing a verse into the karaoke app | Candidate text
+step: 📜 The app holds the original lyrics | Reference text
+step: 🔗 It cuts both into short runs of consecutive words | N-grams
+step: ✅ It counts the runs you sang that are in the lyrics | Clipped n-gram precision (BLEU)
+step: 📉 Singing only two lines of a long song loses points | Brevity penalty
+step: 📚 It also asks how much of the lyrics you covered | Recall (ROUGE)
+takeaway: BLEU and ROUGE reward shared phrases, so they punish correct answers that are worded differently.
+```
+
 ## BLEU: clipped n-gram precision
 
 For each $n$ from 1 to $N$ (usually $N = 4$), the **clipped precision** $p_n$ counts candidate n-grams that appear in the reference, but credits each one at most as many times as it occurs in the reference (so "the the the the" cannot score well against "the cat"):

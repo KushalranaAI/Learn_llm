@@ -7,6 +7,28 @@ A ViT can be trained to classify images into a fixed list of labels, but a fixed
 
 Think of a matching game at a party with $N$ photos and their $N$ captions, shuffled. A good player can pair each photo with its caption. CLIP is trained to win that game, with a batch of $N$ pairs, thousands of times.
 
+## In everyday life
+
+Think of a lost-and-found office run by two clerks. One clerk only looks at photos of items. The other only reads written descriptions. Every item has both a photo and a description. The clerks agree to mark a spot on one shared floor map for each, so that an item's photo and its own description land on the same spot, while photos and descriptions of different items end up far apart.
+
+Practise that on millions of items and the map becomes useful. A customer walks in and says "a blue school bag with a torn strap". The photos closest to that spot on the map are the best matches, even for items nobody has seen before.
+
+This is **CLIP**. The two clerks are an **image encoder** and a **text encoder**, models that turn a picture or a sentence into a list of numbers. The shared floor map is a **shared vector space**. The training rule that pulls true pairs together and pushes wrong pairs apart is the **contrastive loss**. Labels such as "cat" or "car" can then be written as sentences and matched against an image, which is **zero-shot** classification: no extra labelled examples needed.
+
+The office stops fitting here: CLIP learns from web captions, so it is better with objects than with counting.
+
+**Where you meet it.** A shopping app lets you type "red running shoes with white soles" and shows matching products, even when nobody wrote those words as tags. Without a shared space, text search cannot compare words with pictures.
+
+```scene
+title: Two clerks and one shared map
+step: 🧳 A lost-and-found has photos and written descriptions, handled by two separate clerks | image encoder and text encoder
+step: 📍 Both clerks mark a spot on one shared floor map for each item | shared vector space
+step: 🧲 A photo and its own description should land on the same spot | matching pairs pulled together
+step: 🚧 Photos and descriptions of other items should land far apart | mismatched pairs pushed apart
+step: 🔎 A customer describes a bag in words, and the nearest photo wins | zero-shot classification as retrieval
+takeaway: CLIP puts pictures and words in one space, so words can be used to search or label pictures.
+```
+
 ## Embeddings and similarities
 
 For a batch of $N$ image-text pairs, the image encoder gives vectors $u_1, \dots, u_N$ and the text encoder $v_1, \dots, v_N$, each scaled to unit length. Their dot products are cosine similarities, arranged in an $N \times N$ matrix $S$ with $S_{ij} = u_i \cdot v_j$. The diagonal holds the true pairs; everything else is a mismatch.

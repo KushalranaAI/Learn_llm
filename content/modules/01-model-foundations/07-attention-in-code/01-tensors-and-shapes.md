@@ -13,6 +13,28 @@ The convention used throughout this course, and in most GPT-style code, is **(B,
 
 The habit that makes transformer code debuggable is simple: **write the shape next to every line**. If you can say what every axis means after every operation, most bugs become visible before you run anything.
 
+## In everyday life
+
+Picture a school's marks register. Each class section has its own sheet. On the sheet, each student has a row, in roll-number order. In each row sit several numbers, one per subject. To find one mark you need three things: which section, which roll number, which subject.
+
+That three-part address is what a computer calls the **shape** of a **tensor**, a block of numbers with several directions, like a stack of tables. Language models handle text this way. They process many sentences together, called a **batch**. A sentence is a list of positions, and each position carries a row of numbers describing that word. So reading a shape from left to right gives you: which sentence, which position, which number.
+
+Now imagine the school runs the same marking formula on every student row, turning each row of marks into a new row of numbers. That is what a linear layer does. It changes the length of each row and leaves the number of sections and students alone.
+
+A shape bug is like swapping two columns of the register. The sheet still looks tidy, but the marks now mean the wrong thing.
+
+**Where you meet it.** An engineer adds a new layer to a model and training runs without any error, yet the results are poor. Two directions of a tensor were swapped: the shapes still fit, but the numbers mean the wrong thing. Writing the shape next to each line, and testing with every size different, exposes the mix-up quickly.
+
+```scene
+title: Reading a school marks register
+step: 📚 A register holds one sheet for every class section | A batch of sequences
+step: 🧑 Each sheet lists students row by row in roll order | Positions in a sequence
+step: 🔢 Each student row holds one number per subject | A feature vector for each position
+step: 🧮 The same formula turns every student row into a new row | nn.Linear acts on the last axis
+step: 📝 You note what each column means beside every formula | Write the shape next to every line
+takeaway: A tensor shape is an address of batch, position and feature, so check that each axis means what you think.
+```
+
 ## The maths: nn.Linear is $xW^{\top} + b$
 
 A PyTorch `nn.Linear(d_in, d_out)` stores a weight $W$ of shape $(d_\text{out}, d_\text{in})$ and a bias $b$ of length $d_\text{out}$, and computes

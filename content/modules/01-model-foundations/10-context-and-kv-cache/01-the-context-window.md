@@ -16,6 +16,26 @@ A language model has no memory between calls. Everything it knows about your con
 
 Think of a desk with room for a fixed number of pages. The system prompt, the chat history, retrieved documents, tool results and the answer being written all have to fit on the desk at once. When a chat "forgets" what you said an hour ago, it is usually because the application dropped old turns to make room.
 
+## In everyday life
+
+Think of the baggage allowance on a flight. The airline lets you carry one fixed total weight, and everything must fit inside it: clothes, gifts, a laptop, and the space you want to leave for things you buy on the way. If you pack heavily, there is little room left for anything else.
+
+A language model works under a similar limit. It has no memory between calls, so everything it needs to know about you must travel with each request, written as small text pieces called **tokens** (a token is a word or part of a word). The most tokens a model can handle at once is its **context window**. Your instructions, the chat so far, any pasted documents and the answer the model writes all share that one allowance.
+
+Unlike a baggage counter, the model never warns you. When the application runs out of room, it quietly drops the oldest messages, which is why a long chat can seem to forget. The maths below turns this into a simple budget.
+
+**Where you meet it.** A bank's help chatbot gets a customer's long chat history, a policy document and a new question. If the app pastes in everything, the request fails or the reply is cut off halfway. Good apps count tokens first, keep only the recent turns and reserve room for the reply.
+
+```scene
+title: The baggage allowance at check-in
+step: 🧳 The airline allows one fixed total weight for all your luggage | context window
+step: 👕 Clothes, gifts and a laptop all go into the same allowance | prompt: instructions, history, documents
+step: 🛄 The more you pack for the trip, the less room is left | prompt length uses up the budget
+step: 🎁 Space you leave empty is what you can fill later | room left for the output
+step: 🚫 If the bag is too heavy, something has to be left behind | old turns dropped, answer cut off
+takeaway: Prompt and answer share one window, so a long prompt leaves less room for the reply.
+```
+
 ## The budget
 
 The prompt and the generated output share the window:

@@ -7,6 +7,28 @@ With a reward model in hand, the plan sounds simple: let the model write answers
 
 The danger is that the reward model is an imperfect proxy for what people want. Optimise it without restraint and the policy finds its blind spots: answers that score highly but are verbose, flattering, oddly formatted or simply nonsense. So RLHF puts the policy on a **leash**: it is rewarded for scoring well and penalised for drifting far from a **reference model** $\pi_{\text{ref}}$, normally the SFT model it started from.
 
+## In everyday life
+
+A cook at a small dhaba inherits the family dal recipe. A regular customer tastes each new batch and gives it a score. The cook tweaks the spices, cooks again, and keeps whatever earns higher scores. There is a risk, though. If the cook chases the taster's score without limit, the dal may drift into something odd that the taster happens to love today but nobody else would eat.
+
+So the owner adds a rule: every big departure from the family recipe costs points. The cook can improve, but only close to what the recipe already is.
+
+This is **reinforcement learning from human feedback**, or RLHF. The **policy** is the model being trained, the cook. The **reference model** is the original recipe, the model you started from. The taster is the reward model. The penalty for straying is the **KL leash**, and **PPO** is the careful method that changes the policy in small, limited steps.
+
+Where the picture stops fitting: the cook decides on purpose, while the model is nudged by tiny numerical updates.
+
+**Where you meet it.** A team improving a chat assistant starts from a model that already follows instructions. They let it write answers, score them with a reward model, and nudge it toward higher scores while a leash keeps it near the starting model. Without the leash, it can learn to flatter the scorer instead of helping the user.
+
+```scene
+title: The dal cook and the family recipe
+step: 🍲 A cook starts from the family dal recipe | Reference model
+step: 🥄 The cook makes a new batch with small tweaks | Policy writes a response
+step: 😋 A regular customer scores the batch | Reward model score
+step: 📏 Points are deducted for straying far from the family recipe | KL penalty
+step: 🔁 The cook keeps tweaks that score well, in small careful steps | PPO update
+takeaway: RLHF chases a higher score while a leash keeps the model close to where it started.
+```
+
 ## The objective
 
 $$

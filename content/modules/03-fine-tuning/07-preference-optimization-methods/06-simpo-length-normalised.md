@@ -7,6 +7,27 @@ Preference data has a well-known bias: people and LLM judges tend to prefer long
 
 **SimPO** (Simple Preference Optimisation, Meng, Xia and Chen, NeurIPS 2024) changes two things. The reward is the **average** log-probability per token, so length no longer adds up. And the Bradley-Terry comparison must clear a **target margin** $\gamma$, not just be positive. It also drops the reference model.
 
+## In everyday life
+
+A cricket selector must pick the better innings from two batters. One stayed in for a long time and piled up a big total. The other scored fewer runs, but at a sharper rate every ball. A selector who only counts total runs will always favour the one who stayed longer, and over time batters learn that staying in is the way to get picked.
+
+Language models face this with answer length. Judges, human or machine, often prefer longer answers. DPO's score for an answer is a **sum** over its tokens, a **token** being a small piece of text, so a long answer adds up more credit. After DPO, models tend to ramble. **SimPO** uses the **average** score per token instead, like a strike rate, so extra words help only if each word is individually more likely. It also asks the winner to beat the loser by a clear **margin** before the push relaxes, and it uses no frozen **reference** copy of the starting model. With no copy holding it near the start, SimPO is sensitive to the learning rate, so the step size must stay small.
+
+The cricket picture stops at one point: a strike rate is about speed, while the model's average measures how likely each word is.
+
+**Where you meet it.** A team notices that its tuned assistant answers a simple question in three paragraphs. They switch to a length-normalised method so that padding no longer earns reward, and they track answer length in their evaluation.
+
+```scene
+title: Total runs versus strike rate
+step: 🏏 One batter stays in long and piles up a big total | long answer, large summed reward
+step: 🧮 A selector counts only total runs | summed log-probability reward
+step: 😴 Batters learn that staying in longer gets them picked | models learn to write more
+step: ⚡ The selector switches to runs per ball, the strike rate | average log-probability per token
+step: 📏 The winner must also beat the rival by a clear margin | target margin gamma
+step: 🚫 No copy of the batter's old form is kept for comparison | no reference model
+takeaway: SimPO rewards the average per token, not the sum, so writing more no longer pays by itself.
+```
+
 ## Sum versus average
 
 Under DPO, an answer's implicit reward is $\beta \sum_t \big[\log \pi_\theta(y_t \mid \cdot) - \log \pi_{\text{ref}}(y_t \mid \cdot)\big]$. Compare two answers after some training:

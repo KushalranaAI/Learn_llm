@@ -7,6 +7,26 @@ Asking nicely for JSON lowers the error rate. **Constrained decoding** removes i
 
 Think of a train on a rail network. The driver (the model) still chooses which way to go at each junction, but switches that lead off the network are welded shut. Wherever the train goes, it stays on track.
 
+## In everyday life
+
+Think of the state dropdown on an online form. You start typing "Mah" and the list instantly shrinks to the states that begin with those letters. Everything else is hidden. You can still choose whichever visible option you like best, but you cannot end up with a state that does not exist. Type another letter and the list narrows again.
+
+**Constrained decoding** does exactly this to a model. At every step the model scores every possible next **token** (a small piece of text) in its vocabulary. A small program that knows the required format looks at what has been written so far and works out which tokens could legally come next. It hides all the others by setting their probability to zero. The model still picks among the remaining ones, using its own preferences. If the format is JSON, the final output is always valid JSON.
+
+Asking nicely for JSON lowers mistakes. This approach removes the format mistakes entirely. Unlike the dropdown, the model makes dozens of these small choices in a row, and the hidden list at each step is worked out automatically from a schema.
+
+**Where you meet it.** A service that extracts fields from invoices runs its own model. With the format enforced, the next stage never receives a half-finished bracket or a stray sentence, because those continuations are simply not available.
+
+```scene
+title: The shrinking dropdown list
+step: ⌨️ You type the first letters into the form field | the text generated so far
+step: 📋 The list shows only options that still fit | the set of allowed tokens
+step: 🙈 Every other option is hidden from view | disallowed tokens masked to zero probability
+step: 👆 You still pick the visible option you like best | renormalised choice among allowed tokens
+step: ✅ Whatever you finish with is a real, valid entry | output valid by construction
+takeaway: Hide the invalid options at each step, and the final answer cannot break the format.
+```
+
 ## The maths: renormalised softmax over the allowed set
 
 At one step the model gives logits $z_t$ for each token $t$ in the vocabulary $V$. Let $A \subseteq V$ be the set of tokens the format allows next, and define a **mask** $m_t = 1$ if $t \in A$ and $m_t = 0$ otherwise. Unconstrained, the next-token distribution is the softmax

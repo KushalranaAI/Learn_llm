@@ -7,6 +7,26 @@ The repo is meant to be read and run side by side with this module. Each part ha
 
 The checks matter more than the commands. A script that runs without an error proves only that the shapes line up. The checks below are the ones that catch a model that runs but is wrong: a first loss far from $\ln V$, cached and uncached generations that disagree when they should match, a router that sends every token to one expert.
 
+## In everyday life
+
+Think about assembling a flat-pack bookshelf. The instruction sheet is split into stages. After each stage you do not only ask, "did it stay standing?" A shelf can stand and still lean. A careful person lays a small spirit level on the board after every stage, because a tiny tilt early on becomes a wobbly cupboard by the end, and by then nobody can tell which screw caused it.
+
+Running the course code needs the same habit. A script that finishes without an error only proves that the pieces fit together. It does not prove the model is right. So this plan has you read a lesson, run its part, and then make one specific **sanity check**: a quick test whose answer you can predict in advance. One example is how large the very first **loss** (a number that measures how wrong the model's guesses are) should be for an untrained model.
+
+If the result matches your prediction, you move on. If it does not, you have found a bug while it is still small, and you know it came from the last stage.
+
+**Where you meet it.** A learner trains her first small language model, watches the loss go down and assumes all is well. Without a check, a hidden bug, such as the model peeking at the answer it is meant to predict, goes unnoticed. One check on the first number the run prints, or on the tests that ship with each part, catches it on day one.
+
+```scene
+title: Building a bookshelf with a level
+step: 📖 You read the instruction page for the next stage | Read the lesson
+step: 🔨 You assemble just that stage | Run that part of the repo
+step: ✅ The shelf stands and nothing falls apart | The script runs with no error
+step: 📏 You lay a spirit level on it and compare with the centred bubble | Run the sanity check
+step: 🔁 If it leans, you fix it now, then start the next stage | Fix, rerun the tests, move to the next part
+takeaway: Running without an error is not the same as being correct, so check one thing after every stage.
+```
+
 ## The one check that applies everywhere
 
 An untrained language model should be equally unsure about every token, so its first cross-entropy loss should be close to that of a uniform guess over the vocabulary:

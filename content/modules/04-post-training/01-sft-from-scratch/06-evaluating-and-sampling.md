@@ -7,6 +7,26 @@ A falling loss says the model is getting better at predicting the reference answ
 
 Scoring free text automatically is hard in general (the [Evaluation](/learn/evaluation/reference-scoring) module covers the options). For short factual answers like ours, two cheap metrics do most of the work: **exact match**, which asks whether the answer is the gold answer, and **token F1**, which gives partial credit for overlapping words.
 
+## In everyday life
+
+A teacher marks short answers using an answer key. If the student wrote exactly the key, full marks. If the student wrote a longer sentence that contains the key words, the teacher gives partial credit. If the student writes the right answer and then keeps scribbling nonsense, marking gets messy unless the teacher draws a line where the answer ends.
+
+That is how we check a fine-tuned model. A falling loss only says it predicts the reference text well. To see whether it really answers, we let it write, as a user would see it, and compare the result with the **gold response**, the reference answer kept in the data. **Exact match** gives credit only when the answer is the same as the gold one. **Token F1** is the partial credit: it measures how many words overlap. Both only compare words, so neither can tell that "not red" means the opposite of "red".
+
+Two things come first. Cut the text where the model signals that it has finished. And test on questions it never trained on, because scoring on training questions flatters the model.
+
+**Where you meet it.** Before launching a fine-tuned assistant, a team runs it on a set of held-back questions with known answers. They report how often it matches exactly, how much partial credit it gets, and then read some of the failures by eye.
+
+```scene
+title: Marking answers against a key
+step: 📝 The teacher holds an answer key for each short question | gold response
+step: ✋ The teacher stops reading where the answer ends | cut at the end marker
+step: ✅ Exactly the key's words earn full marks | exact match
+step: 🔢 Some overlapping words earn partial marks | token F1
+step: 🆕 Only questions the student never saw count for the result | held-out evaluation
+takeaway: Let the model answer, cut at the end marker, and score against gold answers on questions it has never seen.
+```
+
 ## The metrics in the repo
 
 `llm_from_scratch/part_6/evaluate.py` normalises both strings, then compares them:

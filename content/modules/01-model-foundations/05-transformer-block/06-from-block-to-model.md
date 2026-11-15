@@ -7,6 +7,26 @@ You now have every part of a block: normalise, attend, add; normalise, feed-forw
 
 The blocks share an architecture but **not weights**. Block 1 and block 12 have the same shapes and completely different numbers. Early blocks tend to handle local, surface-level patterns, while later ones build more abstract features. All of them read and write the same $d$-dimensional residual stream.
 
+## In everyday life
+
+Think of an assembly line in a factory. Raw parts arrive and get a tag saying where they belong. They then pass through many stations. Every station has the same layout, but each one is tuned differently by its own settings. The same crate rides the whole line, and each station only adds something to it. At the very end a final desk scores every product in the catalogue and says how well the crate matches each one. One product is then picked.
+
+A language model is built this way. Token IDs become vectors through the **embedding table**, with position information added. The vectors pass through a stack of **blocks**, copies of the same design but with separate learned numbers, all working on one shared stream. At the top, the **unembedding** matrix gives every word in the vocabulary a score called a **logit**. A softmax turns the logits into chances for the next token.
+
+The line also shows cost. Each token must pass every station, so work per token grows with the model's size. Unlike a factory, the model runs this line again for each new token it writes.
+
+**Where you meet it.** When a company compares two chat models, they differ in how many stations, how wide each is, and how large the vocabulary is. Those few choices explain most of the differences in size, speed and cost.
+
+```scene
+title: A factory line with a final scoring desk
+step: 📥 Parts arrive and each gets a tag with its place in line | token and position embeddings
+step: 🏭 Station after station, same layout but different settings | stacked blocks, separate weights
+step: 📦 One crate rides the whole line, and each station only adds to it | residual stream
+step: 🏁 A final desk scores every product in the catalogue | unembedding gives logits
+step: 🎯 Scores become chances, and one product is picked | softmax over the vocabulary
+takeaway: A whole model is the same block repeated, with an entry at the bottom and a scoring layer at the top.
+```
+
 ## The full forward pass
 
 For a sequence of token IDs $t_1, \dots, t_n$:

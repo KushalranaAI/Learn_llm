@@ -7,6 +7,24 @@ The power law in the previous topic varied one thing at a time. Real decisions v
 
 The DeepMind team behind **Chinchilla** (Hoffmann et al., 2022) trained over 400 models from 70M to 16B parameters on 5B to 500B tokens and fitted exactly such a formula.
 
+## In everyday life
+
+Imagine a student going to a series of lectures with a notebook. If the notebook is tiny, she cannot write everything down, however many lectures she attends. If the notebook is huge but she attends only one lecture, most pages stay blank. Her notes are good only when the notebook and the number of lectures are both big enough, and each shortage costs her separately.
+
+A language model has the same two limits. Its **parameters** are the numbers it adjusts while learning. They act like the notebook pages and set how much it can store, its **capacity**. The **tokens** are the small pieces of text it reads during training, like lectures attended, its **data**. The **loss**, the score of how wrong its guesses are, then has three parts: one for the finite notebook, one for the finite number of lectures, and a floor that nobody can remove. This lesson gives one formula that adds those parts, so you can see which shortage hurts more. Unlike a student, the model reads each piece of text only about once.
+
+**Where you meet it.** A team with a model design must decide whether to buy more data or build a bigger model. Without the formula they might pay for a bigger notebook when the real problem is too few lectures. The formula's two shortage terms show which one is larger right now, so the next rupee goes to the right place.
+
+```scene
+title: Notebook size and lectures attended
+step: 📓 A tiny notebook cannot hold everything, however many lectures she attends | capacity term
+step: 🎓 A huge notebook after one lecture stays mostly blank | data term
+step: 🧮 She adds both shortages to the confusion nobody can avoid | sum of terms plus irreducible loss
+step: 🔍 She checks which shortage is the larger one | data-limited or capacity-limited
+step: ✅ She fixes the bigger shortage first | add tokens or add parameters
+takeaway: Loss has separate costs for a limited model and limited data, so fix the larger one first.
+```
+
 ## The parametric loss
 
 $$

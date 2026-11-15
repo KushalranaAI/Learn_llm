@@ -16,6 +16,24 @@ Flip a fair coin 10 times and you will often see 6 or 7 heads. Nobody concludes 
 
 The **standard error** (SE) measures that wobble: roughly how far a measured pass rate typically lands from the true one. A **confidence interval** (CI) turns it into a range that, over many repeated experiments, would contain the true value a stated fraction of the time (95% for the usual interval).
 
+## In everyday life
+
+Think of a batter who scores 60 in his first innings. Is he a 60-average player? Of course not. One innings is part skill and part luck: the bowler, the pitch, the mood of the day. After five innings you have a rough idea. After a hundred you trust the number. Your eval score works the same way. An eval set is a small handful of "innings" taken from all the inputs your system could ever face, and a different handful would give a different score.
+
+The **standard error** is a plain measure of that wobble: how far a score measured on one sample typically sits from the true score. A **confidence interval** is a range built from it, written like "82% plus or minus 5", constructed so that it catches the true score most of the time. More examples make the range narrower, but slowly. Unlike a batter, whose form changes from season to season, your system's true pass rate stays put, which is why piling up more examples really does pin it down.
+
+**Where you meet it.** A team tests a new support chatbot on a small set of questions, sees a good score and tells management it is ready. With no error bar, nobody knows that a fresh set of questions might give a noticeably different score. With one, the team sees how shaky the number is and adds more questions before deciding.
+
+```scene
+title: A batter's average: five innings or a hundred
+step: 🏏 A batter scores a big number in one innings and fans call him a star | one score from a small sample
+step: 🎲 His next few innings are much lower, so the first number was partly luck | sampling wobble
+step: 📏 The scorer notes how far averages usually swing from one spell to another | standard error
+step: 🧾 She reports the average as a range, not a single number | confidence interval
+step: 📈 After a hundred innings the range is much tighter | more examples narrow the interval
+takeaway: A score without an error bar is a guess dressed as a fact, and more examples shrink the bar only slowly.
+```
+
 ## The maths
 
 Each example is a Bernoulli trial: pass with probability $p$, fail otherwise. The mean of $n$ independent trials is $\hat p$ (the observed pass rate). Each trial has variance $p(1-p)$, and averaging $n$ of them divides the variance by $n$:

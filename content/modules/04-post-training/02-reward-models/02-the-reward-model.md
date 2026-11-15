@@ -7,6 +7,26 @@ A language model ends in a head that turns each position's hidden state into $V$
 
 The only design decision with real consequences is **which hidden state the head reads**. A transformer produces $T$ hidden states for a $T$-token input, and the reward is one number for the whole thing. Something has to collapse $T$ vectors into one.
 
+## In everyday life
+
+At a singing contest, a judge listens to a whole performance and then shows one number on the scorecard. There is no separate mark for every note. And the silence while the next singer walks on is not part of the performance, so a good judge ignores it.
+
+A **reward model** is that judge for AI answers. It is built from the same kind of parts as a language model, namely a **transformer**, a network that reads all the tokens of a text and builds a summary for each position. A language model ends with a layer that predicts the next piece of text. The reward model swaps that last layer for a tiny one that gives just one number, saying how good the whole answer is. The design question is how to boil many position summaries down to one number. The repo averages them, but only over real tokens. It skips **padding**, the filler added to make rows the same length. If filler leaked in, the score would change just because of how much filler there was.
+
+Unlike a human judge, this one learned its taste only from the picks in the previous lesson. It has no opinions of its own.
+
+**Where you meet it.** A team building a helpful assistant needs to score thousands of candidate replies, far more than people can read. The reward model scores them instead. Without it, a human would have to rate every single reply during training.
+
+```scene
+title: A judge with one scorecard
+step: 🎤 A singer gives a full performance from start to finish | the whole answer as input
+step: 🧠 The judge forms an impression of each moment | hidden state per position
+step: 🤫 The silence between singers is left out of the judging | padding mask
+step: 🧮 The impressions are blended into one overall feeling | masked mean pooling
+step: 🔢 The judge shows a single number on the card | one-number reward head
+takeaway: A reward model is a language model body with a one-number head that scores a whole answer, ignoring padding.
+```
+
 ## Two ways to get one vector
 
 **Last-token scoring.** In a causal (decoder-only) model, the state at the final real token has attended to every earlier token and to nothing after it, so it already summarises the whole sequence. InstructGPT-style reward models take the SFT model, drop its LM head, and read $h$ at the last non-pad position. The catch is finding that position: with right padding it is `lengths - 1`, not `-1`, which would read a pad.

@@ -7,6 +7,26 @@ In the part 2 GPT, position enters exactly once: `x = tok_emb(idx) + pos_emb(pos
 
 **Rotary position embedding (RoPE)** deletes `pos_emb` entirely. In `part_3/model_modern.py` the line is literally commented out. Instead, inside every attention layer, each query and key is **rotated** by an angle proportional to its position, just before the dot product. Values are not touched. The conceptual introduction, with a two-dimensional example, is in [Position information](/learn/model-foundations/transformer-block). Here we derive why the score becomes relative, then build it.
 
+## In everyday life
+
+Imagine every word in a sentence is stamped with the reading of a clock that has several hands, some spinning fast and some very slowly. How far each hand has turned depends on the word's place in the sentence. To judge how far apart two words are, you do not need the exact time on either. You only compare their hand angles. Move both words forward by the same amount and the gap does not change. The fast hand tells you whether two words are neighbours, and the slow hand tells you whether they are far apart.
+
+That is **rotary position embedding (RoPE)**. Older models added a fixed label for each **position** (the place of a token in the sequence), like "I am number 57". That says nothing about "three words back", and the model could not go past its last label. RoPE instead **rotates** the **query** and **key** vectors (the lists of numbers attention compares) by an angle that grows with position, just before they are compared.
+
+Unlike a clock, nothing here measures time. The angles exist only to make distance easy to read.
+
+**Where you meet it.** A chat model reading a long conversation needs to know which word came just before and which came pages ago. RoPE gives it that relative sense without a learned table of positions, so the same pattern, such as looking at the previous word, works anywhere in the text.
+
+```scene
+title: Clock hands for word positions
+step: 🔢 Each word gets a place number in the sentence | token position
+step: ⏰ The place number sets how far each clock hand turns | rotation angle grows with position
+step: ⚡ Fast hands notice neighbours; slow hands notice distant words | fast and slow rotation pairs
+step: 🔍 To compare two words, you compare their hand angles | query and key comparison
+step: 🔄 Moving both words along together leaves the gap unchanged | score depends on the offset only
+takeaway: RoPE turns position into rotation, so attention sees how far apart words are, not where they sit.
+```
+
 ## The maths
 
 Split a head's query $\mathbf{q} \in \mathbb{R}^{d_h}$ into $d_h/2$ pairs. Pair $i$ of a token at position $m$ is rotated by the angle $m\theta_i$, where

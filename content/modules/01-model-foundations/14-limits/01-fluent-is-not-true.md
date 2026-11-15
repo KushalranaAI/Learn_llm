@@ -11,6 +11,24 @@ Ask a well-read friend a question they half-remember and they will usually hedge
 
 This is **hallucination**: output that is fluent and plausible but not supported by the facts or by the context the model was given. It is not a bug bolted onto an otherwise truthful system. It falls straight out of what the model is: a machine that, at every step, produces a probability distribution over the next token and then picks from it. The training objective rewarded *likely text*, and likely text and true text overlap a lot, but not completely.
 
+## In everyday life
+
+Open WhatsApp and type "I will reach by". Your phone offers three words above the keyboard, perhaps "tonight", "evening" and "9". Tap one and the sentence looks perfectly normal. The phone never checked your train ticket. It only offered words that often follow those words.
+
+A language model is that keyboard suggestion, grown up. At every step it lists many possible next words, each with a chance, and one of them gets picked. The rest of the sentence is then written smoothly around the pick. That is why an invented fact reads exactly like a true one. This failure has a name: **hallucination**, meaning fluent text that is not backed by real facts or by the document you supplied. Nothing in the sentence shows how unsure the model was about that one word. Unlike your keyboard, the model has read an enormous amount of text, so it is right far more often. It is still not right every time.
+
+**Where you meet it.** A student asks a study assistant for the source of a statistic and gets a neat, properly formatted reference to a paper that does not exist. Nothing looked wrong, so nobody checked. The fix is to treat such answers as drafts: give the model real sources to quote, and check what can be checked, like links and names.
+
+```scene
+title: The keyboard that sounds sure
+step: 📱 You type half a sentence and the phone lists several likely next words | Distribution over the next token
+step: 🎲 You tap one suggestion, usually a likely one but not always the right one | Sampling picks a token
+step: 📝 The rest of the sentence is written smoothly around that word | Fluent text built around the pick
+step: 🤥 The sentence sounds equally sure whether the word was right or wrong | Hallucination
+step: 🔍 Only a check against a real source catches the wrong word | Grounding and verification
+takeaway: A fluent sentence shows that the words are likely, not that they are true.
+```
+
 ## Where the wrong answer comes from
 
 At each step the model outputs probabilities $p_\theta(x_t \mid x_{<t})$ over the vocabulary, where $x_t$ is the next token, $x_{<t}$ everything before it and $\theta$ the parameters. When the model knows a fact well, almost all the mass sits on the right token. When it half-knows, the mass is spread over several plausible candidates. The sampler then picks one, and the rest of the sentence is written to be consistent with that pick. The grammar, tone and confidence of the sentence come from the language patterns, which the model knows extremely well. Only the one content token carries the uncertainty, and it is invisible in the final text.

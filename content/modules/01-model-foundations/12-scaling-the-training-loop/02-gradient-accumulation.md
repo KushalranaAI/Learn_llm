@@ -9,6 +9,27 @@ The batch size you want is set by optimisation: larger batches give a less noisy
 
 The trick works because of one PyTorch behaviour you may have treated as an annoyance in part 2: `loss.backward()` **adds** into `.grad` rather than overwriting it. That is why the part 2 loop called `zero_grad()` every iteration. Accumulation simply delays the zeroing.
 
+## In everyday life
+
+A teacher wants to judge how her whole class did in a test, but her small desk holds only one pile of answer sheets at a time. So she marks the first pile and jots down what its mistakes suggest about her teaching. She moves to the next pile and adds to the same notes. Only after the last pile does she change how she teaches. Because she looked at the whole class first, the change is steadier than a reaction to one pile.
+
+**Gradient accumulation** is this trick for training a model. The model learns by adjusting its **weights** (its learned numbers) in the direction that cuts its mistakes, and that direction is the **gradient**. A **batch** is the set of examples behind one adjustment: big batches give a steadier direction but need more memory. So we run small **micro-batches**, let each add its share to a running total, and adjust the weights only once at the end. Each share is divided by the number of piles, so the total is an average, not a sum.
+
+Unlike the teacher, the GPU forgets each pile's examples right away. Only the running notes stay.
+
+**Where you meet it.** Someone trains a small language model on one rented GPU. The batch size that learns smoothly does not fit in its memory, and a smaller one makes the loss curve jumpy. Accumulation keeps the memory use of the small batch and gives much of the steadiness of the big one, for a little extra time per adjustment.
+
+```scene
+title: Marking piles, changing teaching once
+step: 📚 The class is too big, so she takes one small pile at a time | micro-batch
+step: 📝 She marks a pile and adds its notes to the running notes | backward pass adds to the gradient
+step: ➗ Each pile counts for one share of the total, not all of it | dividing the loss by accumulation steps
+step: 🔄 She moves to the next pile without changing her teaching yet | gradients keep piling up
+step: 🎯 After the last pile, she changes her teaching once | one optimizer step
+step: 🧹 She clears her notes and starts fresh for the next round | zeroing the gradients
+takeaway: Accumulation lets small pieces add up to one big, steady update, with memory sized for a single piece.
+```
+
 ## The maths
 
 The loss of a big batch is the mean of its per-token losses. Split the big batch into $k$ equal micro-batches with mean losses $\mathcal{L}_1, \dots, \mathcal{L}_k$. The big-batch loss and its gradient are

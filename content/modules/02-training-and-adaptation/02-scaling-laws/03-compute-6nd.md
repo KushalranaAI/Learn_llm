@@ -11,6 +11,24 @@ $$
 
 $C$ is the total training compute in **FLOPs** (floating-point operations, not per second). The 6 is not a fitted constant; you can derive it.
 
+## In everyday life
+
+A caterer quoting for a wedding does not cook first and count later. She counts the dishes on the menu, counts the guests, and multiplies by the effort each dish needs per guest: cooking it, serving it, clearing it away. Two numbers and a fixed rule of thumb give her the total work, so she can decide how many cooks to hire for how many days.
+
+Training a model can be estimated the same way. The model has some number of **parameters**, the adjustable numbers inside it, like dishes on the menu. It reads some number of **tokens**, small pieces of text, like guests. Every token goes through every parameter in the same few jobs: a forward pass that makes a guess, then a backward pass in two parts that works out how to improve. Multiply it all out and you get the total **FLOPs**, a count of simple arithmetic operations, so you know the work before you start. Divide by how fast your machines really run, always below their top speed, and you get the days. Like the caterer's rule of thumb, it ignores small extras.
+
+**Where you meet it.** A planner is asked how many GPUs a new model needs and for how long. Without a quick estimate, the answer is a guess that can be off by a factor of several. With it, she turns model size and text amount into a work total, then into days and a rough bill.
+
+```scene
+title: Quoting a wedding catering job
+step: 📋 She counts the dishes on the menu | parameters
+step: 👥 She counts the guests | training tokens
+step: 🔁 Each dish for each guest needs the same fixed set of jobs | forward and backward passes
+step: 🧮 She multiplies dishes, guests and jobs to get the total work | total compute in FLOPs
+step: ⏳ She divides by what her kitchen really achieves, not its top speed | GPU speed and utilisation
+takeaway: Training work comes from model size times token count, and real machine speed turns it into days.
+```
+
 ## Where the 6 comes from
 
 Almost all the work in a transformer is matrix multiplication by weight matrices. Multiplying an input by a weight costs one multiply and one add, so each parameter costs **2 FLOPs per token** on the forward pass.

@@ -7,6 +7,26 @@ minutes: 8
 
 Formally, attention is **permutation-equivariant**. Reorder the input rows with a permutation $P$ and the output rows reorder with the same $P$: $\text{Attn}(PX) = P\,\text{Attn}(X)$. The causal mask adds a little order (a token can see only earlier tokens), but the model still could not tell "two tokens back" from "two hundred tokens back". So position has to be injected explicitly. There are three main ways to do it.
 
+## In everyday life
+
+Imagine a group of friends entering a cinema hall, but the tickets carry no seat numbers. Everyone is in the room, yet nobody can say who sits left of whom. Seat numbers fix that. Another way is to talk in neighbour terms: "the person two seats to my left". That phrase means the same in row 2 as in row 50.
+
+Attention on its own is like the hall without seat numbers. It looks at which tokens are present but not in what order, so "dog bites man" and "man bites dog" would look alike. The model has to add **position information** by hand. The first method, used by GPT-2, is a learned **absolute position**: each seat number has its own learned vector, added to the token. This has a hard limit, because the hall has a fixed number of seats. The older **sinusoidal** method computes the seat codes from waves instead. The newer method, **RoPE** (rotary position embeddings), turns each query and key by an amount that depends on its seat, so what attention sees is only the gap between two seats.
+
+Unlike real seats, a model usually cannot handle a hall bigger than the one it practised in.
+
+**Where you meet it.** A long-document assistant may fail past its trained length unless engineers stretch the position scheme.
+
+```scene
+title: Friends finding seats in a cinema hall
+step: 🎟️ Without seat numbers, nobody knows who sits where | attention alone ignores order
+step: 💺 Each ticket gets a seat number, learned or computed | absolute position embeddings
+step: 🚧 The hall ends at its last seat, so later seats do not exist | maximum context length
+step: 🤝 Friends instead say two seats to my left | relative position
+step: 🔄 That phrase means the same in any row | RoPE depends only on the offset
+takeaway: Attention cannot see order by itself, so position must be added, and RoPE makes it depend only on the gap between tokens.
+```
+
 ## 1. Learned absolute positions (GPT-2)
 
 Keep a second embedding table with one learned vector per position, $P \in \mathbb{R}^{n_{\max} \times d}$, and add it to the token embedding:

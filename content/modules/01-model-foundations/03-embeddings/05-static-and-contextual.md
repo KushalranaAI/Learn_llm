@@ -7,6 +7,27 @@ minutes: 7
 
 Transformers solve this by not stopping at the table. The vector for "bank" enters the first layer as its static embedding and is then repeatedly updated by attention, which mixes in information from the surrounding tokens. After a few layers the vector at that position is a **contextual embedding** (also called a **hidden state**): a description of "bank, in this sentence". In the first sentence it has drifted toward water and slopes; in the second, toward money.
 
+## In everyday life
+
+In Hindi, the word kal means yesterday and also tomorrow. A dictionary lists both meanings under the one word. If a friend says only kal, you cannot tell which she means. Then she adds, I will meet you kal, my train is booked, and the meaning snaps into place. Every word you hear after it nudges your understanding of kal.
+
+A **static embedding** is the dictionary entry: one fixed list of numbers per token, the same wherever the token appears. Inside a model, layers of **attention**, a step that lets each word look at the words around it, update that list using the rest of the sentence. The updated list is a **contextual embedding**, also called a **hidden state**: the meaning of the word in this sentence. For search, the model then squeezes a whole passage into one list of numbers, a **sentence embedding**.
+
+Unlike you, the model does this for every word in the sentence at the same time, rather than listening one word after another.
+
+**Where you meet it.** A customer types a question into a help-centre search, and the system must find the article that answers it. One fixed vector per word would blur words that have two meanings. Contextual sentence embeddings let the search match meaning, not just matching words.
+
+```scene
+title: The word kal and its two meanings
+step: 📖 A dictionary lists both meanings of kal under one entry | static embedding, one row per token
+step: 👂 A friend says just kal, and you cannot tell which she means | same starting vector everywhere
+step: 💬 She finishes the sentence, and the other words give clues | surrounding tokens as context
+step: 🧭 Each clue shifts your idea of kal a little | attention updates the vector
+step: ✅ By the end you hold one clear meaning for this sentence | contextual embedding
+step: 🗃️ The whole message is summed up as one note to file | pooled sentence embedding
+takeaway: A static embedding is one fixed entry per token; context turns it into the meaning here.
+```
+
 ## Where the vectors live
 
 Write $\mathbf{h}_i^{(\ell)}$ for the vector at position $i$ after layer $\ell$, with $\mathbf{h}_i^{(0)} = E[t_i,:]$ the static embedding of token $t_i$. Each transformer block adds an update that depends on the whole context:

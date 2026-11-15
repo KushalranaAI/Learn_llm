@@ -8,6 +8,24 @@ Data parallelism and ZeRO split the **batch** and the **stored state**, but ever
 - **Tensor parallelism** (TP) splits each layer's matrices across GPUs, so several GPUs cooperate on every single matrix multiply. Picture several cooks each chopping a share of the same onion at the same time.
 - **Pipeline parallelism** (PP) splits the stack of layers into consecutive **stages** on different GPUs, so a batch flows through them like cars along an assembly line.
 
+## In everyday life
+
+On moving day, two kinds of teamwork appear. A heavy wardrobe is too big for one person, so four people lift it together, each holding one corner. They must stand close and move in step, or it tips. Meanwhile the small boxes go down the stairs in a chain of people: one in the flat, one on the stairs, one at the truck. Each passes a box on and takes the next. At the start the person at the truck waits with nothing to do, and at the end the person in the flat does, but with many boxes the chain stays mostly busy.
+
+Training a very big model uses both ideas. **Tensor parallelism** splits one large calculation inside a layer between several GPUs that work on it together and need very fast links, like the wardrobe lifters. **Pipeline parallelism** gives each GPU its own group of layers, called a **stage**, and passes the data along like boxes in the chain. The idle time at the start and end is the **pipeline bubble**, and sending many small batches in a row shrinks it. Large runs combine both, plus plain data parallelism.
+
+**Where you meet it.** A lab training a model too large for one machine splits it across many. Without splitting inside layers and across layers, either one layer does not fit or most GPUs sit idle waiting their turn. Combining the kinds of splitting keeps expensive GPUs busy.
+
+```scene
+title: Moving house with a wardrobe and boxes
+step: 🛋️ A wardrobe too heavy for one person is lifted by four together | tensor parallelism
+step: 🤝 They must stay close and move in step | needs the fastest links within a node
+step: 📦 Small boxes pass down the stairs along a chain of people | pipeline parallelism with stages
+step: ⏸️ At first the people near the truck stand idle | pipeline bubble
+step: 🚚 Sending many boxes one after another keeps everyone busy | micro-batches
+takeaway: Split inside a layer for huge matrices, split across layers for huge stacks, and keep the pipe full.
+```
+
 ## Tensor parallelism inside a layer
 
 Take the MLP $Y = \text{GeLU}(XW_1)W_2$. Split $W_1$ by **columns** across $t$ GPUs: each GPU computes its own slice of the hidden layer, $\text{GeLU}(XW_1^{(i)})$, with no communication, because the activation acts element-wise. Then split $W_2$ by **rows**: each GPU multiplies its hidden slice by its row block, producing a partial sum, and one **all-reduce** adds the partial sums:

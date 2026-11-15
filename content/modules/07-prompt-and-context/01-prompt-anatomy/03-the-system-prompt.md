@@ -7,6 +7,26 @@ The **system prompt** is the standing brief for a model: who it is acting as, wh
 
 That second fact makes the system prompt the most expensive text you write. A sentence in a user message is paid for once. A sentence in the system prompt is paid for on every call, forever, until someone deletes it.
 
+## In everyday life
+
+Picture a substitute teacher who walks into a different class every morning with no memory of the day before. The school hands over a cover note at the door: which class this is, what to teach, which rules the principal insists on, how to mark homework. The teacher reads it, runs the day, and goes home. Tomorrow, a new substitute gets the note again.
+
+That cover note is the **system prompt**: the standing instructions that sit at the front of every request. The model has no memory between calls, so it needs the note every single time. It does not learn the note, it just re-reads it. The text it reads is counted in **tokens**, small pieces of text, and providers charge by the token. Every call pays again for the whole note.
+
+This makes the system prompt the most expensive text you write. A sentence in one user message is paid for once. A sentence in the cover note is paid for on every call, for as long as it stays there. A thick note also takes longer to read. So good notes are short, ordered, and free of rules nobody uses. Unlike a teacher, the model will also repeat the note to anyone who asks cleverly, so never put secrets in it.
+
+**Where you meet it.** A company runs a billing assistant for many thousands of customers a day. Its system prompt grew by one rule per incident and nobody removed any. Trimming unused rules lowers the bill without hurting answers.
+
+```scene
+title: The substitute teacher's cover note
+step: 📝 The school writes a cover note: class, task, rules, marking style | the system prompt
+step: 🚪 Every morning a new substitute arrives knowing nothing | a stateless API call
+step: 📖 The substitute reads the whole note before teaching | the prompt prefix is processed
+step: 💸 A longer note means more reading time and more cost every day | paid per token, per call
+step: ✂️ The school cuts rules nobody uses and keeps the note short | auditing and shortening the prompt
+takeaway: The system prompt is read on every call, so every sentence in it has a daily price.
+```
+
 ## A structure that works
 
 Good system prompts are boring and well organised. A layout many teams converge on:

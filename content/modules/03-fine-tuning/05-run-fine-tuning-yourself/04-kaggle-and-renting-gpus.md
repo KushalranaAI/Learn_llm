@@ -7,6 +7,26 @@ Colab is not the only free GPU. **Kaggle**, Google's data-science community site
 
 The skill that matters on paid hardware is different from the one on free hardware. On Colab the danger is losing your work; on a rented GPU the danger is losing your money, because the meter runs whether or not anything is training.
 
+## In everyday life
+
+When you hire a cab for an outstation errand, the meter runs from the moment you sit in. Loading your bags is paid time. Finding the route is paid time. If you stop for a long lunch with the cab waiting outside, that is paid time too, even though the car is going nowhere. The actual driving may be the smallest part of the bill, and the people who get surprised are the ones who forgot the meter was on.
+
+Renting a GPU works the same way. A marketplace lends you a powerful graphics card, and you pay by the hour or minute, whether or not your training is running. The bill has three parts: setup time, training time and idle time. The cheapest habit is to test everything on free hardware first, rent only to run a script that already works, and stop the machine the moment the job is done.
+
+**Kaggle** is the free option in this chapter: a site that gives you a weekly allowance of free GPU hours, a bit like a prepaid data pack you can see being used.
+
+**Where you meet it.** A student needs an hour of strong GPU to finish a fine-tune that is too big for free hardware. She uploads her working script, runs it, copies the result to the Hugging Face Hub and stops the machine. Leaving it on overnight would have cost several times more than the training itself.
+
+```scene
+title: The cab with the running meter
+step: 🚕 You hire a cab by the hour for an outstation errand | Rent a GPU by the hour
+step: 🧳 Loading bags and finding the route are paid time too | Setup time is billed
+step: 🛣️ The real drive is the useful part of the trip | Training time
+step: 🍛 A long lunch with the cab waiting still runs the meter | Idle machine still billed
+step: 🧾 You hand back the cab and check the final bill | Stop the pod and check billing
+takeaway: A rented GPU bills while it is on, so be ready before you start and stop it as soon as you finish.
+```
+
 ## Kaggle notebooks
 
 ```steps

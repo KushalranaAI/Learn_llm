@@ -7,6 +7,25 @@ A metric is only as meaningful as the examples it is averaged over. Score a cust
 
 An **eval set** (also called a golden set or test set) is a fixed, versioned collection of inputs, each with whatever is needed to score the output: a reference answer, a rubric, or a list of facts that must appear. Its job is to be a small, faithful model of the inputs your system will face, plus deliberate extra coverage of the cases that matter most.
 
+## In everyday life
+
+A wholesaler buys a truck of mangoes. He cannot cut open every one, so he checks a sample. If he only looks at the neat top layer of crates, he learns about the top layer. A careful buyer picks from the top, the middle and the bottom. He takes extra from the crates that tend to spoil, and he does not let the seller choose the samples.
+
+An **eval set** is the AI version of that sample: a fixed list of test inputs, each with whatever is needed to score the answer, such as a reference answer or a list of facts that must appear. It has to look like real use, so it is sampled from real traffic, plus extra cases for rare but important situations. These groups are called **slices**, and each is scored separately, so a big easy group cannot hide a small broken one. The set also needs enough examples, since a few hundred give a usable estimate of one number. And it must stay clean. If you tune your prompt while watching the same examples, you slowly fit it to them, so keep a **held-out** set that you score only at milestones.
+
+**Where you meet it.** A team building a support bot samples real tickets from past months and writes the required facts for each. They add slices for typos, other languages and abuse attempts. When a change lifts the overall score, they still check the other-language slice, because a small slice can collapse while the average looks fine.
+
+```scene
+title: Sampling a truck of mangoes
+step: 🚚 A wholesaler wants to judge a whole truck of mangoes | the real traffic the system will face
+step: 🥭 He samples from the top, middle and bottom crates | representative core sample
+step: 🔍 He takes extra from crates that tend to spoil | targeted slices
+step: 📝 He writes down what a good mango looks like | references and rubrics
+step: 📦 He keeps some mangoes untouched until the final check | held-out set
+step: ⚖️ He inspects each kind of crate separately | per-slice scores
+takeaway: An eval set is only useful if it mirrors real use, covers the rare cases on purpose, and stays free of tuning leakage.
+```
+
 ## Where examples come from
 
 | Source | Strength | Weakness |

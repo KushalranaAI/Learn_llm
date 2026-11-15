@@ -5,6 +5,25 @@ minutes: 9
 
 A fine-tuned embedding model is only better if it ranks the right passages higher for queries it has never seen. Training loss cannot tell you that: it falls on any dataset the model can memorise. What you need is a fixed retrieval test, run on the base model and the tuned model with identical settings, and a handful of ranking metrics that summarise where the correct passage landed.
 
+## In everyday life
+
+At a railway station's lost-and-found counter, you describe your bag and the clerk brings out items one by one, best guess first. What matters is how soon yours appears. Third on the trolley is good. Fortieth is nearly useless, because you would have given up. A clerk who is right on the first try beats one who gets there eventually.
+
+Checking whether a retrained search model really improved is the same exercise. For each test question, the model sorts every passage from best guess to worst, and you note the **rank**, the position of the correct passage. Averaging over many questions gives scores such as **recall** (how often the right passage is in the top few), **MRR** (the average of one divided by the rank, which rewards being first) and **NDCG** (a score that rewards high positions and gives less credit as the position falls). The test must also be fair. Use questions the model never trained on, and search the whole storeroom, not a tiny shelf where anyone would look good.
+
+**Where you meet it.** A team that tuned a search model on company documents wants to know whether it helped. They run the old and the new model on the same held-out questions against the whole collection and compare. A big jump on a tiny test shelf proves very little.
+
+```scene
+title: The lost-and-found counter
+step: 🎒 You describe your bag and the clerk lays out guesses in order | model ranks passages by similarity
+step: 🥇 You note the position where your own bag appears | rank of the correct passage
+step: 🔟 Only the first few items on the trolley count | top-k cutoff
+step: 📊 Many visitors are averaged, and earlier finds score higher | recall, MRR, NDCG
+step: 🔁 Old and new clerk are tested on the same visitors | baseline and tuned, same evaluator
+step: 🏬 The test searches the whole storeroom, not a tiny shelf | full corpus, no leakage
+takeaway: Judge a tuned model by where the right answer lands for unseen questions, on a realistic collection.
+```
+
 ## The test: queries, corpus, relevance judgements
 
 A retrieval evaluation has three parts:

@@ -5,6 +5,26 @@ minutes: 8
 
 How much faster is speculative decoding? The answer is a short formula you can derive in a few lines, and it tells you how to pick the draft length.
 
+## In everyday life
+
+At a dosa stall, a helper makes a few dosas in advance by guessing the next orders. The head cook compares the real orders with the row of ready dosas. Matching dosas are served at once, in order. At the first wrong guess, that dosa and every dosa made after it go in the bin, since the later guesses assumed the wrong one. The cook then makes the right dosa personally.
+
+Two lessons follow. First, making many dosas ahead has **diminishing returns**: each extra guess helps only if all the earlier ones were right, so its chance of being used drops fast. Second, the helper's time is not free, so a long row can even slow the stall down if the helper is slow or often wrong.
+
+Speculative decoding has this shape. The small model's guesses are the dosas. The **acceptance rate** is how often a guess is right, and the **draft length** is how many guesses are made per round. The speed-up depends on both, and on how costly the guessing is. That is why a good guesser can guess further ahead than a poor one.
+
+**Where you meet it.** A team measures how often their small guesser is right on their own traffic, then picks how many tokens to guess per round. Too few leaves speed unused; too many wastes effort.
+
+```scene
+title: The dosa stall guesses ahead
+step: 🥞 A helper pre-makes a few dosas guessing the next orders | draft of several tokens
+step: 🍳 The head cook compares the row of dosas with real orders in one go | one verification pass
+step: ✅ Dosas are served in order up to the first wrong guess | accepted prefix
+step: 🗑️ Every dosa after the first wrong guess is thrown away | rejected draft tokens discarded
+step: ⏱️ More guesses help less and less, and the helper's time counts too | best draft length and draft cost
+takeaway: Guess further ahead only while guesses keep being right, and remember that guessing itself is not free.
+```
+
 ## Expected accepted tokens
 
 Model each drafted token as accepted independently with probability $\alpha$ (a simplification, since acceptance varies by position and context, but a good guide). The draft proposes $k$ tokens. The target keeps the longest accepted prefix, and then always contributes one more token: the correction if a rejection happened, or the bonus token if all $k$ were accepted. So a pass emits $n + 1$ tokens, where $n \in \{0, \dots, k\}$ is the number accepted.

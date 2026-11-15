@@ -7,6 +7,26 @@ Continuous batching decides *when* requests can join. A **scheduler** decides *w
 
 Think of a kitchen during dinner rush. A table of twelve orders at once. If the chef stops everything to prepare all twelve dishes, every other table's food goes cold. If the chef slots one of the twelve dishes between each round of other orders, the big table waits a little longer and nobody else notices. That is chunked prefill.
 
+## In everyday life
+
+At a bank branch, one customer arrives with twelve passbooks to update. If the teller does all twelve in one go, everyone else in the queue stands frozen for ages. A better branch lets the teller do two passbooks, serve a few quick customers, then do two more. The queue keeps moving, the big customer takes a little longer overall, and nobody feels a long freeze.
+
+The person making these calls is the **scheduler**: in an LLM server, the part that decides at every step which work runs next. The big customer's job is **prefill**, reading a long prompt (the text a user sends). Doing it in small pieces is **chunked prefill**. The quick customers are users already receiving replies, one **token** (a small piece of a word) at a time.
+
+Real branches also have rules about who goes first. A senior citizens' counter is a **priority class**. And when the waiting hall is full, someone may be asked to step out and come back later. That is **preemption**, and in a server it happens when GPU memory for conversation notes runs out. Unlike at a bank, the person sent out may have to repeat some earlier work.
+
+**Where you meet it.** A chatbot shared by live customers and an overnight report job runs on one GPU. Without a scheduler, a single huge prompt freezes everyone's replies for a moment. Chunking the big prompt, and letting live customers go first, keeps replies smooth.
+
+```scene
+title: One big job at a bank counter
+step: 📚 A customer arrives with twelve passbooks to update | a long prompt arrives
+step: 🧍 If all twelve are done at once, the whole queue freezes | the prefill stall
+step: ✂️ The teller does two passbooks, serves others, then does two more | chunked prefill
+step: 👴 A senior citizens counter lets some people go first | priority classes
+step: 🚪 If the hall is full, someone steps out and returns later | preemption
+takeaway: A scheduler splits big jobs, orders the queue and evicts when memory is full, trading the big job's wait for smooth service to everyone else.
+```
+
 ## The prefill stall
 
 Without chunking, admitting a request with a long prompt means running its whole prefill in one step. Every sequence in the batch waits for it. The stall is the prefill time:

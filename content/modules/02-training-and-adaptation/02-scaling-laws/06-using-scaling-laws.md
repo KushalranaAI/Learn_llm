@@ -5,6 +5,24 @@ minutes: 6
 
 A scaling law is a forecast. Like a weather forecast, it is extremely useful when it is built from good data and used for the question it answers, and misleading when stretched beyond that. This topic is about the workflow teams actually use, and about the questions a loss curve does not answer.
 
+## In everyday life
+
+A runner wants to know her marathon time but cannot afford to find out by running one. Instead she times a few short runs, notes how her pace changes as the distance grows, draws a line through the points and predicts her finishing time. She is not certain. Fatigue may hit harder late in the race, an injury may appear, and no line tells her whether she will enjoy the day.
+
+Scaling laws are used in just this way. They are a **forecast**: a prediction about a big experiment drawn from small ones. A team fixes its recipe, trains a **ladder** of small models, and fits a curve to their final **loss**, the score of how wrong the guesses are. Then they **extrapolate**, which means extending the line beyond the measured points. During the big run the forecast becomes a health check, because a loss far above the line means something broke. Unlike a finishing time, the loss does not say how good the model will be at a particular task.
+
+**Where you meet it.** A lab planning an expensive run first trains several cheap small ones and fits a curve. Without a forecast, a poor choice of model size or a hidden bug shows up only after the money is spent. With it, the lab picks sizes with more confidence and checks the running job against the curve to catch trouble early.
+
+```scene
+title: Predicting a marathon from short runs
+step: 👟 The runner times a short run, then a longer one | ladder of small runs
+step: 📊 She plots the times and sees a steady pattern | fitting a power law
+step: 🔮 She extends the line to predict the marathon | extrapolating to the target budget
+step: 🏃 On race day she checks each split against her plan | loss curve as a health check
+step: ⚠️ Falling far behind plan means something is wrong | spotting bugs early
+takeaway: Small runs forecast a big one for a fixed recipe, but loss does not promise task skill.
+```
+
 ## The workflow: fit small, predict big
 
 1. Fix the recipe: data mixture, tokenizer, architecture, optimiser, schedule. Scaling laws describe one recipe; change the recipe and you must refit.

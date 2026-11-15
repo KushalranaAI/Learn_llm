@@ -16,6 +16,27 @@ A network only understands numbers, so text has to be cut into pieces and each p
 
 Picture writing a telegram where you pay per symbol. Spelling every word letter by letter is always possible but long. Having one code for every word in the language is short but the codebook is enormous, and a new name or a typo breaks it. The practical answer is a codebook of common chunks: whole codes for frequent words like *the*, and pieces like *un*, *believ*, *able* that can be combined to spell anything else. Those chunks are **tokens**, and the codebook is the **vocabulary**. The program that cuts text into tokens is the **tokenizer**.
 
+## In everyday life
+
+Imagine a restaurant kitchen that must cook any dish a customer might ask for. You could chop every ingredient down to dust and build each dish from scratch. That works for anything, but every order takes forever. You could also stock one ready-made frozen meal per dish. Orders are quick, but the freezer must be enormous, and a customer who asks for something new gets nothing.
+
+Real kitchens do neither. They keep a shelf of common prepared bases, such as chopped onion, ginger-garlic paste and boiled rice, plus raw basics for everything else. A language model faces the same choice with text. A **token** is one prepared piece of text: a whole common word, a chunk of a word, or a single letter. The **vocabulary** is the full shelf of pieces the model knows. The **tokenizer** is the cook who cuts any sentence into those pieces and gives each one a number label, its **token ID**, so the order slip stays short.
+
+One difference: the kitchen only cooks, but the tokenizer must also rebuild the exact original sentence from the slip, with nothing lost.
+
+**Where you meet it.** A bank's help chatbot must cope with a customer who types a brand-new product name or a spelling mistake. With one code per whole word, that message would hit an unknown word and break. With sub-word pieces, it is simply cut into smaller known chunks and the chatbot carries on.
+
+```scene
+title: The kitchen shelf of prepared bases
+step: 🍲 A cook must be ready for any dish a customer asks for | any text must be encodable
+step: 🥕 Chopping everything to dust handles any order but takes ages | characters make long sequences
+step: 🍱 One frozen meal per dish is quick but cannot cover new orders | whole-word vocabulary
+step: 🧅 A shelf of common prepared bases plus raw basics covers everything | sub-word tokens
+step: 🏷️ Each item on the shelf gets a number, so the order slip is short | token IDs
+step: 🍛 The cook can rebuild the exact dish from the slip | decode gives back the text
+takeaway: Tokens are pieces big enough to keep sequences short and small enough to spell anything.
+```
+
 ## The trade-off in numbers
 
 Three choices of unit, for an English sentence of $w$ words:

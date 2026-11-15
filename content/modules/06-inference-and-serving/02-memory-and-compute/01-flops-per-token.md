@@ -16,6 +16,26 @@ Before asking why inference is slow, ask how much arithmetic it actually needs. 
 
 Almost all the work in a transformer is matrix multiplication: the attention projections ($W_Q, W_K, W_V, W_O$), the two or three MLP matrices in every block, and the final unembedding. Count the cost of one matrix-vector product and you can count the whole model.
 
+## In everyday life
+
+Think of the bill at a kirana shop. The shopkeeper takes each item on your list, multiplies its price by the quantity, and adds the result to a running total. That is two small calculations per item. A longer list means more work, in a straight line, and nothing else changes it.
+
+A language model works out each new word in much the same way. It holds billions of learned numbers, called **weights** (the settings it picked up in training). For every new **token** (a small piece of a word), each weight is used once: multiplied by one number from the input and added into a total. A **FLOP** is one such multiply or one such add, so counting FLOPs is counting the shopkeeper's calculations. The bigger the model, the longer the bill.
+
+This count is useful because it is simple and honest: it tells you the least arithmetic a chip must do. But a bill total alone never says how long the shop takes, because fetching goods from the shelves also takes time. The rest of the chapter shows why that second cost matters more than you might expect.
+
+**Where you meet it.** A team plans to run a model over a big pile of old support emails and wants a cost estimate before any test. Counting the arithmetic per token gives the least compute the job needs, so they neither rent far too little hardware nor far too much.
+
+```scene
+title: A shop bill, item by item
+step: 🧾 The shopkeeper takes a customer's list of items | the model's weights
+step: ✖️ Each item's price is multiplied by its quantity | one multiply per weight
+step: ➕ The result is added to the running total | one add per weight
+step: 📏 A longer list means proportionally more work | work grows with parameter count
+step: 🚚 Fetching goods from the shelves also takes time, which counting does not show | arithmetic is only a lower bound
+takeaway: Each weight costs one multiply and one add per token, so a model costs about twice its parameter count in FLOPs.
+```
+
 ## One matrix, one token
 
 Take a weight matrix $W$ with $m$ rows and $k$ columns, and one token's activation vector $\mathbf{x}$ of length $k$. Each output $y_i = \sum_{j=1}^{k} W_{ij} x_j$ needs $k$ multiplies and $k - 1$ adds, call it $2k$ FLOPs. There are $m$ outputs, so

@@ -7,6 +7,27 @@ TRL's `SFTTrainer` wraps the Hugging Face `Trainer` with the parts SFT needs. It
 
 TRL reached v1.0 in March 2026, and this topic was checked against v1.17 (with transformers 5.x). Argument names do change between releases. Pin the versions that work for you, and when something breaks, read the `SFTConfig` reference for your installed version first.
 
+## In everyday life
+
+Imagine training a new call-centre agent by playing recorded calls. Each recording has the customer's words, then the reply the agent should give. The trainer marks only the agent's reply. Marking the customer's lines would be silly, because the agent never has to say those.
+
+The **SFT trainer** does this for a model. **SFT**, short for supervised fine-tuning, means training on examples that show the answer you want. The trainer wraps each example in the model's chat format and marks which words count, so only the answer is graded. This is the **assistant-only loss**. A **batch** is the group of examples handled together before the model adjusts itself. The desk may fit only a few recordings at once, so the trainer listens to a small group, jots notes, repeats that several times, and only then makes one adjustment. That trick is **gradient accumulation**, and it gives the effect of a bigger batch without a bigger desk. The **learning rate** is how large each adjustment is. Too small and nothing changes. Too large and the agent overreacts. Every so often the trainer tests on calls it has not used.
+
+Unlike a person, the model cannot tell you it is being graded on the wrong lines, so check the marking before you begin.
+
+**Where you meet it.** A telecom help desk wants its chatbot to reply in a fixed, polite format. If the trainer also grades the customer's lines, the model wastes effort learning to write complaints. Checking which words are graded, and sizing the batch to the memory available, fixes both problems.
+
+```scene
+title: Training an agent on recorded calls
+step: 📞 A recorded call has the customer's words, then the ideal reply | chat-formatted training row
+step: ✏ Only the agent's reply is marked, never the customer's lines | assistant-only loss
+step: 🪑 The desk fits only a few recordings at a time | micro-batch size
+step: 📝 After several small groups, notes on many calls pile up | gradient accumulation
+step: 🎚 Then one adjustment is made, its size set by a dial | optimizer step, learning rate
+step: 🧪 Now and then the trainer tests on calls it has not heard | evaluation steps
+takeaway: The trainer grades only the answer, gathers notes over small groups, and adjusts in steps sized by the learning rate.
+```
+
 ## The fields that matter
 
 | Field | Our value | Why |

@@ -7,6 +7,27 @@ The `generate` method of the part 2 GPT does the obvious thing. Every step it cr
 
 The [KV cache lesson](/learn/model-foundations/context-and-kv-cache) explains why those keys and values never change once computed (the causal mask) and how much memory they take. This topic builds the cache into the modern model: what the cache tensors look like, how attention appends to them, how the generate loop splits into **prefill** and **decode**, and how to prove the cached model is still the same model.
 
+## In everyday life
+
+A cricket scorer does not recount every ball from the first over each time a new ball is bowled. They keep a running scoreboard and add the newest ball to it. At the start, they enter the balls already bowled in one go. After that, each ball costs one small update. To check the scorer is honest, an umpire occasionally recounts the whole match from scratch, and the two totals must agree exactly.
+
+Text generation can work the same way. The **KV cache** is the scoreboard: for every **token** so far (a word or word piece), it stores two lists of numbers that attention needs, a **key** and a **value**. In code, **prefill** feeds the whole prompt in one pass and fills the cache. **Decode** then feeds only the newest token, adds its numbers to the cache and moves on. The cache also tells the model how many tokens came before, the **start position**, so the new token knows its place.
+
+Unlike a scoreboard, this cache is large and sits in GPU memory, and a mistake in the code can slip in without any crash. The recount check catches it.
+
+**Where you meet it.** Any chat service that streams text uses this loop. Without the cache, each new word would reprocess the whole conversation. With it, the loop does a small amount of work per word. Teams keep a test that compares cached output with a full recount, because bugs here do not crash the program.
+
+```scene
+title: The scorer and the running scoreboard
+step: 🏏 The match starts with some balls already bowled | the prompt tokens
+step: 📋 The scorer enters all of them on the sheet in one go | prefill fills the cache
+step: ⚾ A new ball is bowled | one new token fed in decode
+step: 📝 The scorer adds only that ball to the running board | append its key and value
+step: 🔢 The ball count says which ball this is | start position
+step: 🧮 An umpire recounts from scratch; the totals must match | cached equals uncached output
+takeaway: A cache saves the old work, but only a full recount proves it still gives the same answer.
+```
+
 ## The maths
 
 Per layer, the cache holds keys and values for every token seen so far, for each of the $h_{kv}$ key/value heads:

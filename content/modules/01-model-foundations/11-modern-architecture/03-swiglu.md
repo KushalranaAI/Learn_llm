@@ -7,6 +7,26 @@ The feed-forward network in the part 2 block is two linear layers with a GELU be
 
 **SwiGLU** adds a second branch that decides how much of each hidden unit to let through. One projection produces candidate features, another produces a **gate**, the gate goes through the SiLU (also called swish) nonlinearity, and the two are multiplied element-wise. The network can now say "this feature, but only when that other pattern is present", a multiplicative interaction that a plain activation cannot express in one layer. Shazeer's experiments with gated linear unit variants found that this consistently lowered perplexity at the same parameter count, and Llama, Mistral and most open models since use it. The FFN theory is covered in [The feed-forward network](/learn/model-foundations/transformer-block); this topic is about the formula, the sizing rule and the code.
 
+## In everyday life
+
+A DJ at a sangeet has a mixing desk. Each channel carries a sound: a drum loop, a vocal, a bass line. On a simple desk, every sound goes out as it is. On a better desk, each channel also has a fader, and a second reading of the music decides how far each fader is pushed up. The vocal stays loud only when the beat is right.
+
+That is the idea behind **SwiGLU**, the feed-forward step in many modern models. Each **token**'s vector (its list of numbers) goes through a layer that makes many **features**, candidate pieces of information. In the older layer, each feature passes through a simple curve and nothing else. In SwiGLU, one path makes the candidate features and a second path makes a **gate**, a set of dials, and the two are multiplied. A feature can be strong, yet its gate can shut it.
+
+Unlike a DJ, nobody sets the dials by hand: the model learns them in training. The extra path adds numbers, so designers usually make the hidden layer narrower to keep the total size fair.
+
+**Where you meet it.** Many open chat and code models use this gated layer in every block. In tests it predicted text slightly better than the plain version at the same size, so the gate is a cheap way to make each layer more flexible.
+
+```scene
+title: The DJ and the faders
+step: 🎧 A DJ has several sound channels: drums, vocal, bass | candidate features from the up path
+step: 🎤 Each channel has a fader that lets its sound through | the gate
+step: 🥁 The same music is read a second way to set each fader | gate path with SiLU
+step: 🔇 Loud sound times a closed fader gives silence | element-wise multiplication
+step: 🔊 The mixed result goes out to the speakers | down projection back to model width
+takeaway: A gated layer lets one signal decide how much of another gets through.
+```
+
 ## The maths
 
 With input $\mathbf{x} \in \mathbb{R}^d$ and hidden width $f$:

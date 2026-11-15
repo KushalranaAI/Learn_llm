@@ -7,6 +7,24 @@ You now have counts per failure category. The temptation is to fix the most inte
 
 A **Pareto chart** sorts categories from largest to smallest and plots the cumulative share. Where the cumulative line flattens shows where extra effort stops paying.
 
+## In everyday life
+
+A family wants to cut monthly spending. They list every expense and notice that rent, groceries and the school van take most of the money, while ten small subscriptions together are tiny. Haggling over one cheap subscription changes nothing, but renegotiating the van fare does. A few items usually account for most of the total. So they sort the expenses from biggest to smallest and start at the top.
+
+That is the **Pareto principle**, applied to failure categories. You sort categories by size, keep a running total, and see where the line flattens. For each category you estimate the **gain**: how many points of pass rate you would win if the fix worked. A fix rarely removes every failure in its category, so an honest estimate assumes only part gets resolved. Size is not the only thing that counts. A small category that crashes a whole workflow can matter more, so you also weigh severity and effort. Unlike rupees, failures are not all equal in cost.
+
+**Where you meet it.** A team finds that two of its failure categories cover most of its failures. It plans work for those two, estimates the gain from each, and puts a rare but dangerous category on a separate must-fix list. Without this, it would fix whatever problem a manager mentioned last.
+
+```scene
+title: Cutting the biggest household expenses first
+step: 🧾 The family lists every monthly expense | failure categories with counts
+step: 📊 They sort from biggest to smallest with a running total | Pareto chart and cumulative share
+step: 🎯 They see that two or three items make up most of the bill | top categories explain most failures
+step: ✂️ They estimate how much each cut would really save | resolution rate and expected gain
+step: ⚠️ A small but risky item, an overdue insurance premium, is handled regardless | severity weighting
+takeaway: Fix the biggest causes first, estimate the real gain, and never ignore a small one that is dangerous.
+```
+
 ## The maths: expected gain from fixing a category
 
 Suppose $N$ eval items, $F$ failures, so the pass rate is $(N - F)/N$. Category $k$ has $f_k$ failures. If a fix removes a fraction $r_k$ of that category (its **resolution rate**, rarely 100%), the new pass rate is

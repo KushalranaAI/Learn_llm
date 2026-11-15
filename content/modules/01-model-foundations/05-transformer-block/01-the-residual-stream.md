@@ -13,6 +13,26 @@ A transformer works the same way. Each token starts as an embedding vector of le
 
 A block has two sub-layers. **Attention** moves information *between* positions: it lets the token "sat" pull in something from "cat". The **feed-forward network** (FFN) then processes each position *on its own*. Each sub-layer reads a normalised copy of the stream and adds its output back through a **residual connection** (also called a skip connection).
 
+## In everyday life
+
+Think of a bank passbook. It opens with a starting balance. Every salary credit and every UPI payment is added as a new line. Nothing is erased or rewritten. After a hundred entries, the first line is still there, and the balance is simply the start plus all entries. If a wrong entry creeps in, a later correction fixes it without touching the rest.
+
+A transformer keeps its running state in the same way. Each token starts as an **embedding**, a list of numbers that stands for the token. That list is called the **residual stream**, and it travels from the bottom of the model to the top. Each **block** (one repeating unit of the model) has two helpers. **Attention** writes an entry holding information from other tokens. The **feed-forward network** writes an entry from the token's own thinking. Each entry is added to the stream. This adding is called a **residual connection**, also known as a skip connection.
+
+There is a bonus. Because the old balance always passes through, the learning signal during training can travel straight back down the stack. Without this, very deep models would barely learn in their early layers. Unlike a passbook, the stream holds hundreds of numbers per token, and entries can be negative.
+
+**Where you meet it.** Every large chat model is built this way. Without the skip path, a stack of dozens of layers would be too hard to train.
+
+```scene
+title: A passbook that only adds entries
+step: 🏦 The passbook opens with a starting balance | token embedding as the start of the stream
+step: ➕ The attention desk adds one entry about other tokens | attention output added
+step: ➕ The feed-forward desk adds another entry from its own work | feed-forward output added
+step: 📒 No entry is erased, so the old balance stays readable | residual connection keeps the input
+step: 🔙 A correction can travel straight back through the plain balance | gradient flows along the skip path
+takeaway: Each block only adds to a shared stream, so earlier information survives and deep models stay trainable.
+```
+
 ## The equations
 
 For one block in the **pre-norm** arrangement used by GPT-2, Llama and nearly every modern LLM:

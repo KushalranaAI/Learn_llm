@@ -9,6 +9,25 @@ Think of a training run as a machine with several dials, not just the weights. T
 
 This topic is not about **activation checkpointing** (recomputing activations to save memory), which [Training at Scale](/learn/training-and-adaptation/training-at-scale) covers. Here "checkpoint" means a resumable snapshot on disk.
 
+## In everyday life
+
+Two friends are halfway through a long game of chess when the power goes and the table is knocked over. One of them had taken a photo of the board, so they set the pieces back. But the photo shows only where the pieces stand. Whose turn is it? How much time is left on each clock? Which pieces were captured? Without those, a game continues, but not the same game. A good save records the board and everything around it.
+
+A **checkpoint** is a save of a training run. The **weights** (the model's learned numbers) are the board. The rest is the **optimizer state**, the running memory of recent adjustments, plus the **scheduler** position (where the learning-rate plan has reached), the step count and how far through the data the run had read. Skip any of these, and the run resumes with a loss spike or a wrong learning rate, and nothing warns you. Also write each new save to a spare sheet first and swap it in only when complete, so a power cut never destroys your last good save.
+
+**Where you meet it.** A cloud job training a model is cut off in the middle of the night because the machine was needed elsewhere. If it saved only the weights, the restart behaves oddly for a while and ends a little worse. If it saved everything, the team restarts it and the curve carries on as if nothing happened.
+
+```scene
+title: Saving a chess game properly
+step: ⏳ The game runs long, so the friends save it now and then | saving checkpoints during training
+step: 📸 A photo of the board alone shows where each piece stands | saving the weights only
+step: 💥 The table is knocked over, and the clocks and turn are lost | resuming without optimizer and scheduler state
+step: 📋 A full note records board, clocks, captured pieces and whose turn | model, optimizer, scheduler and step saved
+step: 📝 The note is written on a fresh sheet and swapped in when finished | write a temp file, then rename
+step: 🎉 The game continues as if nothing had happened | an invisible resume
+takeaway: Save everything the run remembers, not just the weights, and replace the old save only when the new one is complete.
+```
+
 ## What must be saved, and what it costs
 
 | State | Size | If you forget it on resume |

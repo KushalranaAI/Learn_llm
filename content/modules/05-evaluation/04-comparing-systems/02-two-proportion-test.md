@@ -7,6 +7,24 @@ You changed the prompt. The old one scored 78% and the new one 82%, each on 500 
 
 That probability is the **p-value**. The assumption "no real difference" is the **null hypothesis**. A small p-value says the data would be surprising under the null; it does not say how big or important the difference is, and it is not the probability that the null is true.
 
+## In everyday life
+
+Two sections of the same class take the same test. Section B, taught with a new method, has a slightly higher pass rate than section A. The principal is tempted to roll the method out everywhere. But maybe section B simply happened to have a few stronger students this year. Before believing a gap, you ask a fair question: if the two methods were really identical, how often would two sections differ by this much just by luck?
+
+A **hypothesis test** asks exactly that. The starting assumption "there is no real difference" is the **null hypothesis**. The answer comes as a number called the **p-value**: the chance of seeing a gap this big, or bigger, if nothing real is going on. A small p-value means the gap would be surprising under pure luck. It does not tell you how large or how useful the gap is, and it is not the chance that the new method is useless. In an eval, the two sections are your two systems and each test item is a pass or a fail.
+
+**Where you meet it.** A team rewrites the prompt of a loan-FAQ assistant, and the new prompt passes a few more test items than the old one. Without a test they might ship a change that was only luck, or throw away a real gain. The test says how surprising the gap is, so the decision rests on evidence instead of a hunch.
+
+```scene
+title: Two sections, one suspicious gap
+step: 🏫 Two sections take the same test and the new-method section passes slightly more | system A and B pass rates
+step: 🤔 The principal asks whether the gap could be pure luck | null hypothesis
+step: 🥣 She assumes the methods are identical and pools both sections' results | pooled pass rate
+step: 🎲 She imagines many pairs of sections drawn that way and sees how often a gap this big appears | p-value
+step: ✅ If such gaps are rare she trusts the new method; if common she collects more data | significant or not
+takeaway: A gap only counts once you know how often luck alone would produce it.
+```
+
 ## The maths
 
 Let system A pass $x_A$ of $n_A$ items and B pass $x_B$ of $n_B$, with observed rates $\hat p_A = x_A/n_A$ and $\hat p_B = x_B/n_B$. Under the null, both share one true rate, estimated by the **pooled** rate $\bar p = (x_A + x_B)/(n_A + n_B)$. The standard error of the difference under the null is

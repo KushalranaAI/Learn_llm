@@ -16,6 +16,24 @@ Type "What is the capital of France?" into a pure pretrained model and you may g
 
 **Supervised fine-tuning** (SFT), also called **instruction tuning**, teaches that role. You show the model many examples of a prompt followed by the response you want, and train it to produce the response. The knowledge was already there from pretraining; SFT teaches a format and a behaviour: read the request, answer it helpfully, stop.
 
+## In everyday life
+
+Imagine a new trainee at a bank's help desk. Before joining, she read every manual, brochure and old email the bank ever wrote. She knows a great deal. On day one a customer asks, "How do I block my card?" and she replies with more questions customers often ask: "How do I change my PIN? How do I check my balance?" She is not wrong about what such text looks like. Nobody has told her that her job is to answer.
+
+That is the gap between a **base model** and an assistant. A base model is trained only to continue text, so it carries plenty of knowledge but no sense of its role. **Supervised fine-tuning**, or SFT, closes the gap by showing the model many examples of a request followed by a good reply, and training it to produce that reply. Picture a trainer sitting beside her, playing real sample calls. Another name for it is **instruction tuning**. It teaches a habit: read the request, answer it, then stop. It does not add new knowledge, because the trainee already had that from her reading.
+
+**Where you meet it.** A company wants a support chatbot built on an open model. The raw base model rambles on or repeats the question back. After SFT on a few thousand good question-and-answer pairs, it replies directly and in the style the company wants.
+
+```scene
+title: A trainee learns to answer
+step: 📖 A trainee reads every manual and brochure before joining | pretraining on raw text
+step: 🙋 A customer asks a question and she answers with more questions | base model continues the text
+step: 📞 A trainer plays sample calls: a question, then a good reply | prompt and response pairs
+step: 🔁 She practises until replying becomes her habit | supervised fine-tuning
+step: ✅ Now a customer asks, and she answers directly, then stops | assistant behaviour
+takeaway: SFT teaches a model its role as the answerer; the knowledge was already there from pretraining.
+```
+
 ## Same loss, different data
 
 An SFT example is a pair $(x, y)$: a prompt $x$ (instruction, maybe a system message and earlier turns) and a target response $y = (y_1, \dots, y_m)$. The objective is the familiar cross-entropy, applied only to the response, conditioned on the prompt:

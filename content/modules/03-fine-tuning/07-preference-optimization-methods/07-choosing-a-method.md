@@ -5,6 +5,27 @@ minutes: 9
 
 With six or seven methods on the table, the choice can look like a research project. It rarely is. Three questions settle it in most cases: what feedback you have, how much GPU memory you have, and what you are trying to change. Then comes the part that decides whether any of it mattered, which is evaluating the tuned model against the one you started from.
 
+## In everyday life
+
+A travel agency has a new way of writing trip plans and wants to know if it is really better than the old way. It gives reviewers the same trip request, answered both ways, with the writers' names hidden. Reviewers tend to like a thick, detailed plan, so the agency checks whether the new plans simply got longer. It also swaps which plan is shown first, because the first one gets a small edge.
+
+Choosing and checking a preference method follows the same habits. First you pick a method from the feedback you have: pairs, thumbs, or answers a program can check. **DPO** with **LoRA**, a light way to train just a small add-on, is the usual first try. Then you test. The standard test is the **win rate**: show a judge the old model's answer and the new model's answer to the same prompt, and count how often the new one wins, with a tie counting as half a win. A judge, whether a person or a strong model, often favours longer answers, so also compare answers of similar length. Finally, keep a fixed set of real prompts and probes that you never train on, and check that things like JSON formatting still work.
+
+The agency picture stops at scale: a model test needs hundreds of prompts, not a few trips, to give a steady result.
+
+**Where you meet it.** A team tunes its assistant and sees the win rate climb. Then it notices the answers are much longer and some JSON replies break. A length-matched comparison and fixed probes show the gain was mostly length, so the team does not ship that checkpoint.
+
+```scene
+title: Judging two trip-planning methods
+step: 🧭 The agency picks its method from the feedback it has | decision flow by data type
+step: 🗺 The same trip request is answered the old way and the new way | SFT model versus tuned model
+step: 🙈 Reviewers see anonymous plans, shown in both orders | judge with swapped order
+step: 🏆 Count how often the new plan wins, ties as half | win rate
+step: 📏 Reviewers love thick plans, so compare similar lengths | length-matched win rate
+step: 🔒 A fixed set of real requests is never used for training | held-out evaluation set
+takeaway: Pick the method from your feedback, then prove it worked with a fair, length-aware win rate on prompts you never trained on.
+```
+
 ## The decision flow
 
 ```mermaid

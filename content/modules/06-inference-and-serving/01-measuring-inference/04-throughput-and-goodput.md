@@ -7,6 +7,28 @@ A motorway can carry the most cars per hour when it is packed bumper to bumper a
 
 LLM servers have the same trap. **Throughput** counts work done per second, regardless of how long each user waited. You can almost always raise it by packing more requests into each batch, and almost always at the cost of making each request slower. **Goodput** counts only the work that met your latency targets. It is the number that tells you how many users you can actually serve well.
 
+## In everyday life
+
+A food delivery shop promises "hot at your door within thirty minutes". On a busy Friday the kitchen takes in more and more orders and the owner proudly counts how many were handed to riders. But the riders are overloaded, and many parcels arrive cold and late. The count looks great, but many customers are unhappy.
+
+The two ways of counting have names. **Throughput** is how much work gets finished per second, whether or not anyone waited too long. **Goodput** counts only the work that met the promise. To use it you first write down the promise, called a **service-level objective (SLO)**: a target such as "the first word within half a second".
+
+Taking more orders at once usually raises throughput, and it also makes each order slower. Past a certain point, goodput actually falls even while throughput keeps climbing.
+
+Throughput is still the right measure when no one is waiting, such as a job that runs overnight.
+
+**Where you meet it.** A team tests two server settings for a live chat product. One setting handles more requests per second. But under it, many users get their first word too late, so the other setting actually serves more users well.
+
+```scene
+title: Counting hot deliveries, not all deliveries
+step: 📦 The shop promises hot food within thirty minutes | service-level objective
+step: 📈 The owner takes more orders and the count of handovers rises | throughput increases with load
+step: 🛵 Riders are overloaded and parcels start arriving cold and late | each request becomes slower
+step: ✅ Only on-time, hot deliveries are counted as successes | goodput counts requests meeting the SLO
+step: 🏁 The best busy level is where on-time deliveries peak | operate near goodput peak
+takeaway: Count the work that met the promise, because more throughput can quietly mean fewer happy users.
+```
+
 ## Throughput, three ways
 
 Throughput is quoted in three units, and mixing them up is a classic source of confusion:

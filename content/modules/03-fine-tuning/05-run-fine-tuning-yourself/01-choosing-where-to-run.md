@@ -11,6 +11,28 @@ You do not need a GPU to learn fine-tuning. You need the *right size of model* f
 
 So the first decision is not "which library" but "which model on which machine". Two numbers settle it: **memory** (does it fit at all?) and **time** (will it finish while you are still interested?). Memory is a hard wall: cross it and the run dies, or on a laptop the operating system starts swapping to disk and a step that took two seconds takes two minutes. Time is softer, but a 40-hour CPU run is a run you will never finish.
 
+## In everyday life
+
+If you are learning a new biryani recipe, you do not start by cooking for a wedding. You make a small batch on your home stove, work out the spices, and only then scale up in a bigger kitchen. The recipe stays the same. Only the pot gets bigger.
+
+Fine-tuning works the same way. The first question is not which library to use, but which model should run on which machine. Two limits decide it. **Memory** is the pot size: if the model plus training does not fit, the run fails, or the computer slows to a crawl as it shuffles data to the disk. **Time** is how long the cooking takes: a run that needs two days on your laptop is one you will never finish.
+
+A small model on a laptop is a complete rehearsal, because it uses every step of the real pipeline. Later the same script moves to a free shared GPU, or one you rent by the hour.
+
+The kitchen picture has one gap: a pot that is too big only wastes gas, but a model that is too big for your memory simply does not run.
+
+**Where you meet it.** A student with an 8 GB laptop wants to learn fine-tuning without paying for anything. She picks a very small model, works out roughly how much memory and time it needs, and finishes in minutes. Jumping straight to a huge model would have frozen her laptop and taught her nothing.
+
+```scene
+title: Practise small, then cook for the wedding
+step: 🍳 You test a new recipe in a small batch on the home stove | Small model on a laptop CPU
+step: 🫕 The pot has a fixed size, and overfilling makes it spill | Memory is a hard wall
+step: 🕒 Even if it fits, an eight-hour simmer is no use for practice | Estimate training time first
+step: 🏫 The same recipe moves to a bigger shared kitchen | Free Colab or Kaggle GPU
+step: 🎪 Wedding-sized batches go to a catering kitchen booked by the hour | Rented GPU
+takeaway: Match the model size to your machine, learn on the small one, and move the same script up when you need more.
+```
+
 ## Bytes per parameter, by where you run
 
 [Sizing your first run](/learn/fine-tuning/start-here/sizing-your-first-run) gave the 16 bytes per trainable parameter of mixed-precision Adam on a GPU. On a CPU there is no mixed precision worth using, so everything is **fp32**, 4 bytes per number. The totals for a model of $N$ parameters, of which $N_t$ are trained:

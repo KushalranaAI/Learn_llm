@@ -7,6 +7,26 @@ Pretraining batches were easy: cut random windows of exactly `block_size` tokens
 
 A collator makes three decisions. How long is each row (**padding**)? What happens to examples that are too long (**truncation**)? And what goes in the empty slots, both in the input and in the labels? Get the labels wrong and the model trains on padding; get the length wrong and some rows silently lose their answers.
 
+## In everyday life
+
+Imagine packing parcels at a courier shop. Items come in all sizes, but every parcel goes in a box of the same size so it fits the conveyor belt and the van. A small item gets crumpled newspaper stuffed around it. An item too big for the box has to be trimmed, and if you trim from the wrong end, you cut off the part the customer wanted.
+
+Training a model works like this. It learns from a **batch**, a group of examples handled together, and a batch must be a neat rectangle: every row the same length. A **collator** is the small piece of code that takes examples of different lengths and builds that rectangle. Short examples get **padding**, meaningless filler tokens added at the end. The model should not learn from the filler, so those positions are marked to be skipped. Long examples are **truncated**, which means cut at a fixed length. In fine-tuning the answer sits at the end, so a cut can remove it, and the example then teaches nothing.
+
+Unlike newspaper in a box, filler is not free. The computer still works on every filler token, so too much padding wastes real time.
+
+**Where you meet it.** A team fine-tunes on support chats that mix one-line questions with long pasted emails. A careless collator quietly spends much of its compute on filler, or throws away the answers of the long examples without any warning.
+
+```scene
+title: Packing parcels into equal boxes
+step: 📦 The shop uses one box size so everything fits the belt | fixed block size
+step: 🧸 A small item gets crumpled paper stuffed around it | padding with a pad token
+step: 🙈 Nobody inspects the paper, only the item inside | pad labels ignored by the loss
+step: 📏 A too-big item is trimmed, maybe losing the part that mattered | truncation can delete the answer
+step: 🚚 The van carries a neat stack of equal boxes | one rectangular batch of inputs and labels
+takeaway: A collator makes ragged examples rectangular, so choose padding and truncation carefully or the answers are lost or wasted.
+```
+
 ## What the repo's collator does
 
 After building `x` and `y` for each example (topic 2), `SFTCollator.collate` pads every row to the full `block_size`:

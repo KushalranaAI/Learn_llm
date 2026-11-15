@@ -7,6 +7,27 @@ A falling eval loss shows that the model assigns higher probability to the refer
 
 Use the dataset's own `test` split, which the trainer has never seen, and generate with greedy decoding so the comparison isn't blurred by sampling noise.
 
+## In everyday life
+
+A driving school teaches a learner reverse parking. After the course, how do you know it worked? You do not ask the learner to repeat the exact spaces practised. You use fresh bays, you check that the car really ends up inside the lines, and you compare with how the same learner did before the course. You also take the learner on an ordinary road to make sure nothing else got worse.
+
+Checking a tuned model takes the same three steps. First, score its answers on the **held-out test set**, examples it never trained on, and judge by what an answer does, not how it looks. For database queries, two differently written queries can both be right, so you run them and compare the rows they return. That is **execution accuracy**. Second, run the original model on exactly the same inputs, so any gain is real and not luck. A score from a small test has a margin of error, so read it as a range. Third, ask ordinary questions to catch **catastrophic forgetting**, where a model gets so good at the new task that it loses other skills.
+
+The picture stops at one point: a learner who forgot would need weeks to recover, but a model with the add-on switched off returns to the original at once.
+
+**Where you meet it.** A company tunes a model to write database queries and sees eval loss fall. Before shipping, it runs each query on a test database, compares against the base model, and tries a few general questions. If the tuned model answers a question about the capital of Japan with a database query, it knows it has gone too far.
+
+```scene
+title: Testing a reverse-parking course
+step: 🚗 A learner finishes a reverse-parking course | tuned model
+step: 🅿 The test uses fresh bays never practised | held-out test split
+step: 📏 A pass means the car ends inside the lines, however it got there | execution accuracy
+step: 📊 The same learner is tested before and after, on the same bays | base versus tuned, same inputs
+step: 🔢 A short test gives a rough result, so quote a range | standard error and interval
+step: 🛣 A normal drive checks that old skills are intact | forgetting probes
+takeaway: Judge a tuned model on unseen data, against the original, and check that it has not forgotten everything else.
+```
+
 ## Three scores, from cheap to strict
 
 For text-to-SQL there are three useful metrics, each stricter than the last:

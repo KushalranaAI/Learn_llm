@@ -7,6 +7,26 @@ With the value head gone, GRPO's loss has two jobs left. The **policy term** pus
 
 PPO had the same two jobs and handled the second differently. `part_8` subtracts the per-token KL from the reward before computing advantages, so staying close to the reference is just another thing the policy is rewarded for. `part_9` takes it out of the reward and adds it to the loss as its own term, the way DeepSeekMath writes GRPO. That move looks cosmetic. With the estimator the repo uses, it is not.
 
+## In everyday life
+
+A singer is asked to perform a classic song in her own style. The audience claps louder for fresh touches, so she tries new ornaments. But if she chases applause alone, the song can drift until it no longer sounds like the song at all. And the audience only ever heard the original, so they cannot judge wild changes, and their claps stop meaning much. So she keeps one rule in mind: stay recognisably close to the original recording.
+
+GRPO's loss has two jobs for the same reason. The **policy term** nudges the model, called the **policy**, toward answers that scored above the group's average, like chasing claps. The **KL term** measures how far the model's word probabilities have moved from a frozen copy called the **reference**, the model as it was before this training, and penalises that distance. **KL** is short for Kullback-Leibler divergence, a standard way to measure how different two sets of probabilities are. The reward model plays the audience that only knows normal-sounding text.
+
+One part of the story does not fit. A real singer feels her rule at every note. In this chapter's code, the way the distance is estimated on sampled tokens turns out to pull almost nothing on average, and the maths shows why.
+
+**Where you meet it.** A team tunes a chat model with a reward model trained on ordinary replies. With no tie to the reference, the model may find odd phrasing that the reward model rates highly but people dislike. A KL term keeps it near text the reward model can judge.
+
+```scene
+title: A singer and the original song
+step: 🎤 A singer is asked to perform a classic song her own way | policy starts as a copy of the reference
+step: 👏 The audience claps more for fresh touches | reward pushes above-average answers up
+step: 🎼 She keeps the original recording in mind as a fixed guide | frozen reference model
+step: 📏 She notices how far her version has wandered from it | KL estimate per token
+step: ⚖️ Her final choice balances applause against staying close | policy loss plus a weighted KL term
+takeaway: The policy term chases reward and the KL term keeps the model near the reference, if the KL is estimated in a way that actually pulls.
+```
+
 ## The loss, term by term
 
 The repo minimises

@@ -16,6 +16,26 @@ Reference metrics work when a correct answer has one shape. Most LLM outputs do 
 
 The **LLM-as-judge** pattern hands that reading to a second model. You give the judge the input, the output, often a reference or source document, and a **rubric**, and ask for a verdict. It is the same idea as a teacher with a marking scheme: the scheme, not the teacher's mood, should decide the grade. Done carefully, a strong judge agrees with careful human reviewers about as often as two humans agree with each other on many tasks. Done carelessly, it produces confident, biased numbers.
 
+## In everyday life
+
+In a cooking competition, the judge does not just taste a dish and say "nice". The producers hand each judge a score sheet: was the dish cooked through, did it follow the brief, is it nicely presented? The judge reads the brief, tastes the dish, writes a short comment, and only then gives the marks. The sheet, not the judge's mood, decides the score.
+
+**LLM-as-judge** puts a second AI model in that judge's chair. Many answers cannot be marked by simple matching, because a good reply to an angry customer can be written in a hundred ways. So you give the judge model the question, the answer to grade, a source document if there is one, and a **rubric**: a checklist of clear questions that can be answered yes or no. The judge writes its reasoning, then a verdict.
+
+Asking people to do this for thousands of answers is slow, costly and tiring. A judge model is fast and cheap. But it is not automatically fair. Like a human judge, it has habits and blind spots, so you test it against human marks before you trust its scores.
+
+**Where you meet it.** A company that uses a model to draft replies to delivery complaints needs to check thousands of drafts after every change. A judge model reads each complaint, the draft and the refund policy, then answers rubric questions such as whether the refund amount is right. People check a small sample to confirm the judge is still reliable.
+
+```scene
+title: A judge with a score sheet
+step: 📋 The producers give the judge a score sheet of clear questions | Rubric
+step: 🍛 The judge receives the dish and the brief it had to follow | Input, output and source
+step: 💭 The judge writes a short comment on what worked and what did not | Reasoning before the verdict
+step: ✅ Then the judge fills in the marks in a fixed format | Verdict in a fixed format
+step: 👀 People taste a few dishes to check the judge is fair | Human spot-check
+takeaway: A judge model scores quickly by following a rubric, and people still check that it is fair.
+```
+
 ## Two shapes of judge
 
 - **Pointwise** (single-answer grading): the judge sees one output and returns a score or pass/fail against the rubric. Good for absolute thresholds ("ship if 90% pass").

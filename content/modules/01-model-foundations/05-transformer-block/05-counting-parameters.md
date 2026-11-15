@@ -7,6 +7,27 @@ When a model card says "7B", that number is not marketing. You can derive it fro
 
 The trick is that almost everything is a matrix of size $d \times d$ or $d \times d_{ff}$, repeated $L$ times, plus one or two embedding tables of size $V \times d$.
 
+## In everyday life
+
+Suppose someone asks how many rooms a new apartment tower has. You do not walk into every room. You ask for a few numbers: how many floors, how wide each floor is, and how big the ground-floor lobby is. Every floor follows the same plan, so you count the rooms on one floor, multiply by the number of floors, and add the lobby. A good estimate takes a minute.
+
+Counting the size of a language model works the same way. A **parameter** is one learned number inside the model, and "7B" means seven billion of them. The config file gives the key numbers: how wide each token's vector is, how many layers the model has, how big the vocabulary is, and how wide the feed-forward step is. Every layer has the same plan, so you count one layer and multiply. The lobby is the **embedding table**, which holds one row per vocabulary entry. Add them up and you reach the number printed on the model card.
+
+Why care? Each parameter takes memory, and each one is used in the computation for every token. So the count tells you whether a model fits your hardware and roughly what it costs.
+
+**Where you meet it.** A team deciding whether a model fits on their GPU, before downloading it, does this arithmetic. Without it, they find out after a failed download.
+
+```scene
+title: Estimating rooms in an apartment tower
+step: 🏢 Someone asks how many rooms the tower has | a model card says 7B parameters
+step: 📐 The brochure lists floors, floor size and lobby size | config: layers, width, vocabulary, hidden size
+step: 🧱 Every floor has the same plan, so count one and multiply | parameters per block times layers
+step: 🚪 The lobby has its own rooms, one for each vocabulary entry | embedding table
+step: ➕ Floors plus lobby give the total, close to the brochure | total parameter count
+step: 💾 More rooms need more storage space | memory needed for the weights
+takeaway: A model's size follows from a few config numbers, one block times the layers plus the embedding table.
+```
+
 ## The rule of thumb, derived
 
 Per block, ignoring the tiny biases and norms:

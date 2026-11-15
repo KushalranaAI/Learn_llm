@@ -7,6 +7,26 @@ A judge is a model, and models have habits. Two habits show up in almost every p
 
 None of these is a bug you can see in one verdict. Each is a statistical skew, visible only when you compare many verdicts under controlled changes. That is the method for this topic: change one irrelevant thing (the order, the length) and count how often the verdict changes.
 
+## In everyday life
+
+At a chai stall you offer two cups, A and B, for a taste test. Many people say the first cup is better, simply because it came first. The cups may even hold the same chai. To catch this, you run the test again with the order swapped. If someone picks the first cup both times, you learn they chose by position, not by taste.
+
+An AI judge that compares two answers has the same habit, called **position bias**: it favours the answer shown first (or, for some models, second), whatever it says. A second habit is **verbosity bias**: it favours the longer answer, because length looks like effort, the way a bigger portion looks like a better deal. The two need different fixes. Swapping the order cancels the first, because the favoured slot moves with each swap. A longer answer stays longer in both orders, so swapping cannot cancel it.
+
+You cannot see a bias in a single verdict. You see it only by running many comparisons, changing one irrelevant thing at a time, such as the order or the length, and counting how often the verdict changes.
+
+**Where you meet it.** A team compares two versions of a support assistant by letting a judge model pick the better reply for each question. If the new version is always shown first, it may win just for being first. So they judge each pair in both orders, treat flips as ties, and check whether the winner is simply the wordier version.
+
+```scene
+title: The chai cup taste test
+step: ☕ You pour two cups, A and B, and a friend tastes both | Pairwise judging of answers A and B
+step: 👍 Your friend prefers whichever cup comes first | Position bias
+step: 🔄 You swap the cups and run the test again | Judge both orders
+step: 🤷 If the friend picks the first cup both times, position decided | Flipped verdict counted as a tie
+step: 🥛 A bigger cup keeps winning, whatever the order | Verbosity bias stays
+takeaway: Swapping the order cancels position bias, but length bias needs its own test.
+```
+
 ## Measuring position bias: swap the order
 
 Run every pair twice, once as (A, B) and once as (B, A). A judge with no position bias gives the same winner both times. Define the **swap-consistency rate**: the share of pairs where the same answer wins in both orders. Also count how often the *first* slot wins across all runs; with no bias that is 50%.

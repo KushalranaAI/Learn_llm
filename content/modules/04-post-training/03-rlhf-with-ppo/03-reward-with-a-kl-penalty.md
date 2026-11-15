@@ -7,6 +7,26 @@ The reward model gives one number per finished answer. If PPO maximised only tha
 
 The implementation detail that matters is *where* the charge is paid. The repo, like most PPO-for-LLM code following Ziegler et al. (2019), does not subtract one sequence-level KL at the end. It spreads the penalty over the tokens, so every action pays for its own drift, and adds the reward model's score on top of the last token.
 
+## In everyday life
+
+When you fly a kite, the wind pulls it higher and farther. You want it to catch the wind, but you are holding a string, and the farther the kite goes, the more the string holds it back. A kite with no string finds a gust and ends up in a tree three streets away.
+
+The reward model gives a score to finished answers. A model that only chased that score would find odd answers the scorer loves but people dislike. That is **reward hacking**: gaming the scorer instead of being helpful. The string is a **KL penalty**, a charge for every bit the model's word choices move away from the original model it started from. KL is a measure of how different two sets of probabilities are. The model is paid the reward, minus the charge for drifting.
+
+The charge is paid a little at each token, not once at the end. So every word choice pays for its own drift, and the reward model's score lands on the last token. Unlike a string that only pulls back, this charge is a deduction from the score, and a token that moved the other way can even earn a small bonus.
+
+**Where you meet it.** A team tunes an assistant with a reward model and notices answers getting longer and oddly flattering, because the scorer likes that. A drift charge keeps the assistant close to the sensible model it began as.
+
+```scene
+title: A kite on a string
+step: 🪁 The wind pulls the kite up and away | reward model score pulls the policy
+step: 🧵 The farther it flies, the more the string pulls back | KL penalty against the reference
+step: 👣 Every stretch of string carries some tension | penalty charged at every token
+step: 🏁 The final landing gets its rating | reward model score on the last token
+step: 🤝 The flyer balances lift against the pull of the string | reward minus scaled KL charge
+takeaway: A per-token KL charge lets the model chase reward without drifting far from the model it started as.
+```
+
 ## The shaped reward
 
 For action $a_t$ in state $s_t$, with the reward model's score $r_\phi(x, y)$ and a penalty strength $\beta$:

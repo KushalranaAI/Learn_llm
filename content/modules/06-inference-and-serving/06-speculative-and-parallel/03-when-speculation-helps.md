@@ -5,6 +5,26 @@ minutes: 7
 
 The speedup formula quietly assumed that verifying $k+1$ tokens costs the same as generating one. That is true only while the target's pass is memory-bound. Push the batch up and the assumption breaks, which is why speculative decoding is a tool for the *latency-sensitive, lightly loaded* corner of the design space and not a universal win.
 
+## In everyday life
+
+A cab company has plenty of cabs sitting idle at three in the morning. A dispatcher sends a spare cab to the airport in advance, in case a passenger appears. The guess is often right, because the airport at night is predictable, and if it is wrong nothing is lost: the cab was idle anyway.
+
+At six in the evening it is different. Every cab is already carrying a real passenger. A cab sent on a guess now takes a ride away from someone who was actually waiting. Guessing ahead is worth it only when there is spare capacity and the next move is predictable.
+
+The same holds for **speculative decoding**, where a small model guesses several tokens ahead and the big model checks them together. That check uses extra computing power, which is free only while the GPU (the graphics chip) is waiting on memory, as when it serves few users at once. With many users in a **batch** (requests handled together), the spare power is already doing real work and wrong guesses become waste. Unlike a cab, the small model also needs extra memory.
+
+**Where you meet it.** A coding assistant at modest traffic gets faster replies with speculation, since code is predictable. A big overnight job at full load does not, and may even slow down.
+
+```scene
+title: Spare cabs, quiet hours and rush hour
+step: 🌙 At three in the morning many cabs sit idle | small batch, spare compute
+step: 🚕 The dispatcher sends a spare cab ahead where a ride is likely | speculative draft
+step: 🎯 At predictable spots the guess is often right | high acceptance rate
+step: 🌆 At the evening peak every cab already carries a real passenger | large batch, no spare compute
+step: 🚫 A cab sent on a guess now takes a real ride away | wasted verification work
+takeaway: Guess ahead only when you have spare capacity and the next move is predictable.
+```
+
 ## The hidden assumption
 
 A verification pass for one sequence processes $k + 1$ token positions. Across a batch of $B$ sequences, that is $B(k+1)$ tokens through the weights in one pass, so the arithmetic intensity is roughly $B(k+1)$ FLOP/byte for BF16 weights. The pass stays memory-bound only while $B(k+1)$ is below the ridge point $I^* \approx 295$ (H100).

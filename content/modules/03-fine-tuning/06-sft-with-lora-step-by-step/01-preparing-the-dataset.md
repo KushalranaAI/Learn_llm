@@ -16,6 +16,27 @@ Most of the effort in a fine-tuning run goes into the data. The trainer only cop
 
 This lesson builds one run from start to finish: teach a small instruct model to turn a question and a table schema into a single SQL query, with no explanation around it. The task is a good first run because success is easy to check. Either the output is valid SQL that returns the right rows, or it isn't. We use **gretelai/synthetic_text_to_sql**, a public Apache-2.0 dataset on the Hugging Face Hub with about 100,000 training rows and 5,850 test rows. Each row has a `sql_prompt` (the question), a `sql_context` (`CREATE TABLE` and `INSERT` statements) and a `sql` answer.
 
+## In everyday life
+
+Think of a new clerk at a bank branch who learns to fill in forms by copying a pile of forms that others filled in earlier. Nobody explains the rules. The clerk just copies what the pile shows. If one form in ten has the date written in red ink, the clerk will soon write the date in red about one time in ten.
+
+Fine-tuning a model works the same way. **Fine-tuning** means training a model a little further so it behaves the way you want, and the examples you give it are the **training data**. Here each example is a short conversation: a question, then the answer you want. The trainer copies the pattern in those examples, quirks included, so most of the work is preparing the pile. You throw out empty or broken examples, remove repeats, and drop any that are too long to fit. You also lock some examples away, including a **held-out test set** the model never sees until the very end, so you can later tell real learning from memorising.
+
+The clerk picture stops at one point: a person would ask what the red ink means, but the model never asks. It copies.
+
+**Where you meet it.** A company wants a model that turns a plain-English question about a sales table into one database query and nothing else. If the examples include chatty explanations or queries cut off halfway, the tuned model will chatter or stop mid-query. Cleaning and checking the pile first fixes that before any training time is spent.
+
+```scene
+title: A clerk learns from a pile of forms
+step: 📚 The clerk gets a big pile of forms filled in by others | raw training rows
+step: 🗑 Blank, torn or double-entry forms are thrown out | clean the data
+step: 👯 Forms that are copies of each other are kept only once | deduplicate
+step: 📏 Forms too long for the page are dropped, not cut short | length filter instead of truncation
+step: 🔒 A few forms are locked away until the final test | held-out test set
+step: ✍ The clerk now copies the clean pile | SFT training
+takeaway: The model copies whatever the examples show, so clean, unique, right-sized examples decide the result.
+```
+
 ## The conversational format
 
 TRL's `SFTTrainer` accepts a **conversational dataset**: each row has a `messages` list of `{"role", "content"}` dictionaries. The trainer renders each row with the model's own [chat template](/learn/fine-tuning/instruction-tuning/chat-templates), so you never write `<|im_start|>` by hand. One row of our dataset looks like this:

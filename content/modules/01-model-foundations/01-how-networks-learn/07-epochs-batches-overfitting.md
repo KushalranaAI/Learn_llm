@@ -5,6 +5,27 @@ minutes: 9
 
 A student preparing for an exam can work through the practice questions once, or ten times. Ten passes help, up to a point. After that the student starts memorising the exact answers to those particular questions, including the typo in question 7, and does worse on fresh questions. Training a network has the same three ingredients: how much data is looked at per step, how many passes are made over it, and how to tell learning from memorising.
 
+## In everyday life
+
+Think of a tailor who keeps a notebook of measurements from past customers and uses it to refine his basic pattern. He does not study every customer before each tweak. He takes a handful, adjusts the pattern a little, then takes another handful. Going through the whole notebook once is a full round. After a few rounds, the pattern fits most people well, including strangers who walk in.
+
+After too many rounds, something goes wrong. The pattern starts copying each old customer's quirks, such as one man's slouch. It fits the notebook perfectly and fits new walk-ins badly. To catch this, the tailor keeps a few walk-ins aside, never uses them to adjust the pattern, and checks the fit on them now and then.
+
+In training these are **mini-batches** (a small random handful of examples used for one step), an **epoch** (one full pass over the training data), the **validation set** (examples kept aside and never used to adjust), and **overfitting** (fitting the training data ever better while doing worse on new data). Stopping at the best round is **early stopping**.
+
+**Where you meet it.** A company fine-tunes a language model on a few thousand support emails and runs too many passes. The model starts repeating the old emails nearly word for word and handles new questions worse. Watching the loss on held-back examples shows this early.
+
+```scene
+title: The tailor and the notebook of customers
+step: 📒 A tailor has a notebook of measurements from many past customers | the training set
+step: 👥 He studies a handful at a time and adjusts his pattern a little | a mini-batch step
+step: 🔄 Going through the whole notebook once is one round | an epoch
+step: 🆕 He keeps a few walk-ins aside and only tests the fit on them | the validation set
+step: 🧵 After many rounds the pattern copies old quirks and fits walk-ins worse | overfitting
+step: ✋ He stops at the round where the walk-ins fit best | early stopping
+takeaway: Keep some data aside and watch it, because fitting the training data is not the same as learning.
+```
+
 ## Batches: estimating the gradient cheaply
 
 The true loss is the average over all $N$ training examples, so its exact gradient needs all $N$ of them. Instead, each training step samples a **mini-batch** of $B$ examples and uses their average gradient:

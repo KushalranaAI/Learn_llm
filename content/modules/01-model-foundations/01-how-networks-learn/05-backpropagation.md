@@ -7,6 +7,27 @@ Gradient descent needs the slope of the loss with respect to every parameter. Fo
 
 Think of a factory line where a defect is found at the end. To fix it, you ask the last station how much its work contributed, then that station asks the one before it, and so on back to the start. Each station only needs two things: the blame passed back to it, and how sensitive its own output is to its inputs. That is the **chain rule**.
 
+## In everyday life
+
+Remember the game where a message is whispered along a line of friends and arrives garbled? Now imagine a smarter version. The last friend compares what they heard with the original. They work out how their own wording should change to be closer, and tell the friend before them what shift would have helped. That friend works out how to change their own wording, and passes it back. One trip back along the line, and everyone knows how to adjust.
+
+That is **backpropagation**. A network passes numbers forward through its layers to make a prediction, compares it with the right answer to get the **loss** (a number for how wrong it is), then sends information backwards. Each layer needs only two things: the message from the layer after it, and how its own output reacts to its own inputs. Combining them link by link is the **chain rule**. The result is a **gradient**, a list that tells every parameter which way to move to lower the loss.
+
+Unlike the friends, layers pass exact numbers back, not opinions.
+
+**Where you meet it.** A photo-tagging model can have dozens of layers and millions of adjustable numbers. Working out the effect of each number separately would take forever. Backpropagation finds all of them in one sweep backwards, which is why training such models is practical. Libraries do this automatically, so engineers rarely write it by hand.
+
+```scene
+title: A message whispered down a chain
+step: 💬 A message is passed along a chain of friends, each rewording it | forward pass through layers
+step: 😕 The last friend's version differs from the original | the loss
+step: 📣 The last friend works out how their wording should change | the gradient at the output
+step: ⏪ They tell the friend before, who works out their own change | the chain rule
+step: 🔙 The feedback reaches the first friend in one trip back | the backward pass
+step: 📝 Everyone adjusts their wording slightly for the next round | the parameter update
+takeaway: Backpropagation sends the error backwards once, giving every parameter its own correction.
+```
+
 ## The chain rule in one line
 
 If $L$ depends on $u$, and $u$ depends on $w$, then a small nudge to $w$ changes $u$, which changes $L$:

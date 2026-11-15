@@ -17,6 +17,26 @@ Pointwise grades are absolute, so you can compare a score to a threshold, track 
 
 For 5 systems and 400 items, pointwise needs $5 \times 400 = 2000$ judgements. Pairwise with order swapping needs $\binom{5}{2} \times 400 \times 2 = 10 \times 400 \times 2 = 8000$.
 
+## In everyday life
+
+A chess club wants to know how strong its players are. One way is to watch each player alone and give a mark out of ten. Marks are easy to track over months, but different watchers hand out different marks, and almost everyone ends up with a seven or an eight. The other way is to let players face each other and note who wins. Nobody has to decide what a seven means. The results speak, and a drawn game counts as half a win for each side.
+
+These are the two ways of using an AI judge. **Pointwise** judging grades one answer on its own, with a pass or fail or a score. **Pairwise** judging shows two answers to the same question and asks which is better. The **win rate** is the share of matchups a system wins, with ties counted as half. From many matchups you can even build a ladder of strengths, which is how chess and online leaderboard ratings work.
+
+Each way has a cost. Matches tell you who beats whom, but not whether anyone is good enough. And as more players join, the number of matches grows fast.
+
+**Where you meet it.** A team has a current prompt and a new candidate for a shopping assistant. They run a pairwise judge on a set of test questions and report wins, losses, ties and the margin of error. For a daily health check on the live assistant they use a pointwise pass or fail rubric instead, since there is no rival to compare with.
+
+```scene
+title: A chess club ladder
+step: ♟️ Players are graded alone, but each watcher gives different marks | Pointwise scores drift
+step: 🤝 Instead, two players face off and one of them wins | Pairwise comparison
+step: 🟰 A drawn game counts as half a win for each side | Ties count as half
+step: 📊 After many games you count each player's share of wins | Win rate
+step: 🪜 From all the results you build a ladder of strengths | Bradley-Terry strength gap
+takeaway: Pointwise answers whether something is good enough, and pairwise answers which is better, so match the method to the question.
+```
+
 ## The maths: win rate with ties
 
 For a pair of systems, count wins $w_A$, wins $w_B$ and ties $t$ across $N = w_A + w_B + t$ items. The usual **win rate** for A gives each tie half a win:

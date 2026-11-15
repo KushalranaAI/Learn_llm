@@ -7,6 +7,27 @@ minutes: 6
 
 Think of PPO as running a small company with four employees. The **policy** writes answers. The **reward model** grades them. The **reference model** checks the policy has not drifted into strange territory. The **value model** predicts, token by token, how good the answer is going to be, so the policy can tell which tokens deserve credit. Every training step needs all four, and two of them (policy and value) are being trained at the same time.
 
+## In everyday life
+
+A tuition teacher wants a student's essays to improve. One way is to make the student write brand-new essays every round, mark each one, and use the marks to adjust the student's habits. The slow part is not the marking. It is the waiting while the student writes a full essay, word by word. The other way is to mark a big stack of old essays in one sitting, with no waiting.
+
+The first way is **RLHF** with **PPO**, a method where the model writes fresh answers, a **reward model** (a second model trained to grade answers) scores them, and the model updates. The writing step is called the **rollout**, and it is often the slowest part. The method also needs several large models in memory at once. The second way is the idea behind **DPO**, which learns from a saved set of marked answers and trains almost like ordinary fine-tuning. Newer online methods such as **RLOO** keep the fresh writing but drop one expensive helper: each answer is judged against the average of the other answers to the same prompt, so no extra predictor is needed. Many teams now use saved comparisons for taste, and fresh answers with checkable scores for correctness.
+
+The tuition picture stops at memory: a teacher only spends time, but the model also needs room on a GPU for every helper.
+
+**Where you meet it.** A team building a maths helper can check each answer automatically, so fresh answers are worth the wait. A team polishing tone has no checker, so it learns from a stack of saved comparisons instead.
+
+```scene
+title: Fresh essays or a stack of old ones
+step: ✍ The student writes a brand-new essay, word by word | rollout, answers generated
+step: 👩 A marker grades the essay | reward model scores it
+step: 📏 Another check ensures the style has not wandered far | reference model and KL penalty
+step: 🔁 Habits are adjusted, then the whole round repeats | policy update
+step: 🐌 Waiting for fresh essays eats much of the time | generation dominates the cost
+step: 📚 A stack of old marked essays skips the waiting | offline method such as DPO
+takeaway: Online methods pay for fresh answers and extra models, which is why many teams use cheaper offline methods when they can.
+```
+
 ## Where the time goes
 
 A PPO step has two phases. In the **rollout** phase the policy generates complete answers for a batch of prompts, one token at a time, which is inference, not training, and it is slow. Then the reward model scores each answer, the reference model computes log-probabilities for the KL penalty, and the value model computes its estimates. Only then does the **update** phase run several gradient passes over that batch.

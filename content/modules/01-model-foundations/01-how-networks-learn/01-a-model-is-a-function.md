@@ -16,6 +16,27 @@ Picture a mixing desk in a recording studio. Sound goes in, sound comes out, and
 
 A neural network is the same idea with numbers. Numbers go in (pixels, or the IDs of words), numbers come out (a label, or the probability of each possible next word), and in between sits a long list of adjustable numbers called **parameters**. **Training** is the search for parameter values that make the outputs right. A small network has a few dozen parameters. GPT-style language models have billions. The principle does not change.
 
+## In everyday life
+
+Think of how you pick a mango at the market. You check the colour, press it for softness, and smell it near the stem. You do not weigh the three equally: for you, smell may matter most. You add up the clues into one overall feeling. If the feeling clears your personal bar, you buy it.
+
+That is one **neuron**, the basic part of a neural network. The clues are its **inputs**. How much each clue matters to you is its **weight**. The overall feeling is the **weighted sum**, and your personal fussiness is the **bias**, which sets how high the bar is. The rule for how strongly the neuron responds is the **activation function**. The weights and biases together are the **parameters**, the adjustable numbers, and **training** is the search for values that give good answers. A network has many such shoppers in layers, each passing its verdict to the next. Small networks have a few dozen parameters; language models have billions.
+
+Unlike you, a neuron starts with random preferences and learns them only through training.
+
+**Where you meet it.** A spam filter for text messages looks at clues such as an unknown sender, a strange link and urgent words. Each clue gets its own weight, and the total decides spam or not. Training finds weights that match what people really flag, which no engineer could write by hand for every message.
+
+```scene
+title: Picking a mango, one neuron at a time
+step: 🥭 A shopper checks a mango's colour, softness and smell | inputs
+step: 🔍 Smell counts for more than colour in their judgement | weights
+step: ➕ They combine the clues into one overall feeling | weighted sum
+step: 📏 Their fussiness decides how high that feeling must be | bias as a threshold
+step: 🛒 Only past that bar do they decide to buy | activation function
+step: 🏪 Rows of shoppers pass verdicts onward; tuning all their habits is training | layers and parameters
+takeaway: A model is many small weighted judgements, and training adjusts every weight and bias.
+```
+
 ## The smallest piece: one neuron
 
 A **neuron** takes several inputs, multiplies each one by its own **weight**, adds them up together with one extra number called the **bias**, and passes the total through an **activation function** that bends it:

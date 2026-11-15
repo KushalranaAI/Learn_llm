@@ -9,6 +9,26 @@ A car review is the everyday version. Top speed is one number; a useful review a
 
 The best-known example is Stanford's **HELM** (Holistic Evaluation of Language Models, 2022). It evaluated 30 models on 42 scenarios with seven metrics: accuracy, **calibration**, **robustness**, fairness, bias, toxicity and efficiency. One of its points was about coverage: before HELM, a typical model had been evaluated on under a fifth of the core scenarios; HELM ran every model on nearly all of them under the same conditions, so comparisons became possible at all.
 
+## In everyday life
+
+When you go for a full body check-up, the doctor does not stop at your weight. You get blood pressure, blood sugar, cholesterol, eyesight and more. A person can be a healthy weight and still have high blood sugar. One good number can hide a problem somewhere else, so the report lists many numbers side by side.
+
+**Holistic evaluation** applies the same thinking to a model. Instead of a single accuracy score, you test it on many **scenarios** (different tasks and subjects) and measure many **metrics** (different qualities). Beyond being right, you ask: does it say it is unsure when it might be wrong, does it cope with typing mistakes, is it fair to different groups, and what does each answer cost?
+
+When the numbers disagree, no model wins on everything. One may be the most accurate and the most expensive, another cheap but weaker. A model is only clearly out of the running if another is at least as good on every quality you care about.
+
+**Where you meet it.** A hospital wants a model to draft discharge summaries. A model with the best accuracy is rejected because it sounds equally confident when it is wrong, and it breaks on hurried, misspelt notes. A slightly less accurate model that flags its doubts and costs less is chosen.
+
+```scene
+title: The full body check-up
+step: ⚖️ A single reading, such as weight, looks fine and says little | one accuracy number
+step: 🩺 The check-up runs many tests across the body | many scenarios and many metrics
+step: 🧪 One test shows a hidden problem the weight never revealed | weakness on one axis
+step: 📋 The report lines up every patient's numbers side by side | grid of models and metrics
+step: 🎯 The doctor weighs the numbers against what this patient needs | choose on the Pareto frontier
+takeaway: Measure several qualities, then choose by the weights that matter for your use, not by one headline number.
+```
+
 ## The maths: three metrics beyond accuracy
 
 **Calibration** asks whether stated confidence matches observed accuracy. Group answers into bins by the model's confidence and compare. The **expected calibration error** is the bin-size-weighted average gap:

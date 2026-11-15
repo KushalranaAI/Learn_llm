@@ -7,6 +7,26 @@ PPO for language models is usually described as needing four models. The **polic
 
 The repo keeps the cast but shrinks it. The value model is not a separate network: it is a one-layer **value head** bolted onto the policy, so policy and value share a single transformer trunk. The reference is a second instance of the same class with gradients switched off. The reward model is the encoder from the [previous lesson](/learn/post-training/reward-models).
 
+## In everyday life
+
+On a cooking show, a contestant cooks, and a food critic tastes the finished dish and gives a score. Midway through, the contestant also has a gut feeling: "this is going well" or "this is going wrong". Back home, her old recipe notebook sits on a shelf, never changed, so anyone can check how far her cooking has drifted from the original.
+
+PPO, the training method in this chapter, needs four such roles. The **policy** is the model that writes answers and keeps learning, the cook. The **reward model** is the critic. It is frozen, which means never changed, and it scores finished answers only. The **value model** is the gut feeling: from any point in an answer, it guesses how good the final score will be. In the repo it is a small **value head**, an extra tiny layer attached to the policy, so the cook and her gut feeling share one brain. The **reference model** is the notebook, a frozen copy of the model from before this stage, used to measure drift.
+
+The reference must be a separate copy. If it kept learning along with the cook, it would stop measuring drift.
+
+**Where you meet it.** Teams that tune chat models with this method must keep several large models in memory at once. That heavy cost is one reason many teams moved to simpler methods.
+
+```scene
+title: A cooking contest with four roles
+step: 🍳 The contestant cooks and keeps improving between rounds | policy, trained
+step: 😬 Midway, her gut says whether the dish is going well | value head
+step: 🍽 A critic tastes the finished dish and scores it | frozen reward model
+step: 📓 Her old recipe notebook never changes | frozen reference model
+step: 📏 Comparing today's dish with the notebook shows her drift | distance from the reference
+takeaway: PPO keeps a learning policy, a value guess, a frozen judge and a frozen reference copy to measure drift.
+```
+
 ## What the value head predicts
 
 The **value** of a state is the return you expect from it if you keep following the current policy:

@@ -14,6 +14,24 @@ From the previous lesson: decode time per token is roughly the bytes read per st
 
 If decode waits on memory, the most direct fix is to make the weights smaller. A weight does not need 16 bits of precision to do its job; most of the information in a trained network survives being stored coarsely, the way a photo survives JPEG compression. **Quantization** stores each weight with fewer bits and converts it back (or computes with it directly) when needed.
 
+## In everyday life
+
+Think of a student who carries a school bag to class every day. Every trip, the whole bag comes along. With full textbooks the bag is heavy and the walk is slow. Swap the textbooks for compact notes and the bag is light, so each trip is quicker. The notes are a little less detailed, but most of what matters survives.
+
+A language model works the same way. It is made of billions of numbers called **weights**, the learned values that decide how it behaves. Each weight is stored using some number of **bits** (a bit is one on-or-off digit; more bits give a finer, more precise number). To produce each new word, the computer must read all the weights from the memory of its **GPU** (the graphics chip that runs the model). **Quantization** means storing every weight with fewer bits, so the model takes less room and each read is quicker. The price is a small loss of detail.
+
+**Where you meet it.** A small company wants to run an open chat model on one rented graphics card instead of two. At full precision the weights alone do not fit, so a second, costlier card is needed. Storing the weights with fewer bits lets the model fit on one card, and answers also come back faster.
+
+```scene
+title: The school bag of weights
+step: 🎒 A student carries the whole bag to class every day | weights read on every step
+step: 📚 Full textbooks make the bag heavy and the walk slow | many bits per weight
+step: 📝 Swapping them for compact notes shrinks the bag | fewer bits per weight (quantization)
+step: 🚶 A lighter bag means every trip is quicker | fewer bytes read from memory
+step: 🔍 The notes lose a little detail, so the student checks the answers still hold up | small quality cost
+takeaway: Fewer bits per weight means fewer bytes to read on every step, which is the cheapest way to go faster.
+```
+
 ## The formula
 
 A format that spends $q$ bits per weight stores a model with $N$ parameters in

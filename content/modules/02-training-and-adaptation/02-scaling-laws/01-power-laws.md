@@ -16,6 +16,24 @@ Train a family of language models that differ only in size, each on plenty of da
 
 The shape of the curve is a **power law**: every time you multiply the model size by a constant factor, the loss (more precisely, the part of the loss that can still be removed) shrinks by a constant factor. Doubling helps, but each doubling helps by the same ratio, so the absolute gains get smaller and smaller.
 
+## In everyday life
+
+Think of the weeks before a board exam. In the first week of serious study your marks jump. Doubling your study time again helps, but less. Each doubling still removes the same share of the mistakes you could still fix, so the extra marks get smaller every time. And some marks never come: a badly worded question with two defensible answers stays wrong however hard you study.
+
+That is the shape this lesson is about. A language model has a **loss**, a score for how wrong its guesses are (lower is better). Train bigger and bigger models and the loss falls along a very regular curve called a **power law**: each time you multiply the size by the same factor, the part of the loss you can still remove shrinks by the same share. The leftover part that cannot be removed, like the trick question, is the **irreducible loss**. Because the curve is so regular, people can measure small models and predict a much bigger one. Unlike a student's marks, which jump around with mood and luck, the model's curve is smooth enough to forecast.
+
+**Where you meet it.** A team about to pay for a very expensive training run first trains a handful of cheap, small models and plots their loss. Without the idea, the big run is a blind bet. With it, they draw the curve through the small results and read off roughly what the big model will reach.
+
+```scene
+title: Studying harder for an exam
+step: 📚 You study one hour a day and your marks jump | small model, big early gains
+step: ⏰ You double your study time and gain only a few more marks | doubling the model size
+step: 📉 Each doubling removes the same share of fixable mistakes | power law, constant ratio
+step: ❓ A badly worded question stays wrong however long you study | irreducible loss
+step: 🔮 A friend plots your marks and predicts your result for much longer study | extrapolating from small runs
+takeaway: Loss falls by the same share at every step up in size, but never below a floor.
+```
+
 ## The equation
 
 A power law with an irreducible floor looks like this:

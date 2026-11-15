@@ -5,6 +5,25 @@ minutes: 9
 
 A free Colab T4 has a 16 GB card with roughly 15 GB usable, no fast bf16, and a session that can end after a few hours (Google does not guarantee any of this; as of late 2026 it is what you usually get). GRPO is both a training job and an inference job inside one loop, so its memory bill has items that SFT does not: a KV cache for $G$ completions at once, and a logits tensor that is huge for models with big vocabularies. Do the sum before you press run.
 
+## In everyday life
+
+Before a flight you weigh your bags. The big suitcase is always there and takes most of the allowance. On top of it come the small things that get forgotten: the cabin bag, the water bottle, the shopping you picked up on the way. If the total is over the limit, the airline does not care which item was heavy. You have to take something out.
+
+Training on a small free GPU is the same. GPU memory, called **VRAM**, is your allowance, and a free notebook gives you only about fifteen gigabytes. The model's **weights** are the big suitcase. GRPO adds extras that ordinary fine-tuning does not have. One is the **KV cache**, the notes the model keeps about text it has already written so it need not reread it. Another is the **logits**, a long list of scores over every word the model could say next, produced for each position. Writing answers is also slow, because the model produces one word at a time. So you add up every item before you press run, and you know in advance what to cut if the sum is too high.
+
+**Where you meet it.** Someone with only a free cloud GPU starts a training run and sees an out-of-memory error an hour in. Doing the sum first shows which setting to shrink, such as the answer length or the group size, before any time is wasted.
+
+```scene
+title: Packing under the baggage limit
+step: ⚖️ The airline allows a fixed weight, whatever you pack | GPU memory limit
+step: 🧳 The big suitcase is always there and takes most of it | model weights
+step: 🎒 Small extras add up: cabin bag, bottle, shopping | KV cache and logits
+step: 🧮 You weigh everything at home before leaving | memory sum before the run
+step: 🚫 Overweight at the desk, so you remove items | cut batch size or completion length
+step: 🪶 Or you swap in a lighter suitcase | 4-bit quantised base model
+takeaway: Add up weights, cache and logits before the run, and know which setting to cut when memory runs out.
+```
+
 ## The memory sum
 
 For LoRA on a half-precision base model, the main terms are

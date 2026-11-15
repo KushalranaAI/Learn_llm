@@ -5,6 +5,24 @@ minutes: 7
 
 After reading a few dozen failures, patterns emerge. Some outputs are wrong because the system never had the information. Some are wrong because it had the information and ignored it. Some are not wrong at all, but fail an overly strict metric. A **failure taxonomy** is the named set of categories that captures these patterns, and it is the interface between "reading" and "fixing": each category should suggest a different kind of fix.
 
+## In everyday life
+
+A railway control room wants fewer late trains. "Late" is not useful on its own. So staff sort every delay into a cause: signal failure, track repair, crew arriving late, bad weather. Each cause has a different fix, such as a signal engineer or a changed crew roster. A label like "train problem" would be useless, because it points at nobody in particular.
+
+A **failure taxonomy** is that sorted list for an AI system: named categories of what goes wrong, such as "the right document was never found" or "the answer contradicts the text it was given". A good one has few categories, gives each failure one main label, and makes every category suggest a lever to pull. You count failures per category. Because you usually counted only a sample, each count is a little uncertain, so do not read too much into the order of the small ones. Keep one bucket for failures that are the test's fault, not the system's, since a reference answer can simply be wrong.
+
+**Where you meet it.** A company's support assistant gets answers wrong in many different ways. The team sorts failures into categories like retrieval miss, ignored context and format error. Each category now goes to the right person with a clear fix, instead of everything landing in one vague pile called "bad answers".
+
+```scene
+title: Sorting late trains by cause
+step: 🚆 The control room logs every late train | a set of failed eval items
+step: 🏷️ Each delay gets one main cause label | one primary label per failure
+step: 🧰 Each cause is matched to a fix: signals to engineers, crews to schedulers | each category points to a lever
+step: 🔢 Delays are counted per cause | category counts and shares
+step: 🧹 The "other" bucket grows too big, so staff re-read it and split it | refining the taxonomy
+takeaway: A good category is one that tells you who should fix what.
+```
+
 ## What makes a good taxonomy
 
 | Property | Why it matters |
